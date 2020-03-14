@@ -11,7 +11,11 @@ public class UIFrame extends JFrame {
         JButton btn = new JButton("Close");
         btn.addActionListener(e -> System.exit(NORMAL));
 
+        JButton test = new JButton("Print");
+        test.addActionListener(e -> System.out.println("asdf"));
+
         getContentPane().add(btn);
+        getContentPane().add(test, BorderLayout.PAGE_END);
 
         setVisible(true);
     }
