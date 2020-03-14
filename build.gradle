@@ -1,9 +1,13 @@
 plugins {
     id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '2.0.1'
 }
 
 group 'com.walnutbot'
 version '1.0-SNAPSHOT'
+
+mainClassName = "Main"
 
 sourceCompatibility = 1.8
 
