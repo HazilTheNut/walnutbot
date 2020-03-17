@@ -1,5 +1,7 @@
-import net.dv8tion.jda.api.AccountType;
+import UI.UIFrame;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -21,8 +23,9 @@ public class Main extends ListenerAdapter {
         }
         JDABuilder builder = JDABuilder.createDefault(token);
         builder.addEventListeners(new Main());
+        JDA jda = null;
         try {
-            builder.build();
+            jda = builder.build();
         } catch (LoginException e) {
             e.printStackTrace();
         }
@@ -31,7 +34,9 @@ public class Main extends ListenerAdapter {
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
             e.printStackTrace();
         }
-        new UIFrame();
+        if (jda == null)
+            System.out.println("WARNING: JDA was null!");
+        new UIFrame(jda);
     }
 
     @Override public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
