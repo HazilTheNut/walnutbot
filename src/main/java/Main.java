@@ -1,8 +1,8 @@
 import Audio.AudioMaster;
 import UI.UIFrame;
+import Utils.FileIO;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -44,11 +44,13 @@ public class Main extends ListenerAdapter {
     @Override public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         if (event.getAuthor().isBot())
             return;
+        /*
         System.out.printf("Event Message: \'%1$s\'\n", event.getMessage().getContentRaw());
         if (event.getMessage().getContentRaw().contains("$rand")) {
             Random random = new Random();
             event.getChannel().sendMessage(String.format("**RANDOM NUMBER:** %1$d", random.nextInt(32))).queue();
             event.getChannel().sendMessage(String.format("Attempted recursion: $rand", random.nextInt(32))).queue();
         }
+        */
     }
 }

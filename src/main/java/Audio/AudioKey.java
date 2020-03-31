@@ -12,6 +12,24 @@ public class AudioKey {
         this.url = url;
     }
 
+    /**
+     * Constructs an AudioKey from a single string, formatted as follows:
+     * "SONG NAME@SONG URL"
+     *
+     * @param formattedKey The formatted String representing this AudioKey
+     */
+    public AudioKey(String formattedKey){
+        int separatorIndex = formattedKey.indexOf('@');
+        if (separatorIndex > 0){
+            name = formattedKey.substring(0, separatorIndex);
+            url = formattedKey.substring(Math.min(separatorIndex + 1, formattedKey.length()));
+        }
+    }
+
+    public boolean isValid(){
+        return name != null && url != null;
+    }
+
     public String getName() {
         return name;
     }
@@ -29,7 +47,7 @@ public class AudioKey {
     }
 
     @Override public String toString() {
-        return name;
+        return String.format("%1$s@%2$s", name, url);
     }
 
     @Override public boolean equals(Object o) {

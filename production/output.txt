@@ -1,4 +1,4 @@
-BEGIN of Walnutbot (time: 03/30/2020 22:37:19)
+BEGIN of Walnutbot (time: 03/31/2020 16:48:19)
 ---
 \E:\Projects\walnutbot\production\
 SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
@@ -8,5 +8,15 @@ SLF4J: Failed to load class "org.slf4j.impl.StaticMDCBinder".
 SLF4J: Defaulting to no-operation MDCAdapter implementation.
 SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
 [main] INFO JDA - Login Successful!
-[JDA MainWS-ReadThread] INFO WebSocketClient - Connected to WebSocket
+Playlist 'soundboard.playlist' contains:
+brb@E:\Projects\walnutbot\production\sounds\brb.mp3
+dangerzone@E:\Projects\walnutbot\production\sounds\dangerzone.mp3
+[JDA MainWS-WriteThread] INFO WebSocketClient - Connected to WebSocket
 [JDA MainWS-ReadThread] INFO JDA - Finished Loading!
+Warning! This bot is currently not connected to any channel!
+Track 'The Arnold Schwarzenegger "I'll Be Back" Supercut' loaded! (Path: E:\Projects\walnutbot\production\sounds\brb.mp3)
+Track 'The Arnold Schwarzenegger "I'll Be Back" Supercut' starting (Path: E:\Projects\walnutbot\production\sounds\brb.mp3)
+Track 'The Arnold Schwarzenegger "I'll Be Back" Supercut' ended (Path: E:\Projects\walnutbot\production\sounds\brb.mp3)
+Track 'Kenny Loggins - Danger Zone (Audio)' loaded! (Path: E:\Projects\walnutbot\production\sounds\dangerzone.mp3)
+Track 'Kenny Loggins - Danger Zone (Audio)' starting (Path: E:\Projects\walnutbot\production\sounds\dangerzone.mp3)
+Track 'Kenny Loggins - Danger Zone (Audio)' ended (Path: E:\Projects\walnutbot\production\sounds\dangerzone.mp3)

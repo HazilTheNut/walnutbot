@@ -14,8 +14,8 @@ public class UIFrame extends JFrame {
         setSize(new Dimension(400, 400));
 
         JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.addTab("Settings", new SettingsPanel(jda, master));
         if (jda != null) {
-            tabbedPane.addTab("Test", new SettingsPanel(jda, master));
             tabbedPane.addTab("Soundboard", new SoundboardPanel(jda, master));
         }
 
