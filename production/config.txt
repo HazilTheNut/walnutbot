@@ -1,4 +1,4 @@
 #The bot's token
-token=NjI5NDEwODA0MDA1MDc3MDI5.Xmw_og.COBV-O3mgn2rG6IViz6G5NeAt_c
-#The character to signal this as a command to the bot
+token=NjI5NDEwODA0MDA1MDc3MDI5.XnEqVg.Dy_ZgTS94MAmJzfbgcJqnhvge9M
+#The character to preface commands with
 command_char=$

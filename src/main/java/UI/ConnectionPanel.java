@@ -1,5 +1,6 @@
 package UI;
 
+import Audio.AudioMaster;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 
@@ -7,7 +8,7 @@ import javax.swing.*;
 
 public class ConnectionPanel extends JPanel {
     
-    public ConnectionPanel(JDA jda){
+    public ConnectionPanel(JDA jda, AudioMaster audioMaster){
 
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
@@ -23,6 +24,7 @@ public class ConnectionPanel extends JPanel {
             VoiceChannelOption selected = (VoiceChannelOption)channelSelect.getSelectedItem();
             if (selected != null) {
                 selected.getVoiceChannel().getGuild().getAudioManager().openAudioConnection(selected.getVoiceChannel());
+                audioMaster.setConnectedChannel(selected.getVoiceChannel());
             }
         });
 
@@ -31,6 +33,8 @@ public class ConnectionPanel extends JPanel {
             VoiceChannelOption selected = (VoiceChannelOption)channelSelect.getSelectedItem();
             if (selected != null) {
                 selected.getVoiceChannel().getGuild().getAudioManager().closeAudioConnection();
+                audioMaster.setConnectedChannel(null);
+                audioMaster.stopAllAudio();
             }
         });
 

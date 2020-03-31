@@ -1,3 +1,4 @@
+import Audio.AudioMaster;
 import UI.UIFrame;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -36,7 +37,8 @@ public class Main extends ListenerAdapter {
         }
         if (jda == null)
             System.out.println("WARNING: JDA was null!");
-        new UIFrame(jda);
+        AudioMaster audioMaster = new AudioMaster();
+        new UIFrame(jda, audioMaster);
     }
 
     @Override public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
