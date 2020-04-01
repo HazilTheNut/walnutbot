@@ -1,6 +1,7 @@
 package UI;
 
 import Audio.AudioMaster;
+import Utils.ButtonMaker;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 
@@ -13,7 +14,7 @@ public class ConnectionPanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
         JComboBox<VoiceChannelOption> channelSelect = new JComboBox<>();
-        JButton listButton = new JButton("List Channels...");
+        JButton listButton = ButtonMaker.createIconButton("icons/refresh.png", "List Channels...", 10);
         listButton.addActionListener(e -> generateVoiceChannelOptions(channelSelect, jda));
 
         add(listButton);

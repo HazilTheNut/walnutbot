@@ -1,4 +1,4 @@
 #The bot's token
-token=NjI5NDEwODA0MDA1MDc3MDI5.XoOl2w.zXrKyTQukyM9l_S0xgXR6D2-n_c
+token=NjI5NDEwODA0MDA1MDc3MDI5.XoP8gg.KZiKq51h1TRwLt3bpPodOzkFSAE
 #The character to preface commands with
 command_char=$

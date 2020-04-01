@@ -151,7 +151,7 @@ public class SoundboardPanel extends JPanel {
                     AudioKey key = new AudioKey(nameField.getText(), urlField.getText());
                     if (key.isValid()) {
                         audioMaster.getSoundboardList().addAudioKey(key);
-                        audioMaster.getSoundboardList().printPlaylist();
+                        //audioMaster.getSoundboardList().printPlaylist();
                         audioMaster.saveSoundboard();
                         soundsPanel.add(new SoundPanel(key, audioMaster, soundsPanel));
                         soundsPanel.revalidate();
@@ -167,7 +167,7 @@ public class SoundboardPanel extends JPanel {
                 JButton removeButton = new JButton("Remove");
                 removeButton.addActionListener(e -> {
                     audioMaster.getSoundboardList().removeAudioKey(keyToEdit.getAudioKey());
-                    audioMaster.getSoundboardList().printPlaylist();
+                    //audioMaster.getSoundboardList().printPlaylist();
                     audioMaster.saveSoundboard();
                     soundsPanel.remove(keyToEdit);
                     soundsPanel.revalidate();
@@ -185,7 +185,7 @@ public class SoundboardPanel extends JPanel {
                         keyToEdit.getAudioKey().setName(nameField.getText());
                         keyToEdit.getAudioKey().setUrl(urlField.getText());
                         keyToEdit.getPlayButton().setText(nameField.getText());
-                        audioMaster.getSoundboardList().printPlaylist();
+                        //audioMaster.getSoundboardList().printPlaylist();
                         audioMaster.saveSoundboard();
                         soundsPanel.revalidate();
                         soundsPanel.repaint();

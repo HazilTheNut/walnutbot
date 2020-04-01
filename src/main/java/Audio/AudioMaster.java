@@ -21,6 +21,13 @@ public class AudioMaster {
 
     private VoiceChannel connectedChannel;
 
+    //Volumes are 0-1, scaled 0-1000 internally
+    private double masterVolume;
+    private double soundboardVolume;
+    private double musicVolume;
+    public static final double VOLUME_DEFAULT = 0.5d;
+    private static final int VOLUME_MAX = 150;
+
     public AudioMaster(){
 
         playerManager = new DefaultAudioPlayerManager();
@@ -33,6 +40,10 @@ public class AudioMaster {
 
         soundboardList = new Playlist(new File(FileIO.getRootFilePath() + "soundboard.playlist"));
         soundboardList.printPlaylist();
+
+        masterVolume = VOLUME_DEFAULT;
+        soundboardVolume = VOLUME_DEFAULT;
+        musicVolume = VOLUME_DEFAULT;
     }
 
     public void playSoundboardSound(String url){
@@ -67,5 +78,24 @@ public class AudioMaster {
 
     public void stopAllAudio() {
         soundboardPlayer.setPaused(true);
+    }
+
+    public void setMasterVolume(double masterVolume) {
+        this.masterVolume = masterVolume;
+        updatePlayerVolumes();
+    }
+
+    public void setSoundboardVolume(double soundboardVolume) {
+        this.soundboardVolume = soundboardVolume;
+        updatePlayerVolumes();
+    }
+
+    public void setMusicVolume(double musicVolume) {
+        this.musicVolume = musicVolume;
+        updatePlayerVolumes();
+    }
+
+    private void updatePlayerVolumes(){
+        soundboardPlayer.setVolume((int)(VOLUME_MAX * masterVolume * soundboardVolume));
     }
 }
