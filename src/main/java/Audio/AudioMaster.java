@@ -61,6 +61,10 @@ public class AudioMaster {
         return soundboardList;
     }
 
+    public void saveSoundboard(){
+        soundboardList.saveToFile(new File(FileIO.getRootFilePath() + "soundboard.playlist"));
+    }
+
     public void stopAllAudio() {
         soundboardPlayer.setPaused(true);
     }

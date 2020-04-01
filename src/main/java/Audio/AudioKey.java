@@ -1,8 +1,10 @@
 package Audio;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Objects;
 
-public class AudioKey {
+public class AudioKey implements Comparable<AudioKey>{
 
     String name;
     String url;
@@ -27,7 +29,7 @@ public class AudioKey {
     }
 
     public boolean isValid(){
-        return name != null && url != null;
+        return name != null && url != null && name.length() > 0 && url.length() > 0;
     }
 
     public String getName() {
@@ -62,5 +64,9 @@ public class AudioKey {
 
     @Override public int hashCode() {
         return Objects.hash(getName(), getUrl());
+    }
+
+    @Override public int compareTo(@NotNull AudioKey o) {
+        return name.compareTo(o.getName());
     }
 }

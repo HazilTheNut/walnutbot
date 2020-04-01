@@ -16,7 +16,7 @@ public class UIFrame extends JFrame {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Settings", new SettingsPanel(jda, master));
         if (jda != null) {
-            tabbedPane.addTab("Soundboard", new SoundboardPanel(jda, master));
+            tabbedPane.addTab("Soundboard", new SoundboardPanel(master));
         }
 
         getContentPane().add(tabbedPane);

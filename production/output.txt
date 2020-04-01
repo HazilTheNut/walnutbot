@@ -1,4 +1,4 @@
-BEGIN of Walnutbot (time: 03/31/2020 16:48:19)
+BEGIN of Walnutbot (time: 03/31/2020 18:59:35)
 ---
 \E:\Projects\walnutbot\production\
 SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
@@ -9,14 +9,31 @@ SLF4J: Defaulting to no-operation MDCAdapter implementation.
 SLF4J: See http://www.slf4j.org/codes.html#no_static_mdc_binder for further details.
 [main] INFO JDA - Login Successful!
 Playlist 'soundboard.playlist' contains:
-brb@E:\Projects\walnutbot\production\sounds\brb.mp3
 dangerzone@E:\Projects\walnutbot\production\sounds\dangerzone.mp3
+explode@E:\Projects\walnutbot\production\sounds\explode.ogg
+michael1@E:\Projects\walnutbot\production\sounds\michael1.mp3
+snake@E:\Projects\walnutbot\production\sounds\snake.mp3
+crit@E:\Projects\walnutbot\production\sounds\crit.mp3
+bossbattle@E:\Projects\walnutbot\production\sounds\bossbattle.mp3
+party@E:\Projects\walnutbot\production\sounds\party.mp3
+brb@E:\Projects\walnutbot\production\sounds\brb.mp3
+bigreveal@E:\Projects\walnutbot\production\sounds\bigreveal.mp3
+creak@E:\Projects\walnutbot\production\sounds\creak.mp3
+defused@E:\Projects\walnutbot\production\sounds\defused.mp3
+executed@E:\Projects\walnutbot\production\sounds\executed.mp3
+fail@E:\Projects\walnutbot\production\sounds\fail.mp3
+humor@E:\Projects\walnutbot\production\sounds\humor.mp3
+hurt@E:\Projects\walnutbot\production\sounds\hurt.mp3
+michael2@E:\Projects\walnutbot\production\sounds\michael2.mp3
+michael3@E:\Projects\walnutbot\production\sounds\michael3.mp3
+money@E:\Projects\walnutbot\production\sounds\money.mp3
+morning@E:\Projects\walnutbot\production\sounds\morning.mp3
+nani@E:\Projects\walnutbot\production\sounds\nani.mp3
+planardust_end@E:\Projects\walnutbot\production\sounds\planardust_end.mp3
+reality@E:\Projects\walnutbot\production\sounds\reality.mp3
+science@E:\Projects\walnutbot\production\sounds\science.mp3
+surprise@E:\Projects\walnutbot\production\sounds\surprise.mp3
+wilhelm@E:\Projects\walnutbot\production\sounds\wilhelm.mp3
+bigreveal@E:\Projects\walnutbot\production\sounds\bigreveal.mp3
 [JDA MainWS-WriteThread] INFO WebSocketClient - Connected to WebSocket
 [JDA MainWS-ReadThread] INFO JDA - Finished Loading!
-Warning! This bot is currently not connected to any channel!
-Track 'The Arnold Schwarzenegger "I'll Be Back" Supercut' loaded! (Path: E:\Projects\walnutbot\production\sounds\brb.mp3)
-Track 'The Arnold Schwarzenegger "I'll Be Back" Supercut' starting (Path: E:\Projects\walnutbot\production\sounds\brb.mp3)
-Track 'The Arnold Schwarzenegger "I'll Be Back" Supercut' ended (Path: E:\Projects\walnutbot\production\sounds\brb.mp3)
-Track 'Kenny Loggins - Danger Zone (Audio)' loaded! (Path: E:\Projects\walnutbot\production\sounds\dangerzone.mp3)
-Track 'Kenny Loggins - Danger Zone (Audio)' starting (Path: E:\Projects\walnutbot\production\sounds\dangerzone.mp3)
-Track 'Kenny Loggins - Danger Zone (Audio)' ended (Path: E:\Projects\walnutbot\production\sounds\dangerzone.mp3)

@@ -1,8 +1,6 @@
 package Audio;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -58,5 +56,21 @@ public class Playlist {
             return key;
         }
         return null;
+    }
+
+    public void saveToFile(File file){
+        if (file.exists() && file.isFile()){
+            try {
+                file.delete();
+                FileOutputStream outputStream = new FileOutputStream(file);
+                PrintWriter writer = new PrintWriter(outputStream);
+                for (AudioKey key : audioKeys)
+                    writer.println(key.toString());
+                writer.close();
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
