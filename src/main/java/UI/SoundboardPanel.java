@@ -56,6 +56,10 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
         panel.add(playerStatusLabel);
 
+        JButton stopButton = ButtonMaker.createIconButton("icons/stop.png", "Stop", 8);
+        stopButton.addActionListener(e -> audioMaster.getSoundboardPlayer().stopTrack());
+        panel.add(stopButton);
+
         return panel;
     }
 

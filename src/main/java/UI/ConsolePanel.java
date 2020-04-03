@@ -27,7 +27,6 @@ public class ConsolePanel extends JPanel implements TranscriptReceiver {
 
     @Override public void receiveMessage(String message) {
         JScrollBar vertBar = scrollPane.getVerticalScrollBar();
-        System.out.printf("Scroll Bar value=%1$d (+=%3$d) max=%2$d\n", vertBar.getValue(), vertBar.getMaximum(), vertBar.getValue() + vertBar.getVisibleAmount());
         boolean scrollBarAtBottom = Math.abs(vertBar.getValue() + vertBar.getVisibleAmount() - vertBar.getMaximum()) < (int)(0.15 * vertBar.getMaximum());
         outputArea.append(message.concat("\n"));
         //Keep scroll bar at the bottom if it previously was.
