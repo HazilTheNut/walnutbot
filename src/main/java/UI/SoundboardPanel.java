@@ -61,7 +61,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
     private SoundsMainPanel createSoundsPanel(AudioMaster audioMaster){
         SoundsMainPanel panel = new SoundsMainPanel(audioMaster);
-        panel.setLayout(new WrapLayout(WrapLayout.LEFT, 3, 2));
+        panel.setLayout(new WrapLayout(WrapLayout.LEFT, 6, 2));
 
         loadSoundboard(audioMaster, panel);
 
@@ -84,7 +84,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
         panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
 
-        JTextField urlField = new JTextField("https://www.youtube.com/watch?v=xuCn8ux2gbs");
+        JTextField urlField = new JTextField("Enter URL Here for Instant Play");
         JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", 12);
         playButton.addActionListener(e -> {
             System.out.printf("Playing track of url: %1$s\n", urlField.getText());
@@ -160,6 +160,8 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
         @Override public void removeAudioKey(int keyID) {
             remove(keyID);
+            revalidate();
+            repaint();
         }
     }
 }

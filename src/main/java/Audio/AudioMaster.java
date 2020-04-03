@@ -104,4 +104,7 @@ public class AudioMaster {
         return soundboardTrackScheduler;
     }
 
+    public AudioPlayerManager getPlayerManager() {
+        return playerManager;
+    }
 }

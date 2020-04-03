@@ -4,6 +4,10 @@ import Audio.AudioKey;
 import Audio.AudioMaster;
 import Utils.ButtonMaker;
 import Utils.FileIO;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import javax.swing.*;
 import java.awt.*;
@@ -29,7 +33,6 @@ public class ModifyTrackFrame extends JFrame {
         JTextField nameField = new JTextField();
         if (audioKeyUIWrapper != null) nameField.setText(audioKeyUIWrapper.getData().getName());
         namePanel.add(nameField, BorderLayout.CENTER);
-        namePanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
 
         //Row for the AudioKey's URL
         JPanel urlPanel = new JPanel();
@@ -40,6 +43,12 @@ public class ModifyTrackFrame extends JFrame {
         if (audioKeyUIWrapper != null) urlField.setText(audioKeyUIWrapper.getData().getUrl());
         urlPanel.add(urlField, BorderLayout.CENTER);
         urlPanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
+
+        //Add Fetch Info Button
+        JButton fetchInfoButton = ButtonMaker.createIconButton("icons/extract.png", "Fetch Song Name from URL", 5);
+        fetchInfoButton.addActionListener(e -> audioMaster.getPlayerManager().loadItem(urlField.getText(), new InfoFetchLoadResultHandler(nameField)));
+        namePanel.add(fetchInfoButton);
+        namePanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
 
         //Row for buttons
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 3));
@@ -121,4 +130,46 @@ public class ModifyTrackFrame extends JFrame {
         setVisible(true);
     }
 
+    private class InfoFetchLoadResultHandler implements AudioLoadResultHandler {
+
+        JTextField nameRecipient;
+
+        private InfoFetchLoadResultHandler(JTextField nameRecipient) {
+            this.nameRecipient = nameRecipient;
+        }
+
+        /**
+         * Called when the requested item is a track and it was successfully loaded.
+         *
+         * @param track The loaded track
+         */
+        @Override public void trackLoaded(AudioTrack track) {
+            nameRecipient.setText(track.getInfo().title);
+        }
+
+        /**
+         * Called when the requested item is a playlist and it was successfully loaded.
+         *
+         * @param playlist The loaded playlist
+         */
+        @Override public void playlistLoaded(AudioPlaylist playlist) {
+
+        }
+
+        /**
+         * Called when there were no items found by the specified identifier.
+         */
+        @Override public void noMatches() {
+
+        }
+
+        /**
+         * Called when loading an item failed with an exception.
+         *
+         * @param exception The exception that was thrown
+         */
+        @Override public void loadFailed(FriendlyException exception) {
+
+        }
+    }
 }
