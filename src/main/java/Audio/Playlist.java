@@ -1,5 +1,7 @@
 package Audio;
 
+import Utils.Transcriber;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -30,7 +32,7 @@ public class Playlist {
                 e.printStackTrace();
             }
         } else
-            System.out.printf("File \'%1$s\' was not found!\n", file.getAbsolutePath());
+            Transcriber.print("File \'%1$s\' was not found!", file.getAbsolutePath());
     }
 
     public ArrayList<AudioKey> getAudioKeys() {
@@ -42,9 +44,9 @@ public class Playlist {
     }
 
     public void printPlaylist(){
-        System.out.printf("Playlist \'%1$s\' contains:\n", name);
+        Transcriber.print("Playlist \'%1$s\' contains:", name);
         for (AudioKey key : audioKeys)
-            System.out.println(key.toString());
+            Transcriber.print(key.toString());
     }
 
     public void addAudioKey(AudioKey audioKey){

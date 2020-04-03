@@ -1,6 +1,7 @@
 package Audio;
 
 import Utils.FileIO;
+import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
@@ -49,7 +50,7 @@ public class AudioMaster {
 
     public void playSoundboardSound(String url){
         if (getConnectedChannel() == null) {
-            System.out.println("Warning! This bot is currently not connected to any channel!");
+            Transcriber.print("Warning! This bot is currently not connected to any channel!");
             return;
         }
         AudioManager audioManager = connectedChannel.getGuild().getAudioManager();

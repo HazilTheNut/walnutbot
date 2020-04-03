@@ -1,6 +1,7 @@
 package Audio;
 
 import UI.PlayerTrackListener;
+import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -39,7 +40,7 @@ public class SoundboardTrackScheduler extends AudioEventAdapter {
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
         for (PlayerTrackListener listener : listeners)
             listener.onTrackStart();
-        System.out.printf("Track \'%1$s\' starting (Path: %2$s)\n", track.getInfo().title, track.getInfo().uri);
+        Transcriber.print("Track \'%1$s\' starting (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         // A track started playing
     }
 
@@ -47,7 +48,7 @@ public class SoundboardTrackScheduler extends AudioEventAdapter {
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         for (PlayerTrackListener listener : listeners)
             listener.onTrackStop();
-        System.out.printf("Track \'%1$s\' ended (Path: %2$s)\n", track.getInfo().title, track.getInfo().uri);
+        Transcriber.print("Track \'%1$s\' ended (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         if (endReason.mayStartNext) {
             // Start next track
         }
@@ -71,7 +72,7 @@ public class SoundboardTrackScheduler extends AudioEventAdapter {
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
         for (PlayerTrackListener listener : listeners)
             listener.onTrackError();
-        System.out.printf("Track \'%1$s\' got stuck (Path: %2$s)\n", track.getInfo().title, track.getInfo().uri);
+        Transcriber.print("Track \'%1$s\' got stuck (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         // Audio track has been unable to provide us any audio, might want to just start a new track
     }
 }

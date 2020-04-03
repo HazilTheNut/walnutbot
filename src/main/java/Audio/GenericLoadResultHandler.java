@@ -1,5 +1,6 @@
 package Audio;
 
+import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -16,9 +17,9 @@ public class GenericLoadResultHandler implements AudioLoadResultHandler {
 
     @Override
     public void trackLoaded(AudioTrack track) {
-        System.out.printf("Track \'%1$s\' loaded! (Path: %2$s)\n", track.getInfo().title, track.getInfo().uri);
+        Transcriber.print("Track \'%1$s\' loaded! (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         if (!audioPlayer.startTrack(track, false))
-            System.out.printf("Track \'%1$s\' failed to start (Path: %2$s)\n", track.getInfo().title, track.getInfo().uri);
+            Transcriber.print("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
     }
 
     @Override
@@ -30,13 +31,13 @@ public class GenericLoadResultHandler implements AudioLoadResultHandler {
 
     @Override
     public void noMatches() {
-        System.out.println("URL passed in got no matches!");
+        Transcriber.print("URL passed in got no matches!");
         // Notify the user that we've got nothing
     }
 
     @Override
     public void loadFailed(FriendlyException throwable) {
-        System.out.println("Failure to load track!");
+        Transcriber.print("Failure to load track!");
         throwable.printStackTrace();
         // Notify the user that everything exploded
     }

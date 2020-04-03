@@ -18,6 +18,7 @@ public class UIFrame extends JFrame {
         if (jda != null) {
             tabbedPane.addTab("Soundboard", new SoundboardPanel(master));
         }
+        tabbedPane.addTab("Console", new ConsolePanel());
 
         getContentPane().add(tabbedPane);
 
