@@ -1,5 +1,6 @@
 package Audio;
 
+import UI.PlayerTrackListener;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -10,24 +11,42 @@ import java.util.ArrayList;
 
 public class SoundboardTrackScheduler extends AudioEventAdapter {
 
+    private ArrayList<PlayerTrackListener> listeners;
+
+    public SoundboardTrackScheduler() {
+        this.listeners = new ArrayList<>();
+    }
+
+    public void addPlayerTrackListener(PlayerTrackListener listener){
+        listeners.add(listener);
+    }
+
     @Override
     public void onPlayerPause(AudioPlayer player) {
+        for (PlayerTrackListener listener : listeners)
+            listener.onTrackStop();
         // Player was paused
     }
 
     @Override
     public void onPlayerResume(AudioPlayer player) {
+        for (PlayerTrackListener listener : listeners)
+            listener.onTrackStart();
         // Player was resumed
     }
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
+        for (PlayerTrackListener listener : listeners)
+            listener.onTrackStart();
         System.out.printf("Track \'%1$s\' starting (Path: %2$s)\n", track.getInfo().title, track.getInfo().uri);
         // A track started playing
     }
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
+        for (PlayerTrackListener listener : listeners)
+            listener.onTrackStop();
         System.out.printf("Track \'%1$s\' ended (Path: %2$s)\n", track.getInfo().title, track.getInfo().uri);
         if (endReason.mayStartNext) {
             // Start next track
@@ -43,11 +62,15 @@ public class SoundboardTrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
+        for (PlayerTrackListener listener : listeners)
+            listener.onTrackError();
         // An already playing track threw an exception (track end event will still be received separately)
     }
 
     @Override
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
+        for (PlayerTrackListener listener : listeners)
+            listener.onTrackError();
         System.out.printf("Track \'%1$s\' got stuck (Path: %2$s)\n", track.getInfo().title, track.getInfo().uri);
         // Audio track has been unable to provide us any audio, might want to just start a new track
     }

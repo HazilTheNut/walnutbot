@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 
 import javax.swing.*;
+import java.awt.*;
 
 public class ConnectionPanel extends JPanel {
     
@@ -14,13 +15,13 @@ public class ConnectionPanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
         JComboBox<VoiceChannelOption> channelSelect = new JComboBox<>();
-        JButton listButton = ButtonMaker.createIconButton("icons/refresh.png", "List Channels...", 10);
+        JButton listButton = new JButton("List Channels...");
         listButton.addActionListener(e -> generateVoiceChannelOptions(channelSelect, jda));
 
         add(listButton);
         add(channelSelect);
 
-        JButton connectButton = new JButton("Connect");
+        JButton connectButton = ButtonMaker.createIconButton("icons/connect.png", "Connect", 10);
         connectButton.addActionListener(e -> {
             VoiceChannelOption selected = (VoiceChannelOption)channelSelect.getSelectedItem();
             if (selected != null) {
@@ -29,7 +30,7 @@ public class ConnectionPanel extends JPanel {
             }
         });
 
-        JButton disconnectButton = new JButton("Disconnect");
+        JButton disconnectButton = ButtonMaker.createIconButton("icons/disconnect.png", "Disconnect", 10);
         disconnectButton.addActionListener(e -> {
             VoiceChannelOption selected = (VoiceChannelOption)channelSelect.getSelectedItem();
             if (selected != null) {
@@ -41,7 +42,8 @@ public class ConnectionPanel extends JPanel {
 
         add(connectButton);
         add(disconnectButton);
-        
+
+        setBorder(BorderFactory.createTitledBorder("Connection"));
     }
 
     private void generateVoiceChannelOptions(JComboBox<VoiceChannelOption> selectionBox, JDA jda){

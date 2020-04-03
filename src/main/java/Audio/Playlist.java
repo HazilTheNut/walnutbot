@@ -59,18 +59,16 @@ public class Playlist {
     }
 
     public void saveToFile(File file){
-        if (file.exists() && file.isFile()){
-            try {
-                file.delete();
-                FileOutputStream outputStream = new FileOutputStream(file);
-                PrintWriter writer = new PrintWriter(outputStream);
-                for (AudioKey key : audioKeys)
-                    writer.println(key.toString());
-                writer.close();
-                outputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            if (file.exists() && file.isFile()) file.delete();
+            FileOutputStream outputStream = new FileOutputStream(file);
+            PrintWriter writer = new PrintWriter(outputStream);
+            for (AudioKey key : audioKeys)
+                writer.println(key.toString());
+            writer.close();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

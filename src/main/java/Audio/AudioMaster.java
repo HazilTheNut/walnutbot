@@ -15,6 +15,7 @@ public class AudioMaster {
     private AudioPlayerManager playerManager;
 
     private AudioPlayer soundboardPlayer;
+
     private SoundboardTrackScheduler soundboardTrackScheduler;
 
     private Playlist soundboardList;
@@ -98,4 +99,9 @@ public class AudioMaster {
     private void updatePlayerVolumes(){
         soundboardPlayer.setVolume((int)(VOLUME_MAX * masterVolume * soundboardVolume));
     }
+
+    public SoundboardTrackScheduler getSoundboardTrackScheduler() {
+        return soundboardTrackScheduler;
+    }
+
 }

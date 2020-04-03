@@ -11,7 +11,7 @@ public class UIFrame extends JFrame {
     public UIFrame(JDA jda, AudioMaster master){
 
         setTitle("Walnutbot Music & Soundboard Discord Bot");
-        setSize(new Dimension(400, 400));
+        setSize(new Dimension(550, 400));
 
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Settings", new SettingsPanel(jda, master));
