@@ -8,7 +8,6 @@ import Utils.FileIO;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.util.Comparator;
 
 public class SoundboardPanel extends JPanel implements PlayerTrackListener{
@@ -31,7 +30,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
         validate();
 
-        master.getSoundboardTrackScheduler().addPlayerTrackListener(this);
+        master.getGenericTrackScheduler().addPlayerTrackListener(this);
     }
 
     private JPanel createMiscPanel(AudioMaster audioMaster, SoundsMainPanel soundPanel){

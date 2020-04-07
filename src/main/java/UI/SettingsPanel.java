@@ -50,7 +50,7 @@ public class SettingsPanel extends JPanel {
 
         JSlider musicVolumeSlider = generateVolumeSlider();
         musicVolumeSlider.addChangeListener(e -> {
-            audioMaster.setMasterVolume(musicVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
+            audioMaster.setJukeboxVolume(musicVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
             updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
         });
         panel.add(new JLabel("Music Volume (%)"));
@@ -71,7 +71,7 @@ public class SettingsPanel extends JPanel {
     }
 
     private void updateVolumeInfoLabel(JLabel infoLabel, AudioMaster audioMaster){
-        infoLabel.setText(String.format("RAW VOLUMES - Soundboard: %1$d", audioMaster.getSoundboardPlayer().getVolume()));
+        infoLabel.setText(String.format("RAW VOLUMES - Soundboard: %1$d Jukebox: %2$d", audioMaster.getSoundboardPlayer().getVolume(), audioMaster.getJukeboxPlayer().getVolume()));
         infoLabel.repaint();
     }
 }

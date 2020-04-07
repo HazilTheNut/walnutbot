@@ -22,7 +22,7 @@ public class SoundboardCommand implements Command {
     }
 
     @Override public String getSpecificHelpDescription() {
-        return "Plays a sound from the soundboard.\nDo " + SettingsLoader.getValue("command_char") + "sblist for a list of the available sounds.";
+        return "Plays a sound from the soundboard.\nDo " + SettingsLoader.getValue("command_char") + "sblist for a list of the available sounds.\n\nsound name - The name of the sound from the soundboard.";
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {

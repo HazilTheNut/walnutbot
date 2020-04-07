@@ -25,6 +25,8 @@ public class CommandInterpreter extends ListenerAdapter {
         addCommand(new SoundboardCommand());
         addCommand(new SoundboardListCommand());
         addCommand(new InstantPlayCommand());
+        addCommand(new RequestCommand());
+        addCommand(new ListQueueCommand());
     }
 
     private void addCommand(Command command){

@@ -21,6 +21,7 @@ public class Playlist {
         audioKeys = new ArrayList<>();
         if (file.exists() && file.isFile()){
             try {
+                name = file.getName();
                 FileInputStream outputStream = new FileInputStream(file);
                 Scanner sc = new Scanner(outputStream);
                 while(sc.hasNext()){
@@ -58,6 +59,10 @@ public class Playlist {
             return key;
         }
         return null;
+    }
+
+    public AudioKey removeAudioKey(int pos){
+        return audioKeys.remove(pos);
     }
 
     public void saveToFile(File file){
