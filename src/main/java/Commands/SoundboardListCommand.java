@@ -2,7 +2,7 @@ package Commands;
 
 import Audio.AudioKey;
 import Audio.AudioMaster;
-import Audio.Playlist;
+import Audio.AudioKeyPlaylist;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -26,7 +26,7 @@ public class SoundboardListCommand implements Command {
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
         StringBuilder builder = new StringBuilder("**Available Sounds:**\n```\n");
-        Playlist soundboard = audioMaster.getSoundboardList();
+        AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
         //Get longest sound name
         int longestNameLength = 0;
         for (AudioKey audioKey : soundboard.getAudioKeys())

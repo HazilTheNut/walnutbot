@@ -1,8 +1,8 @@
 package UI;
 
 import Audio.AudioKey;
+import Audio.AudioKeyPlaylist;
 import Audio.AudioMaster;
-import Audio.Playlist;
 import Utils.ButtonMaker;
 import Utils.FileIO;
 
@@ -38,7 +38,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
 
         JButton addButton = new JButton("Add Sound");
-        addButton.addActionListener(e -> new ModifyTrackFrame(audioMaster, soundPanel, null));
+        addButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, soundPanel, null, audioMaster.getSoundboardList(), audioMaster::saveSoundboard));
         panel.add(addButton);
 
         JButton sortButton = new JButton("Sort A-Z");
@@ -75,7 +75,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
     private void loadSoundboard(AudioMaster audioMaster, SoundsMainPanel panel){
         panel.removeAll();
-        Playlist soundboard = audioMaster.getSoundboardList();
+        AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
         for (AudioKey audioKey : soundboard.getAudioKeys()){
             panel.add(new SoundButtonPanel(audioKey, audioMaster, panel));
         }

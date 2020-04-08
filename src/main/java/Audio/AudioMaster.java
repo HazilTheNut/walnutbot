@@ -14,14 +14,14 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import java.io.File;
 import java.util.ArrayList;
 
-public class AudioMaster implements PlayerTrackListener {
+public class AudioMaster{
 
     private AudioPlayerManager playerManager;
 
     //Soundboard
     private AudioPlayer soundboardPlayer;
     private GenericTrackScheduler genericTrackScheduler;
-    private Playlist soundboardList;
+    private AudioKeyPlaylist soundboardList;
 
     private VoiceChannel connectedChannel;
 
@@ -29,7 +29,7 @@ public class AudioMaster implements PlayerTrackListener {
     private AudioPlayer jukeboxPlayer;
     private JukeboxTrackScheduler jukeboxTrackScheduler;
     private ArrayList<AudioTrack> jukeboxQueueList; //The list of requested songs to exhaust through first
-    private Playlist jukeboxDefaultList; //The list of songs to randomly select when the request queue is exhausted
+    private AudioKeyPlaylist jukeboxDefaultList; //The list of songs to randomly select when the request queue is exhausted
 
     //Volumes are 0-1, scaled 0-1000 internally
     private double masterVolume;
@@ -46,10 +46,10 @@ public class AudioMaster implements PlayerTrackListener {
 
         soundboardPlayer = playerManager.createPlayer();
         genericTrackScheduler = new GenericTrackScheduler();
-        genericTrackScheduler.addPlayerTrackListener(this); //This allows the AudioMaster to listen for when the soundboard sounds, in order to switch audio stream back to the jukebox.
+        genericTrackScheduler.addPlayerTrackListener(new SoundboardPlayerListener()); //This allows the AudioMaster to listen for when the soundboard sounds, in order to switch audio stream back to the jukebox.
         soundboardPlayer.addListener(genericTrackScheduler);
 
-        soundboardList = new Playlist(new File(FileIO.getRootFilePath() + "soundboard.playlist"));
+        soundboardList = new AudioKeyPlaylist(new File(FileIO.getRootFilePath() + "soundboard.playlist"));
         soundboardList.printPlaylist();
 
         masterVolume = VOLUME_DEFAULT;
@@ -118,7 +118,7 @@ public class AudioMaster implements PlayerTrackListener {
         this.connectedChannel = connectedChannel;
     }
 
-    public Playlist getSoundboardList() {
+    public AudioKeyPlaylist getSoundboardList() {
         return soundboardList;
     }
 
@@ -159,23 +159,25 @@ public class AudioMaster implements PlayerTrackListener {
         return playerManager;
     }
 
-    @Override public void onTrackStart() {
-
-    }
-
-    @Override public void onTrackStop() {
-        AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
-        audioManager.setSendingHandler(new AudioPlayerSendHandler(jukeboxPlayer));
-        jukeboxPlayer.setPaused(false);
-    }
-
-    @Override public void onTrackError() {
-        AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
-        audioManager.setSendingHandler(new AudioPlayerSendHandler(jukeboxPlayer));
-        jukeboxPlayer.setPaused(false);
-    }
-
     public ArrayList<AudioTrack> getJukeboxQueueList() {
         return jukeboxQueueList;
+    }
+
+    private class SoundboardPlayerListener implements PlayerTrackListener{
+        @Override public void onTrackStart() {
+
+        }
+
+        @Override public void onTrackStop() {
+            AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
+            audioManager.setSendingHandler(new AudioPlayerSendHandler(jukeboxPlayer));
+            jukeboxPlayer.setPaused(false);
+        }
+
+        @Override public void onTrackError() {
+            AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
+            audioManager.setSendingHandler(new AudioPlayerSendHandler(jukeboxPlayer));
+            jukeboxPlayer.setPaused(false);
+        }
     }
 }

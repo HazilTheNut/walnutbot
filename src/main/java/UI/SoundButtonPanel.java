@@ -20,7 +20,7 @@ public class SoundButtonPanel extends JPanel implements AudioKeyUIWrapper {
         add(playButton, BorderLayout.CENTER);
 
         JButton menuButton = ButtonMaker.createIconButton("icons/menu.png", "Config", 2);
-        menuButton.addActionListener(e -> new ModifyTrackFrame(audioMaster, owningPanel, this));
+        menuButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, owningPanel, this, audioMaster.getSoundboardList(), audioMaster::saveSoundboard));
         add(menuButton, BorderLayout.LINE_END);
     }
 
