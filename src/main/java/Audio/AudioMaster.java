@@ -31,8 +31,10 @@ public class AudioMaster{
     //Jukebox
     private AudioPlayer jukeboxPlayer;
     private JukeboxTrackScheduler jukeboxTrackScheduler;
-    private ArrayList<AudioKey> jukeboxQueueList; //The list of requested songs to exhaust through first
+    private AudioKeyPlaylist jukeboxQueueList; //The list of requested songs to exhaust through first
     private AudioKeyPlaylist jukeboxDefaultList; //The list of songs to randomly select when the request queue is exhausted
+    private AudioKey currentlyPlayingSong;
+    private JukeboxUIWrapper jukeboxUIWrapper;
 
     //Volumes are 0-1, scaled 0-1000 internally
     private double masterVolume;
@@ -63,7 +65,7 @@ public class AudioMaster{
         jukeboxTrackScheduler = new JukeboxTrackScheduler(this);
         jukeboxPlayer.addListener(jukeboxTrackScheduler);
 
-        jukeboxQueueList = new ArrayList<>();
+        jukeboxQueueList = new AudioKeyPlaylist("queue");
     }
 
     public void playSoundboardSound(String url){
@@ -88,17 +90,31 @@ public class AudioMaster{
     }
 
     void addTrackToJukeboxQueue(AudioTrack track){
-        boolean queueIsEmpty = jukeboxQueueList.isEmpty();
-        jukeboxQueueList.add(new AudioKey(track));
-        if (queueIsEmpty)
-            jukeboxPlayer.startTrack(track, false);
+        jukeboxQueueList.addAudioKey(new AudioKey(track));
+        if (currentlyPlayingSong == null) //If no song is currently playing
+            progressJukeboxQueue(); //Plays the song immediately if the queue was empty.
+        else //Since progressJukeboxQueue() should also start a refresh of the UI.
+            jukeboxUIWrapper.refreshQueueList(this);
     }
 
-    void progressJukeboxQueue(){
-        if (jukeboxQueueList.isEmpty())
-            return;
-        jukeboxQueueList.remove(0);
-        jukeboxPlayer.startTrack(jukeboxQueueList.get(0).getLoadedTrack(), false);
+    public void progressJukeboxQueue(){
+        //Get the next song to play
+        AudioKey keyToPlay = null;
+        if (jukeboxQueueList.isEmpty()){
+            if (jukeboxDefaultList != null && !jukeboxDefaultList.isEmpty())
+                keyToPlay = jukeboxDefaultList.getRandomAudioKey();
+        } else {
+            keyToPlay = jukeboxQueueList.removeAudioKey(0);
+        }
+        //If successfully retrieved next song, play it.
+        if (keyToPlay != null){
+            if (keyToPlay.getLoadedTrack() != null)
+                jukeboxPlayer.startTrack(keyToPlay.getLoadedTrack(), false);
+            else
+                playerManager.loadItem(keyToPlay.getUrl(), new GenericLoadResultHandler(jukeboxPlayer));
+        }
+        currentlyPlayingSong = keyToPlay;
+        jukeboxUIWrapper.refreshQueueList(this);
     }
 
     public AudioPlayer getSoundboardPlayer() {
@@ -200,12 +216,20 @@ public class AudioMaster{
         return playerManager;
     }
 
-    public ArrayList<AudioKey> getJukeboxQueueList() {
+    public AudioKeyPlaylist getJukeboxQueueList() {
         return jukeboxQueueList;
     }
 
     public AudioKeyPlaylist getJukeboxDefaultList() {
         return jukeboxDefaultList;
+    }
+
+    public AudioKey getCurrentlyPlayingSong() {
+        return currentlyPlayingSong;
+    }
+
+    public void setJukeboxUIWrapper(JukeboxUIWrapper jukeboxUIWrapper) {
+        this.jukeboxUIWrapper = jukeboxUIWrapper;
     }
 
     private class SoundboardPlayerListener implements PlayerTrackListener{

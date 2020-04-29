@@ -4,6 +4,7 @@ import Utils.Transcriber;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.Scanner;
 
 public class AudioKeyPlaylist {
@@ -45,6 +46,17 @@ public class AudioKeyPlaylist {
 
     public ArrayList<AudioKey> getAudioKeys() {
         return audioKeys;
+    }
+
+    public boolean isEmpty(){
+        return audioKeys.isEmpty();
+    }
+
+    public AudioKey getRandomAudioKey(){
+        if (isEmpty())
+            return null;
+        Random random = new Random();
+        return audioKeys.get(random.nextInt(audioKeys.size()));
     }
 
     public String getName() {
