@@ -40,7 +40,7 @@ public class RequestCommand implements Command {
             @Override public void playlistLoaded(AudioPlaylist playlist) {
                 AudioKey song = new AudioKey(playlist.getName(), args[0]);
                 audioMaster.queueJukeboxSong(song);
-                Transcriber.printAndPost(event.getChannel(), "Playlist \"%1$s\" loaded (%3$d songs)! (%2$d in queue)", song.getName(), audioMaster.getJukeboxQueueList().size()-1, playlist.getTracks().size());
+                Transcriber.printAndPost(event.getChannel(), "Playlist \"%1$s\" loaded! (%3$d songs) (%2$d in queue)", song.getName(), audioMaster.getJukeboxQueueList().size()-1, playlist.getTracks().size());
             }
 
             @Override public void noMatches() {

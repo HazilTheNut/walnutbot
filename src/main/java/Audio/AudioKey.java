@@ -1,13 +1,17 @@
 package Audio;
 
+import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
 public class AudioKey implements Comparable<AudioKey>{
 
-    String name;
-    String url;
+    private String name;
+    private String url;
+
+    @Nullable private AudioTrack loadedTrack;
 
     public AudioKey(String name, String url) {
         this.name = name;
@@ -26,6 +30,12 @@ public class AudioKey implements Comparable<AudioKey>{
             name = formattedKey.substring(0, separatorIndex);
             url = formattedKey.substring(Math.min(separatorIndex + 1, formattedKey.length()));
         }
+    }
+
+    public AudioKey(AudioTrack loadedTrack){
+        this.loadedTrack = loadedTrack;
+        this.name = loadedTrack.getInfo().title;
+        this.url = loadedTrack.getInfo().uri;
     }
 
     public boolean isValid(){
@@ -68,5 +78,13 @@ public class AudioKey implements Comparable<AudioKey>{
 
     @Override public int compareTo(@NotNull AudioKey o) {
         return name.compareTo(o.getName());
+    }
+
+    public AudioTrack getLoadedTrack() {
+        return loadedTrack;
+    }
+
+    public void setLoadedTrack(AudioTrack loadedTrack) {
+        this.loadedTrack = loadedTrack;
     }
 }

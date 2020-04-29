@@ -9,16 +9,22 @@ import java.util.Scanner;
 public class AudioKeyPlaylist {
 
     private String name;
+    private String url;
     private ArrayList<AudioKey> audioKeys;
+    private boolean isURLValid;
 
     public AudioKeyPlaylist(String name){
         audioKeys = new ArrayList<>();
         this.name = name;
+        isURLValid = true;
+        url = "NULL";
     }
 
     public AudioKeyPlaylist(File file){
         this(file.getName());
         audioKeys = new ArrayList<>();
+        url = file.getAbsolutePath();
+        isURLValid = false;
         if (file.exists() && file.isFile()){
             try {
                 name = file.getName();
@@ -29,6 +35,7 @@ public class AudioKeyPlaylist {
                     if (key.isValid())
                         audioKeys.add(key);
                 }
+                isURLValid = true;
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -77,5 +84,17 @@ public class AudioKeyPlaylist {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean isURLValid() {
+        return isURLValid;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    @Override public String toString() {
+        return String.format("\"%1$s\" @ %2$s", name, url);
     }
 }

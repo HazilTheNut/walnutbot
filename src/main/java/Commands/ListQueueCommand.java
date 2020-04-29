@@ -24,7 +24,7 @@ public class ListQueueCommand implements Command {
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
         StringBuilder message = new StringBuilder("*Jukebox Queue:*\n```\n");
         for (int i = 0; i < audioMaster.getJukeboxQueueList().size(); i++) {
-            message.append('[').append(i).append("] ").append(audioMaster.getJukeboxQueueList().get(i).getInfo().title).append('\n');
+            message.append('[').append(i).append("] ").append(audioMaster.getJukeboxQueueList().get(i).getName()).append('\n');
         }
         if (audioMaster.getJukeboxQueueList().size() == 0)
             message.append("No songs are currently queued - playing from default playlist.");

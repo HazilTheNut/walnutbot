@@ -1,5 +1,6 @@
 package Audio;
 
+import UI.JukeboxUIWrapper;
 import UI.PlayerTrackListener;
 import Utils.FileIO;
 import Utils.Transcriber;
@@ -11,6 +12,8 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -28,7 +31,7 @@ public class AudioMaster{
     //Jukebox
     private AudioPlayer jukeboxPlayer;
     private JukeboxTrackScheduler jukeboxTrackScheduler;
-    private ArrayList<AudioTrack> jukeboxQueueList; //The list of requested songs to exhaust through first
+    private ArrayList<AudioKey> jukeboxQueueList; //The list of requested songs to exhaust through first
     private AudioKeyPlaylist jukeboxDefaultList; //The list of songs to randomly select when the request queue is exhausted
 
     //Volumes are 0-1, scaled 0-1000 internally
@@ -84,13 +87,9 @@ public class AudioMaster{
         playerManager.loadItem(audioKey.getUrl(), new JukeboxLoadResultHandler(this));
     }
 
-    public void queueJukeboxPlaylist(){
-
-    }
-
     void addTrackToJukeboxQueue(AudioTrack track){
         boolean queueIsEmpty = jukeboxQueueList.isEmpty();
-        jukeboxQueueList.add(track);
+        jukeboxQueueList.add(new AudioKey(track));
         if (queueIsEmpty)
             jukeboxPlayer.startTrack(track, false);
     }
@@ -99,7 +98,7 @@ public class AudioMaster{
         if (jukeboxQueueList.isEmpty())
             return;
         jukeboxQueueList.remove(0);
-        jukeboxPlayer.startTrack(jukeboxQueueList.get(0), false);
+        jukeboxPlayer.startTrack(jukeboxQueueList.get(0).getLoadedTrack(), false);
     }
 
     public AudioPlayer getSoundboardPlayer() {
@@ -124,6 +123,48 @@ public class AudioMaster{
 
     public void saveSoundboard(){
         soundboardList.saveToFile(new File(FileIO.getRootFilePath() + "soundboard.playlist"));
+    }
+
+    public void saveJukeboxDefault(){
+        if (jukeboxDefaultList != null)
+            jukeboxDefaultList.saveToFile(new File(jukeboxDefaultList.getUrl()));
+    }
+
+    public void createNewJukeboxPlaylist(JukeboxUIWrapper uiWrapper){
+        JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
+        int result = fileChooser.showSaveDialog(null);
+        if (result == JFileChooser.APPROVE_OPTION){
+            File file = new File(enforceFileExtension(fileChooser.getSelectedFile().getAbsolutePath()));
+            jukeboxDefaultList = new AudioKeyPlaylist(file);
+            uiWrapper.refreshDefaultList(this);
+            uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
+            Transcriber.print("Current playlist: %1$s", jukeboxDefaultList.toString());
+        }
+    }
+
+    private String enforceFileExtension(String path){
+        String ext = ".playlist";
+        int extIndex = path.lastIndexOf('.');
+        if (extIndex < 0)
+            return path.concat(ext);
+        else
+            return path.substring(0, extIndex).concat(ext);
+    }
+
+    public void openJukeboxPlaylist(JukeboxUIWrapper uiWrapper){
+        JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
+        int result = fileChooser.showOpenDialog(null);
+        if (result == JFileChooser.APPROVE_OPTION){
+            AudioKeyPlaylist playlist = new AudioKeyPlaylist(fileChooser.getSelectedFile());
+            if (playlist.isURLValid()) {
+                jukeboxDefaultList = playlist;
+                uiWrapper.refreshDefaultList(this);
+                uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
+                Transcriber.print("Current playlist: %1$s", jukeboxDefaultList.toString());
+            }
+        }
     }
 
     public void stopAllAudio() {
@@ -159,8 +200,12 @@ public class AudioMaster{
         return playerManager;
     }
 
-    public ArrayList<AudioTrack> getJukeboxQueueList() {
+    public ArrayList<AudioKey> getJukeboxQueueList() {
         return jukeboxQueueList;
+    }
+
+    public AudioKeyPlaylist getJukeboxDefaultList() {
+        return jukeboxDefaultList;
     }
 
     private class SoundboardPlayerListener implements PlayerTrackListener{
