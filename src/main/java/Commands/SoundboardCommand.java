@@ -25,7 +25,13 @@ public class SoundboardCommand implements Command {
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
+        //Input sanitation
         if (args[0] == null) return;
+        //Permissions Check
+        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowSoundboard", "true"))) {
+            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of the Soundboard.")).queue();
+            return;
+        }
         for (AudioKey audioKey : audioMaster.getSoundboardList().getAudioKeys()){
             if (audioKey.getName().equals(args[0])){
                 audioMaster.playSoundboardSound(audioKey.getUrl());

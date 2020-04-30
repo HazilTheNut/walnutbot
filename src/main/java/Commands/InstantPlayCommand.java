@@ -1,6 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
+import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -23,7 +24,19 @@ public class InstantPlayCommand implements Command {
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
-        if (args.length > 0)
+        //Permissions Check
+        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowSoundboard", "true"))) {
+            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of the Soundboard.")).queue();
+            return;
+        }
+        if (args.length > 0) {
+            //Permissions Check
+            if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")) && args[0].indexOf("http") != 0){
+                (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked access to local files.")).queue();
+                return;
+            }
+            //Play Sound
             audioMaster.playSoundboardSound(args[0]);
+        }
     }
 }

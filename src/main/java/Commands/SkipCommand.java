@@ -1,6 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
+import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
@@ -23,6 +24,11 @@ public class SkipCommand implements Command {
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
+        //Check for Permissions
+        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowJukebox", "true"))) {
+            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of the Jukebox.")).queue();
+            return;
+        }
         audioMaster.jukeboxSkipToNextSong();
     }
 }

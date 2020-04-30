@@ -2,6 +2,7 @@ package Commands;
 
 import Audio.AudioKey;
 import Audio.AudioMaster;
+import Utils.SettingsLoader;
 import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
@@ -29,7 +30,18 @@ public class RequestCommand implements Command {
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
+        //Input Sanitation
         if (args.length <= 0) return;
+        //Check for Permissions
+        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowJukebox", "true"))) {
+            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of the Jukebox.")).queue();
+            return;
+        }
+        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")) && args[0].indexOf("http") != 0){
+            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked access to local files.")).queue();
+            return;
+        }
+        //Make Request
         audioMaster.getPlayerManager().loadItem(args[0], new AudioLoadResultHandler() {
             @Override public void trackLoaded(AudioTrack track) {
                 AudioKey song = new AudioKey(track);
