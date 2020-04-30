@@ -1,14 +1,19 @@
 package UI;
 
 import Audio.AudioMaster;
+import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.NumberFormat;
 
 public class SettingsPanel extends JPanel {
 
     private static final int VOLUME_SLIDER_SCALE_MAX = 100;
+    private JSlider masterVolumeSlider;
+    private JSlider soundboardVolumeSlider;
+    private JSlider musicVolumeSlider;
 
     public SettingsPanel(JDA jda, AudioMaster audioMaster) {
 
@@ -32,37 +37,45 @@ public class SettingsPanel extends JPanel {
 
         JLabel volumeInfoLabel = new JLabel("");
 
-        JSlider masterVolumeSlider = generateVolumeSlider();
+        masterVolumeSlider = generateVolumeSlider(SettingsLoader.getSettingsValue("masterVolume", "null"));
         masterVolumeSlider.addChangeListener(e -> {
-            audioMaster.setMasterVolume(masterVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
+            assignAudioMasterVolumes(audioMaster);
             updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
         });
         panel.add(new JLabel("Master Volume (%)"));
         panel.add(masterVolumeSlider);
 
-        JSlider soundboardVolumeSlider = generateVolumeSlider();
+        soundboardVolumeSlider = generateVolumeSlider(SettingsLoader.getSettingsValue("soundboardVolume", "null"));
         soundboardVolumeSlider.addChangeListener(e -> {
-            audioMaster.setSoundboardVolume(soundboardVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
+            assignAudioMasterVolumes(audioMaster);
             updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
         });
         panel.add(new JLabel("Soundboard Volume (%)"));
         panel.add(soundboardVolumeSlider);
 
-        JSlider musicVolumeSlider = generateVolumeSlider();
+        musicVolumeSlider = generateVolumeSlider(SettingsLoader.getSettingsValue("jukeboxVolume", "null"));
         musicVolumeSlider.addChangeListener(e -> {
-            audioMaster.setJukeboxVolume(musicVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
+            assignAudioMasterVolumes(audioMaster);
             updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
         });
-        panel.add(new JLabel("Music Volume (%)"));
+        panel.add(new JLabel("Jukebox Volume (%)"));
         panel.add(musicVolumeSlider);
 
         panel.add(volumeInfoLabel);
 
+        assignAudioMasterVolumes(audioMaster);
+        updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
+
         return panel;
     }
 
-    private JSlider generateVolumeSlider() {
-        JSlider slider = new JSlider(SwingConstants.HORIZONTAL, 0, VOLUME_SLIDER_SCALE_MAX, (int) (VOLUME_SLIDER_SCALE_MAX * AudioMaster.VOLUME_DEFAULT));
+    private JSlider generateVolumeSlider(String initValue) {
+        JSlider slider;
+        try {
+            slider = new JSlider(SwingConstants.HORIZONTAL, 0, VOLUME_SLIDER_SCALE_MAX, Integer.valueOf(initValue));
+        } catch (NumberFormatException e) {
+            slider = new JSlider(SwingConstants.HORIZONTAL, 0, VOLUME_SLIDER_SCALE_MAX, (int) (VOLUME_SLIDER_SCALE_MAX * AudioMaster.VOLUME_DEFAULT));
+        }
         slider.setMajorTickSpacing(VOLUME_SLIDER_SCALE_MAX / 5);
         slider.setMinorTickSpacing(VOLUME_SLIDER_SCALE_MAX / 20);
         slider.setPaintLabels(true);
@@ -73,5 +86,15 @@ public class SettingsPanel extends JPanel {
     private void updateVolumeInfoLabel(JLabel infoLabel, AudioMaster audioMaster){
         infoLabel.setText(String.format("RAW VOLUMES - Soundboard: %1$d Jukebox: %2$d", audioMaster.getSoundboardPlayer().getVolume(), audioMaster.getJukeboxPlayer().getVolume()));
         infoLabel.repaint();
+        SettingsLoader.modifySettingsValue("masterVolume", String.valueOf(masterVolumeSlider.getValue()));
+        SettingsLoader.modifySettingsValue("soundboardVolume", String.valueOf(soundboardVolumeSlider.getValue()));
+        SettingsLoader.modifySettingsValue("jukeboxVolume", String.valueOf(musicVolumeSlider.getValue()));
+        SettingsLoader.writeSettingsFile();
+    }
+
+    private void assignAudioMasterVolumes(AudioMaster audioMaster){
+        audioMaster.setMasterVolume(masterVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
+        audioMaster.setSoundboardVolume(soundboardVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
+        audioMaster.setJukeboxVolume(musicVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
     }
 }

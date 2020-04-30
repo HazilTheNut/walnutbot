@@ -87,4 +87,11 @@ public class AudioKey implements Comparable<AudioKey>{
     public void setLoadedTrack(AudioTrack loadedTrack) {
         this.loadedTrack = loadedTrack;
     }
+
+    public String getTrackName(){
+        if (loadedTrack != null)
+            return String.format("%1$s - %2$s", name, loadedTrack.getInfo().author);
+        else
+            return name;
+    }
 }

@@ -83,7 +83,8 @@ public class AddPlaylistFrame extends JFrame {
          */
         @Override public void playlistLoaded(AudioPlaylist playlist) {
             for (AudioTrack track : playlist.getTracks()){
-                AudioKey audioKey = new AudioKey(track);
+                AudioKey audioKey = new AudioKey(track); //I want the AudioKey to contain the author so that it saves onto disk, however that would mean upon first loading it the author name would appear twice.
+                audioKey = new AudioKey(audioKey.getTrackName(), track.getInfo().uri); //The fix is to instantiate an AudioKey without an active Track, and thus the author name will not show up.
                 audioMaster.getJukeboxDefaultList().addAudioKey(audioKey);
                 playlistUIWrapper.addAudioKey(audioKey);
             }

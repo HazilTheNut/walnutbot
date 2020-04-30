@@ -2,19 +2,23 @@ package Utils;
 
 import Utils.FileIO;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class SettingsLoader {
 
-    private static HashMap<String, String> settings;
+    private static HashMap<String, String> botconfig; //From the program's POV, is read-only. config.txt will preserve the comments in the file
+    private static HashMap<String, String> settings; //Is writable & readable. settings.txt will not preserve comments in the file
 
-    public static void readSettings(){
-        File settingsFile = new File(FileIO.getRootFilePath() + "config.txt");
-        settings = new HashMap<>();
+    public static void initialize(){
+        botconfig = readSettingsFile(getConfigPath());
+        settings = readSettingsFile(getSettingsPath());
+    }
+
+    private static HashMap<String, String> readSettingsFile(String filepath){
+        File settingsFile = new File(filepath);
+        HashMap<String, String> settings = new HashMap<>();
         try {
             FileInputStream inputStream = new FileInputStream(settingsFile);
             Scanner sc = new Scanner(inputStream);
@@ -32,6 +36,15 @@ public class SettingsLoader {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+        return settings;
+    }
+
+    private static String getConfigPath(){
+        return FileIO.getRootFilePath() + "config.txt";
+    }
+
+    private static String getSettingsPath(){
+        return FileIO.getRootFilePath() + "settings.txt";
     }
 
     /**
@@ -40,9 +53,53 @@ public class SettingsLoader {
      * @param var The name of the variable you want to fetch the value for.
      * @return The value of the variable being searched for. Returns null if missing.
      */
-    public static String getValue(String var){
+    public static String getBotConfigValue(String var){
+        if (botconfig.containsKey(var))
+            return botconfig.get(var);
+        return null;
+    }
+
+    /**
+     * Returns the settings value from the settings.txt file.
+     *
+     * @param var The name of the variable you want to fetch the value for.
+     * @param defaultSetting What to return if the setting is missing in the map.
+     * @return The value of the variable being searched for. Returns the default value if missing.
+     */
+    public static String getSettingsValue(String var, String defaultSetting){
         if (settings.containsKey(var))
             return settings.get(var);
-        return null;
+        return defaultSetting;
+    }
+
+    /**
+     * Writes to the settings map and then saves it to settings.txt.
+     * If the variable
+     *
+     * @param var The name of the variable you want to modify. If it does not exist, it becomes added to the map.
+     * @param value The value to write to the variable.
+     */
+    public static void modifySettingsValue(String var, String value){
+        settings.put(var, value);
+    }
+
+    /**
+     * Writes the current set of settings to settings.txt
+     */
+    public static void writeSettingsFile(){
+        File settingsFile = new File(getSettingsPath());
+        settingsFile.delete();
+        try {
+            FileOutputStream outputStream = new FileOutputStream(settingsFile);
+            PrintWriter writer = new PrintWriter(outputStream);
+            for (String key : settings.keySet()){
+                writer.println(String.format("%1$s=%2$s", key, settings.get(key)));
+            }
+            writer.close();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }

@@ -27,6 +27,7 @@ public class CommandInterpreter extends ListenerAdapter {
         addCommand(new InstantPlayCommand());
         addCommand(new RequestCommand());
         addCommand(new ListQueueCommand());
+        addCommand(new SkipCommand());
     }
 
     private void addCommand(Command command){
@@ -50,19 +51,15 @@ public class CommandInterpreter extends ListenerAdapter {
         if (event.getAuthor().isBot())
             return;
         //Fetch command character
-        String commandCharStr = SettingsLoader.getValue("command_char");
-        char command_char;
+        String commandCharStr = SettingsLoader.getBotConfigValue("command_char");
         if (commandCharStr == null || commandCharStr.length() <= 0) {
             Transcriber.print("WARNING! config.txt malformed - \'command_char\' is missing!");
             return;
-        } else {
-            command_char = commandCharStr.charAt(0);
-            //Transcriber.print("command_char=\'%1$c\'", command_char);
         }
         //Run command if incoming message starts with the command character
         String messageContent = event.getMessage().getContentRaw();
-        if (messageContent.length() > 0 && messageContent.charAt(0) == command_char){
-            String commandStr = messageContent.substring(1); //Clip off the command character from the rest of the command
+        if (messageContent.length() > commandCharStr.length() && messageContent.substring(0, commandCharStr.length()).equals(commandCharStr)){
+            String commandStr = messageContent.substring(commandCharStr.length()); //Clip off the command character from the rest of the command
             String[] parts = commandStr.split(" ");
             if (commandMap.containsKey(parts[0])){ //If command is valid
                 String[] args = new String[parts.length-1]; //Command arguments are the same as the parts array aside from the first element

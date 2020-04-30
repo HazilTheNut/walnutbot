@@ -7,22 +7,17 @@ import Utils.Transcriber;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.internal.entities.ActivityImpl;
 
-import javax.annotation.Nonnull;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
-import java.util.Random;
 
 public class Main {
 
     public static void main(String[] args){
         Transcriber.startTranscription();
         System.out.println(FileIO.getRootFilePath());
-        SettingsLoader.readSettings();
-        String token = SettingsLoader.getValue("token");
+        SettingsLoader.initialize();
+        String token = SettingsLoader.getBotConfigValue("token");
         if (token == null) {
             System.out.println("WARNING! The token is missing from the config file! (Put \'token=...\' on a line in the file)");
         }
@@ -45,7 +40,7 @@ public class Main {
             jda.addEventListener(new CommandInterpreter(jda, audioMaster));
         new UIFrame(jda, audioMaster);
         if (jda != null) {
-            jda.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT, "sounds // type " + SettingsLoader.getValue("command_char") + "help"));
+            jda.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT, "sounds / type " + SettingsLoader.getBotConfigValue("command_char") + "help"));
         }
     }
 }

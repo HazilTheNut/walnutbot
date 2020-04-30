@@ -68,31 +68,35 @@ public class AudioMaster{
         jukeboxQueueList = new AudioKeyPlaylist("queue");
     }
 
+    private void setActiveStream(AudioPlayer player){
+        AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
+        audioManager.setSendingHandler(new AudioPlayerSendHandler(player));
+    }
+
     public void playSoundboardSound(String url){
         if (getConnectedChannel() == null) {
             Transcriber.print("Warning! This bot is currently not connected to any channel!");
             return;
         }
         jukeboxPlayer.setPaused(true);
-        AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
-        audioManager.setSendingHandler(new AudioPlayerSendHandler(soundboardPlayer));
+        setActiveStream(soundboardPlayer);
         playerManager.loadItem(url, new GenericLoadResultHandler(soundboardPlayer));
     }
 
-    public void queueJukeboxSong(AudioKey audioKey){
+    public void queueJukeboxSong(AudioKey audioKey, PostSongRequestAction action){
         if (getConnectedChannel() == null) {
             Transcriber.print("Warning! This bot is currently not connected to any channel!");
             return;
         }
-        AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
-        audioManager.setSendingHandler(new AudioPlayerSendHandler(jukeboxPlayer));
-        playerManager.loadItem(audioKey.getUrl(), new JukeboxLoadResultHandler(this));
+        setActiveStream(jukeboxPlayer);
+        playerManager.loadItem(audioKey.getUrl(), new JukeboxLoadResultHandler(this, action));
     }
 
     void addTrackToJukeboxQueue(AudioTrack track){
         jukeboxQueueList.addAudioKey(new AudioKey(track));
-        if (currentlyPlayingSong == null) //If no song is currently playing
+        if (currentlyPlayingSong == null) {//If no song is currently playing
             progressJukeboxQueue(); //Plays the song immediately if the queue was empty.
+        }
         else //Since progressJukeboxQueue() should also start a refresh of the UI.
             jukeboxUIWrapper.refreshQueueList(this);
     }
@@ -108,6 +112,7 @@ public class AudioMaster{
         }
         //If successfully retrieved next song, play it.
         if (keyToPlay != null){
+            setActiveStream(jukeboxPlayer);
             if (keyToPlay.getLoadedTrack() != null)
                 jukeboxPlayer.startTrack(keyToPlay.getLoadedTrack(), false);
             else
@@ -238,15 +243,17 @@ public class AudioMaster{
         }
 
         @Override public void onTrackStop() {
-            AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
-            audioManager.setSendingHandler(new AudioPlayerSendHandler(jukeboxPlayer));
+            setActiveStream(jukeboxPlayer);
             jukeboxPlayer.setPaused(false);
         }
 
         @Override public void onTrackError() {
-            AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
-            audioManager.setSendingHandler(new AudioPlayerSendHandler(jukeboxPlayer));
+            setActiveStream(jukeboxPlayer);
             jukeboxPlayer.setPaused(false);
         }
+    }
+
+    public interface PostSongRequestAction {
+        void doAction();
     }
 }

@@ -28,7 +28,7 @@ public class HelpCommand implements Command {
 
     @Override public String getSpecificHelpDescription() {
         return String.format("Lists the commands you can give to this bot.\n%shelp <command> for detailed info on a specific command",
-            SettingsLoader.getValue("command_char"));
+            SettingsLoader.getBotConfigValue("command_char"));
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
@@ -37,8 +37,8 @@ public class HelpCommand implements Command {
         //Build message
         String message;
         if (args.length > 0 && commandInterpreter.getCommandMap().containsKey(args[0])) { //Getting help on a specific command
-            message = String.format("```   $%1$s\n-------------\n%2$s```", args[0],
-                commandInterpreter.getCommandMap().get(args[0]).getSpecificHelpDescription());
+            message = String.format("```   %3$s%1$s\n-------------\n%2$s```", commandInterpreter.getCommandMap().get(args[0]).getHelpName(),
+                commandInterpreter.getCommandMap().get(args[0]).getSpecificHelpDescription(), SettingsLoader.getBotConfigValue("command_char"));
         } else { //The general help info (or if asking specific help on a command that doesn't exist
             StringBuilder builder = new StringBuilder("**Available Commands:**\n```\n");
             int longestLength = commandInterpreter.getLongestCommandHelpName();
@@ -46,7 +46,7 @@ public class HelpCommand implements Command {
                 String commandHelpName = commandInterpreter.getCommandMap().get(command).getHelpName();
                 String commandDescription = commandInterpreter.getCommandMap().get(command).getHelpDescription();
                 builder.append(String.format("%4$s%1$s%3$s : %2$s\n", commandHelpName, commandDescription,
-                    createCommandNameSpacing(longestLength - commandHelpName.length()), SettingsLoader.getValue("command_char")));
+                    createCommandNameSpacing(longestLength - commandHelpName.length()), SettingsLoader.getBotConfigValue("command_char")));
             }
             builder.append("```");
             message = builder.toString();

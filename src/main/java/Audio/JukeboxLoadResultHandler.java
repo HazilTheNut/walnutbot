@@ -7,10 +7,12 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 public class JukeboxLoadResultHandler implements AudioLoadResultHandler {
 
-    AudioMaster audioMaster;
+    private AudioMaster audioMaster;
+    private AudioMaster.PostSongRequestAction postSongRequestAction;
 
-    public JukeboxLoadResultHandler(AudioMaster audioMaster) {
+    public JukeboxLoadResultHandler(AudioMaster audioMaster, AudioMaster.PostSongRequestAction postSongRequestAction) {
         this.audioMaster = audioMaster;
+        this.postSongRequestAction = postSongRequestAction;
     }
 
     /**
@@ -20,6 +22,7 @@ public class JukeboxLoadResultHandler implements AudioLoadResultHandler {
      */
     @Override public void trackLoaded(AudioTrack track) {
         audioMaster.addTrackToJukeboxQueue(track);
+        postSongRequestAction.doAction();
     }
 
     /**
@@ -30,6 +33,7 @@ public class JukeboxLoadResultHandler implements AudioLoadResultHandler {
     @Override public void playlistLoaded(AudioPlaylist playlist) {
         for (AudioTrack track : playlist.getTracks())
             audioMaster.addTrackToJukeboxQueue(track);
+        postSongRequestAction.doAction();
     }
 
     /**

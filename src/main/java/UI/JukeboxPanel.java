@@ -4,7 +4,6 @@ import Audio.AudioKey;
 import Audio.AudioKeyPlaylist;
 import Audio.AudioMaster;
 import Utils.ButtonMaker;
-import sun.tools.jps.Jps;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,6 +25,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         setLayout(new BorderLayout());
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, false, createDefaultListPanel(audioMaster), createQueuePanel(audioMaster));
+        splitPane.setDividerLocation(75);
 
         add(splitPane, BorderLayout.CENTER);
         validate();
@@ -120,7 +120,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
     @Override public void refreshQueueList(AudioMaster audioMaster) {
         queueTable.pullAudioKeyList(audioMaster.getJukeboxQueueList());
         if (audioMaster.getCurrentlyPlayingSong() != null)
-            currentPlayingSongLabel.setText(String.format("Currently Playing: %1$s", audioMaster.getCurrentlyPlayingSong().getName()));
+            currentPlayingSongLabel.setText(String.format("Now Playing: %1$s", audioMaster.getCurrentlyPlayingSong().getTrackName()));
         else
             currentPlayingSongLabel.setText(noSongText);
         currentPlayingSongLabel.repaint();
@@ -206,7 +206,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
             } else {
                 //Queue Button
                 JButton queueButton = ButtonMaker.createIconButton("icons/queue.png", "Queue", 4);
-                queueButton.addActionListener(e -> audioMaster.queueJukeboxSong(audioKey));
+                queueButton.addActionListener(e -> audioMaster.queueJukeboxSong(audioKey, () -> {}));
                 add(queueButton);
                 //Edit Button
                 JButton editButton = ButtonMaker.createIconButton("icons/menu.png", "Edit", 4);
@@ -239,7 +239,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
             audioKey.setName(data.getName());
             audioKey.setUrl(data.getUrl());
 
-            nameText.setText(" " + audioKey.getName());
+            nameText.setText(" " + audioKey.getTrackName());
             urlText.setText(audioKey.getUrl());
 
             repaint();

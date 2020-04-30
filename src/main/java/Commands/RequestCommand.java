@@ -33,14 +33,12 @@ public class RequestCommand implements Command {
         audioMaster.getPlayerManager().loadItem(args[0], new AudioLoadResultHandler() {
             @Override public void trackLoaded(AudioTrack track) {
                 AudioKey song = new AudioKey(track.getInfo().title, args[0]);
-                audioMaster.queueJukeboxSong(song);
-                Transcriber.printAndPost(event.getChannel(), "Track \"%1$s\" loaded! (%2$d in queue)", song.getName(), audioMaster.getJukeboxQueueList().getAudioKeys().size()-1);
+                audioMaster.queueJukeboxSong(song, () -> postQueueStatus(audioMaster, event, song));
             }
 
             @Override public void playlistLoaded(AudioPlaylist playlist) {
                 AudioKey song = new AudioKey(playlist.getName(), args[0]);
-                audioMaster.queueJukeboxSong(song);
-                Transcriber.printAndPost(event.getChannel(), "Playlist \"%1$s\" loaded! (%3$d songs) (%2$d in queue)", song.getName(), audioMaster.getJukeboxQueueList().getAudioKeys().size()-1, playlist.getTracks().size());
+                audioMaster.queueJukeboxSong(song, () -> postQueueStatus(audioMaster, event, song));
             }
 
             @Override public void noMatches() {
@@ -49,6 +47,12 @@ public class RequestCommand implements Command {
 
             @Override public void loadFailed(FriendlyException exception) {
 
+            }
+
+            private void postQueueStatus(AudioMaster audioMaster, MessageReceivedEvent event, AudioKey song){
+                int numberofSongs = audioMaster.getJukeboxQueueList().getAudioKeys().size();
+                if (audioMaster.getCurrentlyPlayingSong() != null) numberofSongs++;
+                Transcriber.printAndPost(event.getChannel(), "Track \"%1$s\" loaded! (%2$d in queue)", song.getName(), numberofSongs);
             }
         });
     }
