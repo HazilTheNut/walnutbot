@@ -38,6 +38,7 @@ public class AudioMaster{
     private AudioKeyPlaylist jukeboxDefaultList; //The list of songs to randomly select when the request queue is exhausted
     private AudioKey currentlyPlayingSong;
     private JukeboxUIWrapper jukeboxUIWrapper;
+    private boolean loopingCurrentSong = false;
 
     //Volumes are 0-1, scaled 0-1000 internally
     private double masterVolume;
@@ -74,6 +75,12 @@ public class AudioMaster{
     private void setActiveStream(AudioPlayer player){
         AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
         audioManager.setSendingHandler(new AudioPlayerSendHandler(player));
+    }
+
+    public void resumeJukebox(){
+        soundboardPlayer.stopTrack();
+        setActiveStream(jukeboxPlayer);
+        jukeboxPlayer.setPaused(false);
     }
 
     public void playSoundboardSound(String url){
@@ -131,8 +138,15 @@ public class AudioMaster{
             jukeboxQueueList.addAudioKey(new AudioKey(track));
         jukeboxUIWrapper.refreshQueueList(this);
     }
-    
-    public void jukeboxSkipToNextSong(){
+
+    public void jukeboxSkipToNextSong() { jukeboxSkipToNextSong(false); }
+
+    public void jukeboxSkipToNextSong(boolean forceskip){
+        if (!forceskip && isLoopingCurrentSong() && currentlyPlayingSong != null && currentlyPlayingSong.getLoadedTrack() != null){
+            currentlyPlayingSong = new AudioKey(currentlyPlayingSong.getLoadedTrack().makeClone());
+            playCurrentSong();
+            return;
+        }
         AudioKey keyToPlay = null;
         if (jukeboxQueueList.isEmpty()){
             if (jukeboxDefaultList != null && !jukeboxDefaultList.isEmpty())
@@ -271,6 +285,14 @@ public class AudioMaster{
         return currentlyPlayingSong;
     }
 
+    public boolean isLoopingCurrentSong() {
+        return loopingCurrentSong;
+    }
+
+    public void setLoopingCurrentSong(boolean loopingCurrentSong) {
+        this.loopingCurrentSong = loopingCurrentSong;
+    }
+
     public void setJukeboxUIWrapper(JukeboxUIWrapper jukeboxUIWrapper) {
         this.jukeboxUIWrapper = jukeboxUIWrapper;
     }
@@ -351,6 +373,7 @@ public class AudioMaster{
 
         @Override public void trackLoaded(AudioTrack track) {
             Transcriber.print("Track \'%1$s\' loaded! (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+            currentlyPlayingSong = new AudioKey(track);
             if (!audioPlayer.startTrack(track, false))
                 Transcriber.print("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
             super.trackLoaded(track);

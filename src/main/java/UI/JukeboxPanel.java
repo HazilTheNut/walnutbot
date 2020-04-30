@@ -50,13 +50,15 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.LINE_AXIS));
         
-        JButton openButton = ButtonMaker.createIconButton("icons/open.png", "Open", 4);
+        JButton openButton = ButtonMaker.createIconButton("icons/open.png", "Open", 8);
         openButton.addActionListener(e -> audioMaster.openJukeboxPlaylist(this));
         mainPanel.add(openButton);
 
-        JButton newButton = ButtonMaker.createIconButton("icons/new.png", "New", 4);
+        JButton newButton = ButtonMaker.createIconButton("icons/new.png", "New", 8);
         newButton.addActionListener(e -> audioMaster.createNewJukeboxPlaylist(this));
         mainPanel.add(newButton);
+
+        mainPanel.add(Box.createHorizontalStrut(5));
 
         playlistLabel = new JLabel();
         mainPanel.add(playlistLabel);
@@ -92,21 +94,35 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
     private JPanel createQueueControlsPanel(AudioMaster audioMaster){
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
-    
-        JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", 4);
+
+        int BUTTON_MARGIN = 8;
+
+        JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", BUTTON_MARGIN);
         playButton.addActionListener(e -> audioMaster.getJukeboxPlayer().setPaused(false));
         panel.add(playButton);
 
-        JButton pauseButton = ButtonMaker.createIconButton("icons/stop.png", "Pause", 4);
+        JButton pauseButton = ButtonMaker.createIconButton("icons/stop.png", "Pause", BUTTON_MARGIN);
         pauseButton.addActionListener(e -> audioMaster.getJukeboxPlayer().setPaused(true));
         panel.add(pauseButton);
         
-        JButton nextButton = ButtonMaker.createIconButton("icons/next.png", "Skip", 4);
-        nextButton.addActionListener(e -> audioMaster.jukeboxSkipToNextSong());
+        JButton nextButton = ButtonMaker.createIconButton("icons/next.png", "Skip", BUTTON_MARGIN);
+        nextButton.addActionListener(e -> audioMaster.jukeboxSkipToNextSong(true));
         panel.add(nextButton);
+
+        panel.add(Box.createHorizontalStrut(5));
 
         currentPlayingSongLabel = new JLabel(noSongText);
         panel.add(currentPlayingSongLabel);
+
+        panel.add(Box.createHorizontalGlue());
+
+        JCheckBox loopingBox = new JCheckBox("Loop", audioMaster.isLoopingCurrentSong());
+        loopingBox.addChangeListener(e -> audioMaster.setLoopingCurrentSong(loopingBox.isSelected()));
+        panel.add(loopingBox);
+
+        JButton requestButton = new JButton("Make Request");
+        requestButton.addActionListener(e -> new MakeRequestFrame(audioMaster));
+        panel.add(requestButton);
 
         return panel;
     }
@@ -120,10 +136,14 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
 
     @Override public void refreshQueueList(AudioMaster audioMaster) {
         queueTable.pullAudioKeyList(audioMaster.getJukeboxQueueList());
-        if (audioMaster.getCurrentlyPlayingSong() != null)
+        if (audioMaster.getCurrentlyPlayingSong() != null) {
             currentPlayingSongLabel.setText(String.format("Now Playing: %1$s", audioMaster.getCurrentlyPlayingSong().getTrackName()));
-        else
+            currentPlayingSongLabel.setToolTipText(audioMaster.getCurrentlyPlayingSong().getUrl());
+        }
+        else {
             currentPlayingSongLabel.setText(noSongText);
+            currentPlayingSongLabel.setToolTipText("");
+        }
         currentPlayingSongLabel.repaint();
     }
 
@@ -196,7 +216,15 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
             setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
             JButton buttonToMeasure;
             if (isInQueueList){
-                JButton removeButton = ButtonMaker.createIconButton("icons/cancel.png", "Remove", 4);
+                JButton postponeButton = ButtonMaker.createIconButton("icons/queue.png", "Postpone", 3);
+                postponeButton.addActionListener(e -> {
+                    int pos = trackLister.getAudioKeyID(this);
+                    trackLister.removeAudioKey(pos);
+                    audioMaster.getJukeboxQueueList().removeAudioKey(pos);
+                    audioMaster.queueJukeboxSong(audioKey, () -> {}, () -> {});
+                });
+                add(postponeButton);
+                JButton removeButton = ButtonMaker.createIconButton("icons/cancel.png", "Remove", 3);
                 removeButton.addActionListener(e -> {
                     int pos = trackLister.getAudioKeyID(this);
                     trackLister.removeAudioKey(pos);

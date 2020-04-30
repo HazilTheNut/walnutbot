@@ -19,7 +19,7 @@ public class UIFrame extends JFrame {
             tabbedPane.addTab("Soundboard", new SoundboardPanel(master));
             tabbedPane.addTab("Jukebox", new JukeboxPanel(master));
         }
-        tabbedPane.addTab("Console", new ConsolePanel());
+        tabbedPane.addTab("Log", new ConsolePanel());
 
         getContentPane().add(tabbedPane);
 
