@@ -1,14 +1,11 @@
 package Audio;
 
-import UI.PlayerTrackListener;
 import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-
-import java.util.ArrayList;
 
 public class JukeboxTrackScheduler extends AudioEventAdapter {
 
@@ -38,7 +35,7 @@ public class JukeboxTrackScheduler extends AudioEventAdapter {
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         Transcriber.print("Track \'%1$s\' ended (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         if (endReason.mayStartNext) {
-            audioMaster.progressJukeboxQueue();
+            audioMaster.jukeboxSkipToNextSong();
         }
 
         // endReason == FINISHED: A track finished or died by an exception (mayStartNext = true).

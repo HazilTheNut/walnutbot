@@ -4,10 +4,13 @@ import UI.JukeboxUIWrapper;
 import UI.PlayerTrackListener;
 import Utils.FileIO;
 import Utils.Transcriber;
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -82,27 +85,54 @@ public class AudioMaster{
         setActiveStream(soundboardPlayer);
         playerManager.loadItem(url, new GenericLoadResultHandler(soundboardPlayer));
     }
+    
+    /*
+    The following are the three ways a new song is queued up to play:
+    
+    A - The Current Song Ends
+    1: Get the next song (from the queue or from default if queue is empty) and load it up.
+    2: Play loaded song
+    
+    B - Skip via either UI or Discord
+    1: Get the next song (from the queue or from default if queue is empty) and load it up.
+    2: Play loaded song
+    
+    C - Add a new song to queue via either UI or Discord
+    1: If queue is empty, do (a), otherwise do (b)
+      a: Load up and play song
+      b: Add song to queue
+      
+    
+    For cases A and B, do jukeboxSkipToNextSong()
+    For case C, do queueJukeboxSong()
+    
+     */
 
-    public void queueJukeboxSong(AudioKey audioKey, PostSongRequestAction action){
+    public void queueJukeboxSong(AudioKey audioKey, PostSongRequestAction ifSuccess, PostSongRequestAction ifError){
         if (getConnectedChannel() == null) {
             Transcriber.print("Warning! This bot is currently not connected to any channel!");
             return;
         }
         setActiveStream(jukeboxPlayer);
-        playerManager.loadItem(audioKey.getUrl(), new JukeboxLoadResultHandler(this, action));
+        if (audioKey.getLoadedTrack() == null)
+            playerManager.loadItem(audioKey.getUrl(), new JukeboxQueueResultHandler(jukeboxPlayer, ifSuccess, ifError));
+        else {
+            addTrackToJukeboxQueue(audioKey.getLoadedTrack());
+            ifSuccess.doAction();
+        }
     }
 
     void addTrackToJukeboxQueue(AudioTrack track){
-        jukeboxQueueList.addAudioKey(new AudioKey(track));
         if (currentlyPlayingSong == null) {//If no song is currently playing
-            progressJukeboxQueue(); //Plays the song immediately if the queue was empty.
+            currentlyPlayingSong = new AudioKey(track);
+            playCurrentSong();
         }
-        else //Since progressJukeboxQueue() should also start a refresh of the UI.
-            jukeboxUIWrapper.refreshQueueList(this);
+        else
+            jukeboxQueueList.addAudioKey(new AudioKey(track));
+        jukeboxUIWrapper.refreshQueueList(this);
     }
-
-    public void progressJukeboxQueue(){
-        //Get the next song to play
+    
+    public void jukeboxSkipToNextSong(){
         AudioKey keyToPlay = null;
         if (jukeboxQueueList.isEmpty()){
             if (jukeboxDefaultList != null && !jukeboxDefaultList.isEmpty())
@@ -110,16 +140,24 @@ public class AudioMaster{
         } else {
             keyToPlay = jukeboxQueueList.removeAudioKey(0);
         }
-        //If successfully retrieved next song, play it.
-        if (keyToPlay != null){
-            setActiveStream(jukeboxPlayer);
-            if (keyToPlay.getLoadedTrack() != null)
-                jukeboxPlayer.startTrack(keyToPlay.getLoadedTrack(), false);
-            else
-                playerManager.loadItem(keyToPlay.getUrl(), new GenericLoadResultHandler(jukeboxPlayer));
-        }
         currentlyPlayingSong = keyToPlay;
+        playCurrentSong();
         jukeboxUIWrapper.refreshQueueList(this);
+    }
+    
+    private void playCurrentSong(){
+        jukeboxPlayer.setPaused(true);
+        if (currentlyPlayingSong != null){
+            setActiveStream(jukeboxPlayer);
+            if (currentlyPlayingSong.getLoadedTrack() != null)
+                jukeboxPlayer.startTrack(currentlyPlayingSong.getLoadedTrack(), false);
+            else
+                playerManager.loadItem(currentlyPlayingSong.getUrl(), new JukeboxPlayResultHandler(jukeboxPlayer, () -> {}, () -> {
+                    Transcriber.print("WARNING: Song url \"%1$s\" is invalid!", currentlyPlayingSong.getUrl());
+                    jukeboxSkipToNextSong();
+                }));
+        }
+        jukeboxPlayer.setPaused(false);
     }
 
     public AudioPlayer getSoundboardPlayer() {
@@ -255,5 +293,67 @@ public class AudioMaster{
 
     public interface PostSongRequestAction {
         void doAction();
+    }
+
+    private class JukeboxLoadResultHandler implements AudioLoadResultHandler{
+
+        PostSongRequestAction ifSuccess;
+        PostSongRequestAction ifError;
+        AudioPlayer audioPlayer;
+
+        JukeboxLoadResultHandler(AudioPlayer audioPlayer, PostSongRequestAction ifSuccess, PostSongRequestAction ifError) {
+            this.ifError = ifError;
+            this.ifSuccess = ifSuccess;
+            this.audioPlayer = audioPlayer;
+        }
+
+        @Override public void trackLoaded(AudioTrack track) {
+            ifSuccess.doAction();
+        }
+
+        @Override public void playlistLoaded(AudioPlaylist playlist) {
+            ifSuccess.doAction();
+        }
+
+        @Override public void noMatches() {
+            ifError.doAction();
+        }
+
+        @Override public void loadFailed(FriendlyException throwable) {
+            ifError.doAction();
+        }
+    }
+
+    private class JukeboxQueueResultHandler extends JukeboxLoadResultHandler {
+
+        public JukeboxQueueResultHandler(AudioPlayer audioPlayer, PostSongRequestAction ifSuccess, PostSongRequestAction ifError) {
+            super(audioPlayer, ifSuccess, ifError);
+        }
+
+        @Override public void trackLoaded(AudioTrack track) {
+            addTrackToJukeboxQueue(track);
+            super.trackLoaded(track);
+        }
+
+        @Override public void playlistLoaded(AudioPlaylist playlist) {
+            for (AudioTrack track : playlist.getTracks())
+                addTrackToJukeboxQueue(track);
+            super.playlistLoaded(playlist);
+        }
+    }
+
+    private class JukeboxPlayResultHandler extends JukeboxLoadResultHandler {
+
+        public JukeboxPlayResultHandler(AudioPlayer audioPlayer, PostSongRequestAction ifSuccess,
+            PostSongRequestAction ifError) {
+            super(audioPlayer, ifSuccess, ifError);
+        }
+
+        @Override public void trackLoaded(AudioTrack track) {
+            Transcriber.print("Track \'%1$s\' loaded! (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+            if (!audioPlayer.startTrack(track, false))
+                Transcriber.print("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+            super.trackLoaded(track);
+        }
     }
 }

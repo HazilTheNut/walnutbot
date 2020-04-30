@@ -23,6 +23,6 @@ public class SkipCommand implements Command {
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
-        audioMaster.progressJukeboxQueue();
+        audioMaster.jukeboxSkipToNextSong();
     }
 }

@@ -4,6 +4,7 @@ import Audio.AudioKey;
 import Audio.AudioKeyPlaylist;
 import Audio.AudioMaster;
 import Utils.ButtonMaker;
+import Utils.Transcriber;
 
 import javax.swing.*;
 import java.awt.*;
@@ -101,7 +102,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         panel.add(pauseButton);
         
         JButton nextButton = ButtonMaker.createIconButton("icons/next.png", "Skip", 4);
-        nextButton.addActionListener(e -> audioMaster.progressJukeboxQueue());
+        nextButton.addActionListener(e -> audioMaster.jukeboxSkipToNextSong());
         panel.add(nextButton);
 
         currentPlayingSongLabel = new JLabel(noSongText);
@@ -206,7 +207,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
             } else {
                 //Queue Button
                 JButton queueButton = ButtonMaker.createIconButton("icons/queue.png", "Queue", 4);
-                queueButton.addActionListener(e -> audioMaster.queueJukeboxSong(audioKey, () -> {}));
+                queueButton.addActionListener(e -> audioMaster.queueJukeboxSong(audioKey, () -> {}, () -> Transcriber.print("ERROR: Audio key is invalid: %1$s", audioKey.toString())));
                 add(queueButton);
                 //Edit Button
                 JButton editButton = ButtonMaker.createIconButton("icons/menu.png", "Edit", 4);

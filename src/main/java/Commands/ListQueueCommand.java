@@ -26,7 +26,7 @@ public class ListQueueCommand implements Command {
         if (audioMaster.getCurrentlyPlayingSong() != null)
             message.append("Now Playing: ").append(audioMaster.getCurrentlyPlayingSong().getTrackName()).append("\n===\n");
         for (int i = 0; i < audioMaster.getJukeboxQueueList().getAudioKeys().size(); i++) {
-            message.append('[').append(i).append("] ").append(audioMaster.getJukeboxQueueList().getAudioKeys().get(i).getName()).append('\n');
+            message.append('[').append(i).append("] ").append(audioMaster.getJukeboxQueueList().getAudioKeys().get(i).getTrackName()).append('\n');
         }
         if (audioMaster.getJukeboxQueueList().getAudioKeys().size() == 0)
             message.append("No songs are currently queued; playing from default playlist.");
