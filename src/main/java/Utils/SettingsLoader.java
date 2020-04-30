@@ -35,6 +35,7 @@ public class SettingsLoader {
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            Transcriber.print("Could not find config/settings file at %1$s - if config.txt is missing, this bot is broken; if settings.txt is missing, will use default settings.", filepath);
         }
         return settings;
     }

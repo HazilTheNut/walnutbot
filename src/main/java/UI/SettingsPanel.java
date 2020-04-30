@@ -99,7 +99,7 @@ public class SettingsPanel extends JPanel {
             SettingsLoader.modifySettingsValue("discordAllowJukebox", String.valueOf(allowJukeboxBox.isSelected()));
             SettingsLoader.writeSettingsFile();
         });
-        allowJukeboxBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowJukebox", "false")));
+        allowJukeboxBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowJukebox", "true")));
         panel.add(allowJukeboxBox);
 
         return panel;
