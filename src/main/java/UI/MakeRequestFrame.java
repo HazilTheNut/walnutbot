@@ -48,7 +48,10 @@ public class MakeRequestFrame extends JFrame {
         buttonPanel.add(openFileButton);
 
         JButton confirmButton = new JButton("Request");
-        confirmButton.addActionListener(e -> audioMaster.queueJukeboxSong(new AudioKey("Requested", urlField.getText()), () -> {}, () -> {}));
+        confirmButton.addActionListener(e -> {
+            audioMaster.queueJukeboxSong(new AudioKey("Requested", urlField.getText()), () -> {}, () -> {});
+            urlField.setText("");
+        });
         buttonPanel.add(confirmButton);
 
         JButton cancelButton = new JButton("Exit");

@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class GenericTrackScheduler extends AudioEventAdapter {
 
@@ -65,6 +66,8 @@ public class GenericTrackScheduler extends AudioEventAdapter {
     public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
         for (PlayerTrackListener listener : listeners)
             listener.onTrackError();
+        Transcriber.print(exception.getMessage());
+        exception.printStackTrace();
         // An already playing track threw an exception (track end event will still be received separately)
     }
 

@@ -90,8 +90,9 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         JTextField urlField = new JTextField("Enter URL Here for Instant Play");
         JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", 12);
         playButton.addActionListener(e -> {
-            System.out.printf("Playing track of url: %1$s\n", urlField.getText());
+            System.out.printf("Soundboard Instant Play - Playing track of url: %1$s\n", urlField.getText());
             audioMaster.playSoundboardSound(urlField.getText());
+            urlField.setText("");
         });
 
         JButton searchButton = ButtonMaker.createIconButton("icons/open.png", "Search...", 5);
