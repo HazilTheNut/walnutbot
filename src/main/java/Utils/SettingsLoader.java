@@ -27,9 +27,11 @@ public class SettingsLoader {
                 String in = sc.nextLine();
                 if (in.length() > 0 && in.charAt(0) != '#'){
                     int split = in.indexOf('=');
-                    String var = in.substring(0, split);
-                    String value = in.substring(Math.min(split+1,in.length()));
-                    settings.put(var, value);
+                    if (split > 0) {
+                        String var = in.substring(0, split);
+                        String value = in.substring(Math.min(split + 1, in.length()));
+                        settings.put(var, value);
+                    }
                 }
             }
 
