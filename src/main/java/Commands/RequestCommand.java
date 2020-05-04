@@ -57,11 +57,11 @@ public class RequestCommand implements Command {
             }
 
             @Override public void noMatches() {
-
+                postErrorStatus(event, new AudioKey("", args[0]));
             }
 
             @Override public void loadFailed(FriendlyException exception) {
-
+                Transcriber.printAndPost(event.getChannel(), "**ERROR:** Some internal error caused the song to load incorrectly!");
             }
 
             private void postQueueStatus(AudioMaster audioMaster, MessageReceivedEvent event, AudioKey song){

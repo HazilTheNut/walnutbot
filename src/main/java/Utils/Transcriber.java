@@ -47,10 +47,43 @@ public class Transcriber {
             e.printStackTrace();
         }
         if (fileOut != null) {
-            System.setOut(fileOut);
-            System.setErr(fileOut);
+            try {
+                OutputSplitter splitter = new OutputSplitter(filename, fileOut, transcriptReceivers);
+                System.setOut(splitter);
+                System.setErr(splitter);
+            } catch (FileNotFoundException e) {
+                System.setOut(fileOut);
+                System.setErr(fileOut);
+                e.printStackTrace();
+            }
         }
         System.out.printf("BEGIN of Walnutbot (time: %1$s)\n---\n", (new SimpleDateFormat("MM/dd/yyyy kk:mm:ss")).format(new Date()));
     }
 
+    private static class OutputSplitter extends PrintStream {
+
+        PrintStream fileOutStream;
+        ArrayList<TranscriptReceiver> transcriptReceivers;
+
+        public OutputSplitter(String filename, PrintStream fileOutStream, ArrayList<TranscriptReceiver> transcriptReceivers) throws FileNotFoundException {
+            super(filename);
+            this.fileOutStream = fileOutStream;
+            this.transcriptReceivers = transcriptReceivers;
+        }
+
+        private void sendToReceivers(String s){
+            for (TranscriptReceiver transcriptReceiver : transcriptReceivers)
+                transcriptReceiver.receiveMessage(s);
+        }
+
+        @Override public void print(String s) {
+            fileOutStream.print(s);
+            sendToReceivers(s);
+        }
+
+        @Override public void println(String x) {
+            fileOutStream.println(x);
+            sendToReceivers(x);
+        }
+    }
 }

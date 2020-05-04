@@ -82,6 +82,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         JPanel panel = new JPanel(new BorderLayout());
 
         queueTable = new TrackListingTable(audioMaster, true);
+        queueTable.pullAudioKeyList(audioMaster.getJukeboxQueueList());
 
         JScrollPane scrollPane = new JScrollPane(queueTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
@@ -124,6 +125,10 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         requestButton.addActionListener(e -> new MakeRequestFrame(audioMaster));
         panel.add(requestButton);
 
+        JButton clearButton = new JButton("Clear Queue");
+        clearButton.addActionListener(e -> audioMaster.clearJukeboxQueue());
+        panel.add(clearButton);
+
         return panel;
     }
 
@@ -137,7 +142,8 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
     @Override public void refreshQueueList(AudioMaster audioMaster) {
         queueTable.pullAudioKeyList(audioMaster.getJukeboxQueueList());
         if (audioMaster.getCurrentlyPlayingSong() != null) {
-            currentPlayingSongLabel.setText(String.format("Now Playing: %1$s", audioMaster.getCurrentlyPlayingSong().getTrackName()));
+            String preface = (audioMaster.getJukeboxPlayer().isPaused()) ? "Paused" : "Now Playing";
+            currentPlayingSongLabel.setText(String.format("%2$s: %1$s", audioMaster.getCurrentlyPlayingSong().getTrackName(), preface));
             currentPlayingSongLabel.setToolTipText(audioMaster.getCurrentlyPlayingSong().getUrl());
         }
         else {
@@ -167,6 +173,12 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
             removeAll();
             for (AudioKey audioKey : playlist.getAudioKeys()){
                 add(new TrackListing(audioKey, audioMaster, this, isQueueList));
+            }
+            if (isQueueList && playlist.isEmpty()) {
+                JLabel endOfQueueLabel = new JLabel("Queue Empty - Playing random songs from Default List (above)");
+                Font italic = new Font(endOfQueueLabel.getFont().getName(), Font.ITALIC, endOfQueueLabel.getFont().getSize());
+                endOfQueueLabel.setFont(italic);
+                add(endOfQueueLabel);
             }
             validate();
             repaint();

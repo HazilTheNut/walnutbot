@@ -116,11 +116,12 @@ public class AudioMaster{
      */
 
     public void queueJukeboxSong(AudioKey audioKey, PostSongRequestAction ifSuccess, PostSongRequestAction ifError){
-        if (getConnectedChannel() == null) {
+        //Set up audio stream
+        if (getConnectedChannel() == null)
             Transcriber.print("Warning! This bot is currently not connected to any channel!");
-            return;
-        }
-        setActiveStream(jukeboxPlayer);
+        else
+            setActiveStream(jukeboxPlayer);
+        //Fetch song and queue it up
         if (audioKey.getLoadedTrack() == null)
             playerManager.loadItem(audioKey.getUrl(), new JukeboxQueueResultHandler(jukeboxPlayer, ifSuccess, ifError));
         else {
@@ -130,7 +131,7 @@ public class AudioMaster{
     }
 
     void addTrackToJukeboxQueue(AudioTrack track){
-        if (currentlyPlayingSong == null) {//If no song is currently playing
+        if (currentlyPlayingSong == null && connectedChannel != null) { //If no song is currently playing and this bot is ready to play music
             currentlyPlayingSong = new AudioKey(track);
             playCurrentSong();
         }
@@ -172,6 +173,11 @@ public class AudioMaster{
                 }));
         }
         jukeboxPlayer.setPaused(false);
+    }
+
+    public void clearJukeboxQueue(){
+        jukeboxQueueList.getAudioKeys().clear();
+        jukeboxUIWrapper.refreshQueueList(this);
     }
 
     public AudioPlayer getSoundboardPlayer() {
