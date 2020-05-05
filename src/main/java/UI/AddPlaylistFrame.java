@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class AddPlaylistFrame extends JFrame {
 
@@ -50,7 +51,15 @@ public class AddPlaylistFrame extends JFrame {
 
     private void importPlaylist(String url, AudioMaster audioMaster, PlaylistUIWrapper playlistUIWrapper){
         Transcriber.print("Loading playlist from %1$s", url);
-        audioMaster.getPlayerManager().loadItem(url, new PlaylistScraper(audioMaster, playlistUIWrapper));
+        ArrayList<AudioKey> loadedFromFile = AudioKeyPlaylistLoader.grabKeysFromPlaylist(url);
+        if (loadedFromFile.size() > 0){
+            for (AudioKey audioKey : loadedFromFile){
+                audioMaster.getJukeboxDefaultList().addAudioKey(audioKey);
+                playlistUIWrapper.addAudioKey(audioKey);
+            }
+            audioMaster.saveJukeboxDefault();
+        } else
+            audioMaster.getPlayerManager().loadItem(url, new PlaylistScraper(audioMaster, playlistUIWrapper));
         dispose();
     }
 

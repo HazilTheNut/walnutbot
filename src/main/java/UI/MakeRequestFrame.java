@@ -4,10 +4,12 @@ import Audio.AudioKey;
 import Audio.AudioMaster;
 import Utils.ButtonMaker;
 import Utils.FileIO;
+import Utils.Transcriber;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.util.ArrayList;
 
 public class MakeRequestFrame extends JFrame {
 
@@ -49,7 +51,7 @@ public class MakeRequestFrame extends JFrame {
 
         JButton confirmButton = new JButton("Request");
         confirmButton.addActionListener(e -> {
-            audioMaster.queueJukeboxSong(new AudioKey("Requested", urlField.getText()), () -> {}, () -> {});
+            makeRequest(audioMaster, urlField.getText());
             urlField.setText("");
         });
         buttonPanel.add(confirmButton);
@@ -61,5 +63,14 @@ public class MakeRequestFrame extends JFrame {
         add(buttonPanel);
 
         setVisible(true);
+    }
+
+    private void makeRequest(AudioMaster audioMaster, String url){
+        ArrayList<AudioKey> loadedFromFile = AudioKeyPlaylistLoader.grabKeysFromPlaylist(url);
+        if (loadedFromFile.size() > 0){
+            for (AudioKey audioKey : loadedFromFile)
+                audioMaster.queueJukeboxSong(audioKey, () -> {}, () -> Transcriber.print("WARNING! Invalid Audio Key: %1$s", audioKey));
+        } else
+            audioMaster.queueJukeboxSong(new AudioKey("Requested", url), () -> {}, () -> Transcriber.print("WARNING! Invalid URL: %1$s", url));
     }
 }
