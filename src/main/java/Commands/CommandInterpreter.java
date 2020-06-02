@@ -60,6 +60,7 @@ public class CommandInterpreter extends ListenerAdapter {
         String messageContent = event.getMessage().getContentRaw();
         if (messageContent.length() > commandCharStr.length() && messageContent.substring(0, commandCharStr.length()).equals(commandCharStr)){
             String commandStr = messageContent.substring(commandCharStr.length()); //Clip off the command character from the rest of the command
+            Transcriber.print("command received: \'%1$s\' (from %2$s)", messageContent, event.getAuthor().getAsTag());
             String[] parts = commandStr.split(" ");
             if (commandMap.containsKey(parts[0])){ //If command is valid
                 String[] args = new String[parts.length-1]; //Command arguments are the same as the parts array aside from the first element

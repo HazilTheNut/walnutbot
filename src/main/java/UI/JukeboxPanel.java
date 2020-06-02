@@ -93,43 +93,47 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
     }
 
     private JPanel createQueueControlsPanel(AudioMaster audioMaster){
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
+        JPanel masterPanel = new JPanel(new BorderLayout());
+        
+        JPanel controlsPanel = new JPanel();
+        controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.LINE_AXIS));
 
         int BUTTON_MARGIN = 8;
 
         JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", BUTTON_MARGIN);
-        playButton.addActionListener(e -> audioMaster.getJukeboxPlayer().setPaused(false));
-        panel.add(playButton);
+        playButton.addActionListener(e -> audioMaster.setJukeboxTruePause(false));
+        controlsPanel.add(playButton);
 
         JButton pauseButton = ButtonMaker.createIconButton("icons/stop.png", "Pause", BUTTON_MARGIN);
-        pauseButton.addActionListener(e -> audioMaster.getJukeboxPlayer().setPaused(true));
-        panel.add(pauseButton);
+        pauseButton.addActionListener(e -> audioMaster.setJukeboxTruePause(true));
+        controlsPanel.add(pauseButton);
         
         JButton nextButton = ButtonMaker.createIconButton("icons/next.png", "Skip", BUTTON_MARGIN);
         nextButton.addActionListener(e -> audioMaster.jukeboxSkipToNextSong(true));
-        panel.add(nextButton);
-
-        panel.add(Box.createHorizontalStrut(5));
+        controlsPanel.add(nextButton);
 
         currentPlayingSongLabel = new JLabel(noSongText);
-        panel.add(currentPlayingSongLabel);
+        controlsPanel.add(currentPlayingSongLabel);
 
-        panel.add(Box.createHorizontalGlue());
+        JPanel optionsPanel = new JPanel();
+        optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.LINE_AXIS));
 
         JCheckBox loopingBox = new JCheckBox("Loop", audioMaster.isLoopingCurrentSong());
         loopingBox.addChangeListener(e -> audioMaster.setLoopingCurrentSong(loopingBox.isSelected()));
-        panel.add(loopingBox);
+        optionsPanel.add(loopingBox);
 
         JButton requestButton = new JButton("Make Request");
         requestButton.addActionListener(e -> new MakeRequestFrame(audioMaster));
-        panel.add(requestButton);
+        optionsPanel.add(requestButton);
 
         JButton clearButton = new JButton("Clear Queue");
         clearButton.addActionListener(e -> audioMaster.clearJukeboxQueue());
-        panel.add(clearButton);
+        optionsPanel.add(clearButton);
 
-        return panel;
+        masterPanel.add(controlsPanel, BorderLayout.CENTER);
+        masterPanel.add(optionsPanel, BorderLayout.LINE_END);
+
+        return masterPanel;
     }
 
     @Override public void refreshDefaultList(AudioMaster audioMaster) {
@@ -144,7 +148,8 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         if (audioMaster.getCurrentlyPlayingSong() != null) {
             String preface = (audioMaster.getJukeboxPlayer().isPaused()) ? "Paused" : "Now Playing";
             currentPlayingSongLabel.setText(String.format("%2$s: %1$s", audioMaster.getCurrentlyPlayingSong().getTrackName(), preface));
-            currentPlayingSongLabel.setToolTipText(audioMaster.getCurrentlyPlayingSong().getUrl());
+            String tooltip = String.format("%1$s : %2$s", audioMaster.getCurrentlyPlayingSong().getName(), audioMaster.getCurrentlyPlayingSong().getUrl());
+            currentPlayingSongLabel.setToolTipText(tooltip);
         }
         else {
             currentPlayingSongLabel.setText(noSongText);

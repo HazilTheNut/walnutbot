@@ -25,8 +25,8 @@ public class Transcriber {
         String time = String.format("[%1$s] ", (new SimpleDateFormat("MM/dd/yyyy kk:mm:ss")).format(new Date()));
         String message = time.concat(String.format(formattedString, args));
         System.out.println(message);
-        for (TranscriptReceiver transcriptReceiver : transcriptReceivers)
-            transcriptReceiver.receiveMessage(message);
+//        for (TranscriptReceiver transcriptReceiver : transcriptReceivers)
+//            transcriptReceiver.receiveMessage(message);
     }
 
     public static void printAndPost(MessageChannel channel, String formattedString, Object... args){

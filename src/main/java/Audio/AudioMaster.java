@@ -39,6 +39,7 @@ public class AudioMaster{
     private AudioKey currentlyPlayingSong;
     private JukeboxUIWrapper jukeboxUIWrapper;
     private boolean loopingCurrentSong = false;
+    private boolean jukeboxPaused = false; //THe "true" state of teh jukebox controlled via UI, commands, etc.
 
     //Volumes are 0-1, scaled 0-1000 internally
     private double masterVolume;
@@ -80,7 +81,7 @@ public class AudioMaster{
     public void resumeJukebox(){
         soundboardPlayer.stopTrack();
         setActiveStream(jukeboxPlayer);
-        jukeboxPlayer.setPaused(false);
+        jukeboxPlayer.setPaused(jukeboxPaused);
     }
 
     public void playSoundboardSound(String url){
@@ -143,6 +144,7 @@ public class AudioMaster{
     public void jukeboxSkipToNextSong() { jukeboxSkipToNextSong(false); }
 
     public void jukeboxSkipToNextSong(boolean forceskip){
+        //Loop the current playing song if that feature is enabled and is not being forcibly skipped (i.e. the "skip" button on the UI).
         if (!forceskip && isLoopingCurrentSong() && currentlyPlayingSong != null && currentlyPlayingSong.getLoadedTrack() != null){
             currentlyPlayingSong = new AudioKey(currentlyPlayingSong.getLoadedTrack().makeClone());
             playCurrentSong();
@@ -161,7 +163,7 @@ public class AudioMaster{
     }
     
     private void playCurrentSong(){
-        jukeboxPlayer.setPaused(true);
+        setJukeboxTruePause(true);
         if (currentlyPlayingSong != null){
             setActiveStream(jukeboxPlayer);
             if (currentlyPlayingSong.getLoadedTrack() != null)
@@ -172,7 +174,7 @@ public class AudioMaster{
                     jukeboxSkipToNextSong();
                 }));
         }
-        jukeboxPlayer.setPaused(false);
+        setJukeboxTruePause(false);
     }
 
     public void clearJukeboxQueue(){
@@ -248,7 +250,21 @@ public class AudioMaster{
 
     public void stopAllAudio() {
         soundboardPlayer.setPaused(true);
-        jukeboxPlayer.setPaused(true);
+        setJukeboxTruePause(true);
+    }
+
+    /**
+     * Performs a more permanent form of pausing of the jukebox.
+     * When the soundboard plays a sound, it pauses the jukebox player while the sound is playing, but that is not truly "pausing it".
+     * When the soundboard finishes playing a sound, it returns the jukebox to its previous status, which must be stored as a field.
+     *
+     * This method both assigns the jukebox playing state and it's previous state to return to after playing a sound through the soundboard.
+     *
+     * @param paused Whether or not the jukebox is truly "paused"
+     */
+    public void setJukeboxTruePause(boolean paused){
+        jukeboxPlayer.setPaused(paused);
+        jukeboxPaused = paused;
     }
 
     public void setMasterVolume(double masterVolume) {
@@ -309,13 +325,11 @@ public class AudioMaster{
         }
 
         @Override public void onTrackStop() {
-            setActiveStream(jukeboxPlayer);
-            jukeboxPlayer.setPaused(false);
+            resumeJukebox();
         }
 
         @Override public void onTrackError() {
-            setActiveStream(jukeboxPlayer);
-            jukeboxPlayer.setPaused(false);
+            resumeJukebox();
         }
     }
 
