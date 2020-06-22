@@ -3,9 +3,7 @@ package Audio;
 import Utils.Transcriber;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 public class AudioKeyPlaylist {
 
@@ -57,6 +55,14 @@ public class AudioKeyPlaylist {
             return null;
         Random random = new Random();
         return audioKeys.get(random.nextInt(audioKeys.size()));
+    }
+
+    void shuffle(){
+        AudioKey[] shuffledArray = new AudioKey[audioKeys.size()];
+        Random random = new Random();
+        for (int i = 0; i < shuffledArray.length; i++)
+            shuffledArray[i] = audioKeys.remove(random.nextInt(audioKeys.size()));
+        audioKeys.addAll(Arrays.asList(shuffledArray));
     }
 
     public String getName() {

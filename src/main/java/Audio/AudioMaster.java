@@ -39,7 +39,8 @@ public class AudioMaster{
     private AudioKey currentlyPlayingSong;
     private JukeboxUIWrapper jukeboxUIWrapper;
     private boolean loopingCurrentSong = false;
-    private boolean jukeboxPaused = false; //THe "true" state of teh jukebox controlled via UI, commands, etc.
+    private boolean jukeboxPaused = false; //The "true" state of teh jukebox controlled via UI, commands, etc.
+    private SongDurationTracker songDurationTracker;
 
     //Volumes are 0-1, scaled 0-1000 internally
     private double masterVolume;
@@ -182,6 +183,11 @@ public class AudioMaster{
         jukeboxUIWrapper.refreshQueueList(this);
     }
 
+    public void shuffleJukeboxQueue(){
+        jukeboxQueueList.shuffle();
+        jukeboxUIWrapper.refreshQueueList(this);
+    }
+
     public AudioPlayer getSoundboardPlayer() {
         return soundboardPlayer;
     }
@@ -248,6 +254,13 @@ public class AudioMaster{
         }
     }
 
+    public void emptyJukeboxPlaylist(JukeboxUIWrapper uiWrapper){
+        jukeboxDefaultList = null;
+        uiWrapper.refreshDefaultList(this);
+        uiWrapper.updateDefaultPlaylistLabel("");
+        Transcriber.print("Playlist set to an empty one.");
+    }
+
     public void stopAllAudio() {
         soundboardPlayer.setPaused(true);
         setJukeboxTruePause(true);
@@ -285,6 +298,14 @@ public class AudioMaster{
     private void updatePlayerVolumes(){
         soundboardPlayer.setVolume((int)(VOLUME_MAX * masterVolume * soundboardVolume));
         jukeboxPlayer.setVolume((int)(VOLUME_MAX * masterVolume * jukeboxVolume));
+    }
+
+    public SongDurationTracker getSongDurationTracker() {
+        return songDurationTracker;
+    }
+
+    public void setSongDurationTracker(SongDurationTracker songDurationTracker) {
+        this.songDurationTracker = songDurationTracker;
     }
 
     public GenericTrackScheduler getGenericTrackScheduler() {

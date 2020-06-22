@@ -3,6 +3,7 @@ package UI;
 import Audio.AudioKey;
 import Audio.AudioKeyPlaylist;
 import Audio.AudioMaster;
+import Audio.SongDurationTracker;
 import Utils.ButtonMaker;
 import Utils.Transcriber;
 
@@ -57,6 +58,10 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         JButton newButton = ButtonMaker.createIconButton("icons/new.png", "New", 8);
         newButton.addActionListener(e -> audioMaster.createNewJukeboxPlaylist(this));
         mainPanel.add(newButton);
+
+        JButton emptyButton = ButtonMaker.createIconButton("icons/empty.png", "Empty Playlist", 8);
+        emptyButton.addActionListener(e -> audioMaster.emptyJukeboxPlaylist(this));
+        mainPanel.add(emptyButton);
 
         mainPanel.add(Box.createHorizontalStrut(5));
 
@@ -118,15 +123,25 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         JPanel optionsPanel = new JPanel();
         optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.LINE_AXIS));
 
+        optionsPanel.add(Box.createHorizontalStrut(10));
+
+        JLabel songTimer = new JLabel("");
+        audioMaster.setSongDurationTracker(new SongDurationTracker(songTimer));
+        optionsPanel.add(songTimer);
+
         JCheckBox loopingBox = new JCheckBox("Loop", audioMaster.isLoopingCurrentSong());
         loopingBox.addChangeListener(e -> audioMaster.setLoopingCurrentSong(loopingBox.isSelected()));
         optionsPanel.add(loopingBox);
 
-        JButton requestButton = new JButton("Make Request");
+        JButton requestButton = ButtonMaker.createIconButton("icons/add.png", "Make Request", 11);
         requestButton.addActionListener(e -> new MakeRequestFrame(audioMaster));
         optionsPanel.add(requestButton);
 
-        JButton clearButton = new JButton("Clear Queue");
+        JButton shuffleButton = ButtonMaker.createIconButton("icons/shuffle.png", "Shuffle", 10);
+        shuffleButton.addActionListener(e -> audioMaster.shuffleJukeboxQueue());
+        optionsPanel.add(shuffleButton);
+
+        JButton clearButton = ButtonMaker.createIconButton("icons/empty.png", "Clear", 3);
         clearButton.addActionListener(e -> audioMaster.clearJukeboxQueue());
         optionsPanel.add(clearButton);
 
@@ -176,14 +191,17 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
 
         private void pullAudioKeyList(AudioKeyPlaylist playlist){
             removeAll();
-            for (AudioKey audioKey : playlist.getAudioKeys()){
-                add(new TrackListing(audioKey, audioMaster, this, isQueueList));
-            }
-            if (isQueueList && playlist.isEmpty()) {
-                JLabel endOfQueueLabel = new JLabel("Queue Empty - Playing random songs from Default List (above)");
-                Font italic = new Font(endOfQueueLabel.getFont().getName(), Font.ITALIC, endOfQueueLabel.getFont().getSize());
-                endOfQueueLabel.setFont(italic);
-                add(endOfQueueLabel);
+            if (playlist != null) {
+                for (AudioKey audioKey : playlist.getAudioKeys()) {
+                    add(new TrackListing(audioKey, audioMaster, this, isQueueList));
+                }
+                if (isQueueList && playlist.isEmpty()) {
+                    JLabel endOfQueueLabel = new JLabel("Queue Empty - Playing random songs from Default List (above)");
+                    Font italic = new Font(endOfQueueLabel.getFont().getName(), Font.ITALIC,
+                        endOfQueueLabel.getFont().getSize());
+                    endOfQueueLabel.setFont(italic);
+                    add(endOfQueueLabel);
+                }
             }
             validate();
             repaint();

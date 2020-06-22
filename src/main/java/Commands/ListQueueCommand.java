@@ -29,7 +29,7 @@ public class ListQueueCommand implements Command {
             message.append('[').append(i).append("] ").append(audioMaster.getJukeboxQueueList().getAudioKeys().get(i).getTrackName()).append('\n');
         }
         if (audioMaster.getJukeboxQueueList().getAudioKeys().size() == 0)
-            message.append("No songs are currently queued; playing from default playlist.");
+            message.append("No songs are currently queued; playing random songs from default playlist.");
         message.append("\n```");
         (event.getChannel().sendMessage(message.toString())).queue();
     }

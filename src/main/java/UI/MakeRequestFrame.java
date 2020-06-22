@@ -27,7 +27,7 @@ public class MakeRequestFrame extends JFrame {
 
         urlPanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
         urlPanel.add(new JLabel("URL: "), BorderLayout.LINE_START);
-        JTextField urlField = new JTextField("Enter URL Here...");
+        JTextField urlField = new JTextField("");
         urlPanel.add(urlField, BorderLayout.CENTER);
         urlPanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
 
