@@ -6,7 +6,9 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 
 import javax.swing.*;
-import java.awt.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class ConnectionPanel extends JPanel {
     
@@ -48,8 +50,18 @@ public class ConnectionPanel extends JPanel {
 
     private void generateVoiceChannelOptions(JComboBox<VoiceChannelOption> selectionBox, JDA jda){
         selectionBox.removeAllItems();
-        for (VoiceChannel channel : jda.getVoiceChannels())
-            selectionBox.addItem(new VoiceChannelOption(channel, String.format("%1$s : %2$s", channel.getGuild().getName(), channel.getName())));
+        ArrayList<VoiceChannel> voiceChannels = new ArrayList<>(jda.getVoiceChannels());
+        voiceChannels.sort(new Comparator<VoiceChannel>() {
+            @Override public int compare(VoiceChannel o1, VoiceChannel o2) {
+                return representVoiceChannel(o1).compareTo(representVoiceChannel(o2));
+            }
+        });
+        for (VoiceChannel channel : voiceChannels)
+            selectionBox.addItem(new VoiceChannelOption(channel, representVoiceChannel(channel)));
+    }
+
+    private String representVoiceChannel(VoiceChannel channel) {
+        return String.format("%1$s : %2$s", channel.getGuild().getName(), channel.getName());
     }
 
     private class VoiceChannelOption{
