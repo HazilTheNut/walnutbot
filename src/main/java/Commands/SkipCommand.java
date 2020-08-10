@@ -16,7 +16,7 @@ public class SkipCommand implements Command {
     }
 
     @Override public String getHelpDescription() {
-        return "skips the current song in the Jukebox";
+        return "Skips the current song in the Jukebox";
     }
 
     @Override public String getSpecificHelpDescription() {
@@ -24,11 +24,6 @@ public class SkipCommand implements Command {
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
-        //Check for Permissions
-        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowJukebox", "true"))) {
-            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of the Jukebox.")).queue();
-            return;
-        }
         audioMaster.jukeboxSkipToNextSong();
     }
 }

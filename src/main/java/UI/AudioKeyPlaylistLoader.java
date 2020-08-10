@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 public class AudioKeyPlaylistLoader {
 
-    static ArrayList<AudioKey> grabKeysFromPlaylist(String uri){
+    public static ArrayList<AudioKey> grabKeysFromPlaylist(String uri){
         File file = new File(uri);
         AudioKeyPlaylist playlist = new AudioKeyPlaylist(file);
         if (playlist.isURLValid())

@@ -1,5 +1,6 @@
 package Audio;
 
+import Utils.FileIO;
 import Utils.Transcriber;
 
 import java.io.*;
@@ -22,24 +23,29 @@ public class AudioKeyPlaylist {
     public AudioKeyPlaylist(File file){
         this(file.getName());
         audioKeys = new ArrayList<>();
-        url = file.getAbsolutePath();
+        url = file.getPath();
         isURLValid = false;
         if (file.exists() && file.isFile()){
-            try {
-                name = file.getName();
-                FileInputStream outputStream = new FileInputStream(file);
-                Scanner sc = new Scanner(outputStream);
-                while(sc.hasNext()){
-                    AudioKey key = new AudioKey(sc.nextLine());
-                    if (key.isValid())
-                        audioKeys.add(key);
+            if (FileIO.getFileExtension(url).equals("playlist")) {
+                try {
+                    name = file.getName();
+                    FileInputStream outputStream = new FileInputStream(file);
+                    Scanner sc = new Scanner(outputStream);
+                    while (sc.hasNext()) {
+                        AudioKey key = new AudioKey(sc.nextLine());
+                        if (key.isValid())
+                            audioKeys.add(key);
+                    }
+                    isURLValid = true;
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
                 }
-                isURLValid = true;
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-        } else
-            Transcriber.print("File \'%1$s\' was not found!", file.getAbsolutePath());
+            } else
+                audioKeys.add(new AudioKey(FileIO.getFileName(url), url));
+        } else {
+            Transcriber.print("File \'%1$s\' was not found!", url);
+            audioKeys.add(new AudioKey("Requested", url));
+        }
     }
 
     public ArrayList<AudioKey> getAudioKeys() {

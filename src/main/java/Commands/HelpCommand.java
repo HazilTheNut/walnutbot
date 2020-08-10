@@ -23,7 +23,7 @@ public class HelpCommand implements Command {
     }
 
     @Override public String getHelpDescription() {
-        return "Displays this message";
+        return "Displays the help message";
     }
 
     @Override public String getSpecificHelpDescription() {

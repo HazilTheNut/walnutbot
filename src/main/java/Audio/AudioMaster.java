@@ -1,5 +1,6 @@
 package Audio;
 
+import Commands.CommandInterpreter;
 import UI.JukeboxUIWrapper;
 import UI.PlayerTrackListener;
 import Utils.FileIO;
@@ -23,6 +24,8 @@ import java.util.ArrayList;
 public class AudioMaster{
 
     private AudioPlayerManager playerManager;
+
+    private CommandInterpreter commandInterpreter;
 
     //Soundboard
     private AudioPlayer soundboardPlayer;
@@ -338,6 +341,14 @@ public class AudioMaster{
 
     public void setJukeboxUIWrapper(JukeboxUIWrapper jukeboxUIWrapper) {
         this.jukeboxUIWrapper = jukeboxUIWrapper;
+    }
+
+    public CommandInterpreter getCommandInterpreter() {
+        return commandInterpreter;
+    }
+
+    public void setCommandInterpreter(CommandInterpreter commandInterpreter) {
+        this.commandInterpreter = commandInterpreter;
     }
 
     private class SoundboardPlayerListener implements PlayerTrackListener{

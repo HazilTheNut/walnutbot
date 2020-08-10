@@ -20,6 +20,7 @@ public class CommandInterpreter extends ListenerAdapter {
         commandMap = new HashMap<>();
         this.jda = jda;
         this.audioMaster = audioMaster;
+        audioMaster.setCommandInterpreter(this);
         //Add commands to map
         addCommand(new HelpCommand(this));
         addCommand(new SoundboardCommand());
@@ -45,6 +46,10 @@ public class CommandInterpreter extends ListenerAdapter {
         return commandMap;
     }
 
+    public String getCommandAllowanceSettingName(String command){
+        return String.format("allowCommand_%1$s", command);
+    }
+
     @Override public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         //Transcriber.print("Raw message: \"%1$s\"", event.getMessage().getContentRaw());
         //Input sanitation
@@ -63,6 +68,10 @@ public class CommandInterpreter extends ListenerAdapter {
             Transcriber.print("command received: \'%1$s\' (from %2$s)", messageContent, event.getAuthor().getAsTag());
             String[] parts = commandStr.split(" ");
             if (commandMap.containsKey(parts[0])){ //If command is valid
+                if (!Boolean.valueOf(SettingsLoader.getSettingsValue(getCommandAllowanceSettingName(parts[0]), "true"))) {
+                    (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of this command.")).queue();
+                    return;
+                }
                 String[] args = new String[parts.length-1]; //Command arguments are the same as the parts array aside from the first element
                 System.arraycopy(parts, 1, args, 0, parts.length - 1);
                 commandMap.get(parts[0]).onRunCommand(jda, audioMaster, event, args);

@@ -1,8 +1,10 @@
 package UI;
 
 import Audio.AudioMaster;
+import Commands.CommandInterpreter;
 import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
+import sun.tools.jstat.Alignment;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -23,7 +25,7 @@ public class SettingsPanel extends JPanel {
         if (jda != null) {
             add(new ConnectionPanel(jda, audioMaster), BorderLayout.PAGE_START);
             add(createMainPanel(audioMaster), BorderLayout.CENTER);
-            add(createPermissionsPanel(), BorderLayout.PAGE_END);
+            add(createPermissionsPanel(audioMaster), BorderLayout.PAGE_END);
         } else
             add(new JLabel(
                     "WARNING! Looks like the bot failed to load! (Check output.txt for more info)"),
@@ -73,7 +75,7 @@ public class SettingsPanel extends JPanel {
         return panel;
     }
 
-    private JPanel createPermissionsPanel(){
+    private JPanel createPermissionsPanel(AudioMaster audioMaster){
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         panel.setBorder(BorderFactory.createTitledBorder("Permissions"));
@@ -86,21 +88,24 @@ public class SettingsPanel extends JPanel {
         allowLocalAccessBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")));
         panel.add(allowLocalAccessBox);
 
-        JCheckBox allowSoundboardBox = new JCheckBox("Allow Discord users to play sounds on the Soundboard");
-        allowSoundboardBox.addChangeListener(e -> {
-            SettingsLoader.modifySettingsValue("discordAllowSoundboard", String.valueOf(allowSoundboardBox.isSelected()));
-            SettingsLoader.writeSettingsFile();
-        });
-        allowSoundboardBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowSoundboard", "true")));
-        panel.add(allowSoundboardBox);
+        panel.add(new JLabel("Allowed Commands through Discord:"));
 
-        JCheckBox allowJukeboxBox = new JCheckBox("Allow Discord users to request/skip songs on the Jukebox");
-        allowJukeboxBox.addChangeListener(e -> {
-            SettingsLoader.modifySettingsValue("discordAllowJukebox", String.valueOf(allowJukeboxBox.isSelected()));
-            SettingsLoader.writeSettingsFile();
-        });
-        allowJukeboxBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowJukebox", "true")));
-        panel.add(allowJukeboxBox);
+        JPanel commandsAllowPanel = new JPanel();
+        commandsAllowPanel.setLayout(new BoxLayout(commandsAllowPanel, BoxLayout.PAGE_AXIS));
+        commandsAllowPanel.setAlignmentX(0);
+
+        CommandInterpreter commandInterpreter = audioMaster.getCommandInterpreter();
+        for (String key : commandInterpreter.getCommandMap().keySet()){
+            JCheckBox commandAllowBox = new JCheckBox(String.format("%1$s : %2$s", key, commandInterpreter.getCommandMap().get(key).getHelpDescription()));
+            commandAllowBox.addChangeListener(e -> {
+                SettingsLoader.modifySettingsValue(commandInterpreter.getCommandAllowanceSettingName(key), String.valueOf(commandAllowBox.isSelected()));
+                SettingsLoader.writeSettingsFile();
+            });
+            commandAllowBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue(commandInterpreter.getCommandAllowanceSettingName(key), "true")));
+            commandsAllowPanel.add(commandAllowBox);
+        }
+
+        panel.add(commandsAllowPanel);
 
         return panel;
     }

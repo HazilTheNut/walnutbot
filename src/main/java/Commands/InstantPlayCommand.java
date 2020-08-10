@@ -24,11 +24,6 @@ public class InstantPlayCommand implements Command {
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
-        //Permissions Check
-        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowSoundboard", "true"))) {
-            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of the Soundboard.")).queue();
-            return;
-        }
         if (args.length > 0) {
             //Permissions Check
             if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")) && args[0].indexOf("http") != 0){

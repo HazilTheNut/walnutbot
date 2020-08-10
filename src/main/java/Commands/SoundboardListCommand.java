@@ -18,19 +18,14 @@ public class SoundboardListCommand implements Command {
     }
 
     @Override public String getHelpDescription() {
-        return "Lists the available sounds in the soundboard";
+        return "Lists the available sounds in the Soundboard";
     }
 
     @Override public String getSpecificHelpDescription() {
-        return "Lists the available sounds in the soundboard.";
+        return "Lists the available sounds in the Soundboard.";
     }
 
     @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
-        //Permissions Check
-        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowSoundboard", "true"))) {
-            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of the Soundboard.")).queue();
-            return;
-        }
         StringBuilder builder = new StringBuilder("**Available Sounds:**\n```\n");
         AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
         //Get longest sound name

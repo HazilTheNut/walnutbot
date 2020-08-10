@@ -12,8 +12,8 @@ public class SongDurationTracker {
     private long startTimestampMs; //in ms
 
     private long songLength; //in seconds
-    private boolean isSongLoaded = false;
-    private boolean isSongPlaying = false;
+    private int songsLoaded = 0; //Should be either 0 or 1, but cannot be a boolean as it is less async-friendly
+    private int songsPlaying = 0; //Same for this too
 
     private JLabel label;
 
@@ -45,13 +45,13 @@ public class SongDurationTracker {
     }
 
     private void updateLabel(){
-        if (isSongLoaded) {
+        if (songsLoaded > 0) {
             long time = additionalRuntimeMs / 1000; //in seconds
-            if (isSongPlaying)
+            if (songsPlaying > 0)
                 time += (System.currentTimeMillis() - startTimestampMs) / 1000;
             label.setText(String.format("%1$02d:%2$02d / %3$02d:%4$02d", time / 60, time % 60, songLength / 60, songLength % 60));
         } else
-            label.setText("00:00 / 00:00");
+            label.setText("--:-- / --:--");
         label.repaint();
     }
 
@@ -64,18 +64,18 @@ public class SongDurationTracker {
         songLength = startingTrack.getDuration() / 1000;
         startTimestampMs = System.currentTimeMillis();
         additionalRuntimeMs = 0;
-        isSongLoaded = true;
-        isSongPlaying = true;
+        songsLoaded++;
+        songsPlaying++;
     }
 
     /**
      * Run this whenever a song resumes playing (after being paused, but not when it first starts playing).
      */
     public void onSongResume(){
-        if (isSongLoaded)
+        if (songsLoaded > 0)
             startTimestampMs = System.currentTimeMillis();
-        isSongLoaded = true;
-        isSongPlaying = true;
+        songsLoaded++;
+        songsPlaying++;
     }
 
     /**
@@ -83,14 +83,14 @@ public class SongDurationTracker {
      */
     public void onSongPause(){
         additionalRuntimeMs += System.currentTimeMillis() - startTimestampMs;
-        isSongPlaying = false;
+        songsPlaying--;
     }
 
     /**
      * RUn this whenever a song reaches its end.
      */
     public void onSongEnd(){
-        isSongLoaded = false;
-        isSongPlaying = false;
+        songsLoaded--;
+        songsPlaying--;
     }
 }

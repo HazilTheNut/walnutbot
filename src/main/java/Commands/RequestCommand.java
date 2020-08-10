@@ -2,6 +2,7 @@ package Commands;
 
 import Audio.AudioKey;
 import Audio.AudioMaster;
+import UI.AudioKeyPlaylistLoader;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -33,10 +34,6 @@ public class RequestCommand implements Command {
         //Input Sanitation
         if (args.length <= 0) return;
         //Check for Permissions
-        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowJukebox", "true"))) {
-            (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked usage of the Jukebox.")).queue();
-            return;
-        }
         if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")) && args[0].indexOf("http") != 0){
             (event.getChannel().sendMessage("**WARNING:** This bot's admin has blocked access to local files.")).queue();
             return;
