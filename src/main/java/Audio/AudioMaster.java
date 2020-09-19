@@ -21,6 +21,8 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioMaster{
 
@@ -38,6 +40,8 @@ public class AudioMaster{
     //Jukebox
     private AudioPlayer jukeboxPlayer;
     private JukeboxTrackScheduler jukeboxTrackScheduler;
+    private ArrayList<JukeboxSongRequest> jukeboxSongsToRequest;
+    private AtomicBoolean jukeboxSongIsProcessing;
     private AudioKeyPlaylist jukeboxQueueList; //The list of requested songs to exhaust through first
     private AudioKeyPlaylist jukeboxDefaultList; //The list of songs to randomly select when the request queue is exhausted
     private AudioKey currentlyPlayingSong;
@@ -76,6 +80,24 @@ public class AudioMaster{
         jukeboxPlayer.addListener(jukeboxTrackScheduler);
 
         jukeboxQueueList = new AudioKeyPlaylist("queue");
+
+        jukeboxSongsToRequest = new ArrayList<>();
+        jukeboxSongIsProcessing = new AtomicBoolean(false);
+
+        //Set tp thread to process jukebox songs
+        Thread jukeboxRequestThread = new Thread(() -> {
+            while (true) {
+                processJukeboxSongToRequest();
+                do {
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } while (jukeboxSongIsProcessing.get());
+            }
+        });
+        jukeboxRequestThread.start();
     }
 
     private void setActiveStream(AudioPlayer player){
@@ -121,25 +143,37 @@ public class AudioMaster{
     
      */
 
-    public void queueJukeboxSong(String uri, PostSongRequestAction ifSuccess, PostSongRequestAction ifError){
+    public synchronized void queueJukeboxSong(String uri, PostSongRequestAction ifSuccess, PostSongRequestAction ifError){
         ArrayList<AudioKey> keys = AudioKeyPlaylistLoader.grabKeysFromPlaylist(uri);
         for (AudioKey key : keys)
             queueJukeboxSong(key, ifSuccess, ifError);
 //        queueJukeboxSong(new AudioKey("Requested", uri), ifSuccess, ifError);
     }
 
-    public void queueJukeboxSong(AudioKey audioKey, PostSongRequestAction ifSuccess, PostSongRequestAction ifError){
-        //Set up audio stream
-        if (getConnectedChannel() == null)
-            Transcriber.print("Warning! This bot is currently not connected to any channel!");
-        else
-            setActiveStream(jukeboxPlayer);
-        //Fetch song and queue it up
-        if (audioKey.getLoadedTrack() == null)
-            playerManager.loadItem(audioKey.getUrl(), new JukeboxQueueResultHandler(jukeboxPlayer, ifSuccess, ifError));
-        else {
-            addTrackToJukeboxQueue(audioKey.getLoadedTrack());
-            ifSuccess.doAction();
+    public synchronized void queueJukeboxSong(AudioKey audioKey, PostSongRequestAction ifSuccess, PostSongRequestAction ifError){
+        jukeboxSongsToRequest.add(new JukeboxSongRequest(audioKey, ifSuccess, ifError, RequestType.ADD_TO_QUEUE));
+    }
+
+    private void processJukeboxSongToRequest(){
+        if (jukeboxSongsToRequest.size() > 0){
+            jukeboxSongIsProcessing.set(true);
+            JukeboxSongRequest request = jukeboxSongsToRequest.remove(0);
+            if (request.requestType == RequestType.ADD_TO_QUEUE) { //If this request is to add it to the queue
+                //Set up audio stream
+                if (getConnectedChannel() == null)
+                    Transcriber.print("Warning! This bot is currently not connected to any channel!");
+                else
+                    setActiveStream(jukeboxPlayer);
+                //Fetch song and queue it up
+                if (request.getAudioKey().getLoadedTrack() == null)
+                    playerManager.loadItem(request.getAudioKey().getUrl(),
+                        new JukeboxQueueResultHandler(jukeboxPlayer, request.getIfSuccess(), request.getIfError()));
+                else {
+                    addTrackToJukeboxQueue(request.getAudioKey().getLoadedTrack());
+                    request.getIfSuccess().doAction();
+                    jukeboxSongIsProcessing.set(false);
+                }
+            }
         }
     }
 
@@ -235,6 +269,7 @@ public class AudioMaster{
         if (result == JFileChooser.APPROVE_OPTION){
             File file = new File(enforceFileExtension(fileChooser.getSelectedFile().getAbsolutePath()));
             jukeboxDefaultList = new AudioKeyPlaylist(file);
+            jukeboxDefaultList.getAudioKeys().clear(); //The Playlist will see that the file DNE and insert an AudioKey in there. This removes that to create a clean, totally-new playlist.
             uiWrapper.refreshDefaultList(this);
             uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
             Transcriber.print("Current playlist: %1$s", jukeboxDefaultList.toString());
@@ -415,12 +450,38 @@ public class AudioMaster{
         @Override public void trackLoaded(AudioTrack track) {
             addTrackToJukeboxQueue(track);
             super.trackLoaded(track);
+            jukeboxSongIsProcessing.set(false);
         }
 
         @Override public void playlistLoaded(AudioPlaylist playlist) {
             for (AudioTrack track : playlist.getTracks())
                 addTrackToJukeboxQueue(track);
             super.playlistLoaded(playlist);
+            jukeboxSongIsProcessing.set(false);
+        }
+
+        @Override public void noMatches() {
+            super.noMatches();
+            jukeboxSongIsProcessing.set(false);
+        }
+
+        @Override public void loadFailed(FriendlyException throwable) {
+            super.loadFailed(throwable);
+            jukeboxSongIsProcessing.set(false);
+        }
+    }
+
+    private class JukeboxDefaultResultHandler extends JukeboxLoadResultHandler {
+
+        JukeboxDefaultResultHandler(AudioPlayer audioPlayer, PostSongRequestAction ifSuccess,
+            PostSongRequestAction ifError) {
+            super(audioPlayer, ifSuccess, ifError);
+        }
+
+        @Override public void trackLoaded(AudioTrack track) {
+            jukeboxDefaultList.addAudioKey(new AudioKey(track));
+            super.trackLoaded(track);
+            jukeboxSongIsProcessing.set(false);
         }
     }
 
@@ -437,6 +498,43 @@ public class AudioMaster{
             if (!audioPlayer.startTrack(track, false))
                 Transcriber.print("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
             super.trackLoaded(track);
+        }
+    }
+
+    public enum RequestType {
+        ADD_TO_DEFAULT, //Behavior not supported. May need to add later if synchronous requests are needed to ensure songs load properly.
+        ADD_TO_QUEUE
+    }
+
+    private class JukeboxSongRequest {
+
+        private AudioKey audioKey;
+        private PostSongRequestAction ifSuccess;
+        private PostSongRequestAction ifError;
+        private RequestType requestType;
+
+        public JukeboxSongRequest(AudioKey audioKey, PostSongRequestAction ifSuccess,
+            PostSongRequestAction ifError, RequestType requestType) {
+            this.audioKey = audioKey;
+            this.ifSuccess = ifSuccess;
+            this.ifError = ifError;
+            this.requestType = requestType;
+        }
+
+        public AudioKey getAudioKey() {
+            return audioKey;
+        }
+
+        public PostSongRequestAction getIfSuccess() {
+            return ifSuccess;
+        }
+
+        public PostSongRequestAction getIfError() {
+            return ifError;
+        }
+
+        public RequestType getRequestType() {
+            return requestType;
         }
     }
 }
