@@ -54,8 +54,7 @@ public class AddPlaylistFrame extends JFrame {
         ArrayList<AudioKey> loadedFromFile = AudioKeyPlaylistLoader.grabKeysFromPlaylist(url);
         if (loadedFromFile.size() > 0){
             for (AudioKey audioKey : loadedFromFile){
-                audioMaster.getJukeboxDefaultList().addAudioKey(audioKey);
-                playlistUIWrapper.addAudioKey(audioKey);
+                audioMaster.getPlayerManager().loadItem(audioKey.getUrl(), new PlaylistScraper(audioMaster, playlistUIWrapper));
             }
             audioMaster.saveJukeboxDefault();
         } else

@@ -1,6 +1,7 @@
 package Audio;
 
 import Commands.CommandInterpreter;
+import UI.AudioKeyPlaylistLoader;
 import UI.JukeboxUIWrapper;
 import UI.PlayerTrackListener;
 import Utils.FileIO;
@@ -119,6 +120,13 @@ public class AudioMaster{
     For case C, do queueJukeboxSong()
     
      */
+
+    public void queueJukeboxSong(String uri, PostSongRequestAction ifSuccess, PostSongRequestAction ifError){
+        ArrayList<AudioKey> keys = AudioKeyPlaylistLoader.grabKeysFromPlaylist(uri);
+        for (AudioKey key : keys)
+            queueJukeboxSong(key, ifSuccess, ifError);
+//        queueJukeboxSong(new AudioKey("Requested", uri), ifSuccess, ifError);
+    }
 
     public void queueJukeboxSong(AudioKey audioKey, PostSongRequestAction ifSuccess, PostSongRequestAction ifError){
         //Set up audio stream

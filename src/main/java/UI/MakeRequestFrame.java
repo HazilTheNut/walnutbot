@@ -66,11 +66,6 @@ public class MakeRequestFrame extends JFrame {
     }
 
     private void makeRequest(AudioMaster audioMaster, String url){
-        ArrayList<AudioKey> loadedFromFile = AudioKeyPlaylistLoader.grabKeysFromPlaylist(url);
-        if (loadedFromFile.size() > 0){
-            for (AudioKey audioKey : loadedFromFile)
-                audioMaster.queueJukeboxSong(audioKey, () -> {}, () -> Transcriber.print("WARNING! Invalid Audio Key: %1$s", audioKey));
-        }
-        else audioMaster.queueJukeboxSong(new AudioKey("Requested", url), () -> {}, () -> Transcriber.print("WARNING! Invalid URL: %1$s", url));
+        audioMaster.queueJukeboxSong(url, () -> {}, () -> {});
     }
 }

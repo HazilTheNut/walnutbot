@@ -43,7 +43,7 @@ public class AudioKeyPlaylist {
             } else
                 audioKeys.add(new AudioKey(FileIO.getFileName(url), url));
         } else {
-            Transcriber.print("File \'%1$s\' was not found!", url);
+            Transcriber.print("\'%1$s\' is not a file.", url);
             audioKeys.add(new AudioKey("Requested", url));
         }
     }

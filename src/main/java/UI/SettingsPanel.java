@@ -4,13 +4,10 @@ import Audio.AudioMaster;
 import Commands.CommandInterpreter;
 import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
-import sun.tools.jstat.Alignment;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.text.NumberFormat;
-import java.util.Set;
 
 public class SettingsPanel extends JPanel {
 
