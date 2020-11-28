@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'com.walnutbot'
-version '1.0-pre7'
+version '1.0-pre8'
 
 mainClassName = "Main"
 
@@ -19,5 +19,5 @@ repositories {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile 'net.dv8tion:JDA:4.1.1_113'
-    implementation 'com.sedmelluq:lavaplayer:1.3.50'
+    implementation 'com.sedmelluq:lavaplayer:1.3.61'
 }

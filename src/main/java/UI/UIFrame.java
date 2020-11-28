@@ -26,7 +26,7 @@ public class UIFrame extends JFrame implements ComponentListener {
         tabbedPane.addTab("Settings", new SettingsPanel(jda, master));
         if (jda != null) {
             tabbedPane.addTab("Soundboard", new SoundboardPanel(master));
-            tabbedPane.addTab("Jukebox", new JukeboxPanel(master));
+            tabbedPane.addTab("Jukebox", new JukeboxPanel(master, this));
         }
         tabbedPane.addTab("Log", new ConsolePanel());
 

@@ -8,8 +8,9 @@ import java.util.TimerTask;
 
 public class SongDurationTracker {
 
-    private long additionalRuntimeMs; //in ms
-    private long startTimestampMs; //in ms
+    private long additionalRuntimeMs; //the amount of time the song has been playing that is not accounted for
+                                        // with tracking the starting timestamp, which accrues whenever the song is paused, in ms
+    private long startTimestampMs; //the System.currentTimeMillis() timestamp at which the song started or resumed, in ms
 
     private long songLength; //in seconds
     private int songsLoaded = 0; //Should be either 0 or 1, but cannot be a boolean as it is less async-friendly
@@ -74,7 +75,6 @@ public class SongDurationTracker {
     public void onSongResume(){
         if (songsLoaded > 0)
             startTimestampMs = System.currentTimeMillis();
-        songsLoaded++;
         songsPlaying++;
     }
 
@@ -87,10 +87,15 @@ public class SongDurationTracker {
     }
 
     /**
-     * RUn this whenever a song reaches its end.
+     * Run this whenever a song reaches its end.
      */
     public void onSongEnd(){
         songsLoaded--;
         songsPlaying--;
+    }
+
+    public void reset(){
+        songsLoaded = 0;
+        songsPlaying = 0;
     }
 }

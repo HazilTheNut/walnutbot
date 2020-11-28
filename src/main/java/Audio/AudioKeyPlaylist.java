@@ -2,6 +2,7 @@ package Audio;
 
 import Utils.FileIO;
 import Utils.Transcriber;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import java.io.*;
 import java.util.*;
@@ -11,6 +12,7 @@ public class AudioKeyPlaylist {
     private String name;
     private String url;
     private ArrayList<AudioKey> audioKeys;
+    private CircularFifoQueue<AudioKey> previousRandomDrawings; //For pesudo-random selection of songs
     private boolean isURLValid;
 
     public AudioKeyPlaylist(String name){
@@ -20,7 +22,16 @@ public class AudioKeyPlaylist {
         url = "NULL";
     }
 
-    public AudioKeyPlaylist(File file){
+    public AudioKeyPlaylist(File file) { this(file, true); }
+
+    /**
+     * Instantiates an AudioKeyPlaylist from a File with a .playlist format.
+     *
+     * @param file The File to open and create an AudioKeyPlaylist from
+     * @param loopback If the file doesn't exist or is not formatted correctly, setting this to true will instantiate
+     *                 this AudioKeyPlaylist with a single element in its list, which is an AudioKey whose url is the location of the file provided.
+     */
+    public AudioKeyPlaylist(File file, boolean loopback){
         this(file.getName());
         audioKeys = new ArrayList<>();
         url = file.getPath();
@@ -40,10 +51,10 @@ public class AudioKeyPlaylist {
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
-            } else
+            } else if (loopback)
                 audioKeys.add(new AudioKey(FileIO.getFileName(url), url));
-        } else {
-            Transcriber.print("\'%1$s\' is not a file.", url);
+        } else if (loopback){
+            //Transcriber.print("\'%1$s\' is not a file.", url);
             audioKeys.add(new AudioKey("Requested", url));
         }
     }
@@ -52,15 +63,34 @@ public class AudioKeyPlaylist {
         return audioKeys;
     }
 
+    public void clearPlaylist(){
+        audioKeys.clear();
+        if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
+    }
+
     public boolean isEmpty(){
         return audioKeys.isEmpty();
+    }
+
+    private void instantiatePreviousDrawingsQueue(){
+        previousRandomDrawings = new CircularFifoQueue<>(audioKeys.size() >> 1);
     }
 
     public AudioKey getRandomAudioKey(){
         if (isEmpty())
             return null;
         Random random = new Random();
-        return audioKeys.get(random.nextInt(audioKeys.size()));
+        //Create a new queue if the
+        if (previousRandomDrawings == null) instantiatePreviousDrawingsQueue();
+        //Pick a song that has not been played recently
+        AudioKey selected;
+        short timeout = 32; //Give the random number generator 32 tries to find a new song - should be enough
+        do {
+            selected = audioKeys.get(random.nextInt(audioKeys.size()));
+            timeout--;
+        } while (timeout > 0 && previousRandomDrawings.contains(selected)); //Since the queue's size is never larger than half the Default List, there will always be a new song to pick and a decent likelihood of picking it.
+        previousRandomDrawings.add(selected);
+        return selected;
     }
 
     void shuffle(){
@@ -83,16 +113,19 @@ public class AudioKeyPlaylist {
 
     public void addAudioKey(AudioKey audioKey){
         audioKeys.add(audioKey);
+        if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
     }
 
     public AudioKey removeAudioKey(AudioKey key){
         if (audioKeys.remove(key)){
+            if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
             return key;
         }
         return null;
     }
 
     public AudioKey removeAudioKey(int pos){
+        if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
         return audioKeys.remove(pos);
     }
 

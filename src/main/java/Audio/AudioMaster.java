@@ -68,7 +68,7 @@ public class AudioMaster{
         genericTrackScheduler.addPlayerTrackListener(new SoundboardPlayerListener()); //This allows the AudioMaster to listen for when the soundboard sounds, in order to switch audio stream back to the jukebox.
         soundboardPlayer.addListener(genericTrackScheduler);
 
-        soundboardList = new AudioKeyPlaylist(new File(FileIO.getRootFilePath() + "soundboard.playlist"));
+        soundboardList = new AudioKeyPlaylist(new File(FileIO.getRootFilePath() + "soundboard.playlist"), false);
         soundboardList.printPlaylist();
 
         masterVolume = VOLUME_DEFAULT;
@@ -203,7 +203,7 @@ public class AudioMaster{
         } else {
             keyToPlay = jukeboxQueueList.removeAudioKey(0);
         }
-        currentlyPlayingSong = keyToPlay;
+        currentlyPlayingSong = keyToPlay; //This can be null, as can discerned above. This is fine - currentlyPlayingSong being null means no song is being played.
         playCurrentSong();
         jukeboxUIWrapper.refreshQueueList(this);
     }
@@ -219,12 +219,20 @@ public class AudioMaster{
                     Transcriber.print("WARNING: Song url \"%1$s\" is invalid!", currentlyPlayingSong.getUrl());
                     jukeboxSkipToNextSong();
                 }));
-        }
+        } else
+            songDurationTracker.reset();
         setJukeboxTruePause(false);
     }
 
+    public void unpauseCurrentSong(){
+        if (currentlyPlayingSong == null)
+            jukeboxSkipToNextSong(true);
+        else
+            setJukeboxTruePause(false);
+    }
+
     public void clearJukeboxQueue(){
-        jukeboxQueueList.getAudioKeys().clear();
+        jukeboxQueueList.clearPlaylist();
         jukeboxUIWrapper.refreshQueueList(this);
     }
 
@@ -268,8 +276,8 @@ public class AudioMaster{
         int result = fileChooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION){
             File file = new File(enforceFileExtension(fileChooser.getSelectedFile().getAbsolutePath()));
-            jukeboxDefaultList = new AudioKeyPlaylist(file);
-            jukeboxDefaultList.getAudioKeys().clear(); //The Playlist will see that the file DNE and insert an AudioKey in there. This removes that to create a clean, totally-new playlist.
+            jukeboxDefaultList = new AudioKeyPlaylist(file, false);
+            //jukeboxDefaultList.getAudioKeys().clear(); //The Playlist will see that the file DNE and insert an AudioKey in there. This removes that to create a clean, totally-new playlist.
             uiWrapper.refreshDefaultList(this);
             uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
             Transcriber.print("Current playlist: %1$s", jukeboxDefaultList.toString());
@@ -290,7 +298,7 @@ public class AudioMaster{
         fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION){
-            AudioKeyPlaylist playlist = new AudioKeyPlaylist(fileChooser.getSelectedFile());
+            AudioKeyPlaylist playlist = new AudioKeyPlaylist(fileChooser.getSelectedFile(), true);
             if (playlist.isURLValid()) {
                 jukeboxDefaultList = playlist;
                 uiWrapper.refreshDefaultList(this);

@@ -21,12 +21,12 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
     private JLabel currentPlayingSongLabel;
     private static final String noSongText = "Song currently not playing";
 
-    public JukeboxPanel(AudioMaster audioMaster){
+    public JukeboxPanel(AudioMaster audioMaster, JFrame uiFrame){
         audioMaster.setJukeboxUIWrapper(this);
 
         setLayout(new BorderLayout());
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, false, createDefaultListPanel(audioMaster), createQueuePanel(audioMaster));
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, false, createDefaultListPanel(audioMaster), createQueuePanel(audioMaster, uiFrame));
         splitPane.setDividerLocation(75);
 
         add(splitPane, BorderLayout.CENTER);
@@ -83,7 +83,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         return mainPanel;
     }
 
-    private JPanel createQueuePanel(AudioMaster audioMaster){
+    private JPanel createQueuePanel(AudioMaster audioMaster, JFrame uiFrame){
         JPanel panel = new JPanel(new BorderLayout());
 
         queueTable = new TrackListingTable(audioMaster, true);
@@ -92,12 +92,12 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         JScrollPane scrollPane = new JScrollPane(queueTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(createQueueControlsPanel(audioMaster), BorderLayout.PAGE_START);
+        panel.add(createQueueControlsPanel(audioMaster, uiFrame), BorderLayout.PAGE_START);
 
         return panel;
     }
 
-    private JPanel createQueueControlsPanel(AudioMaster audioMaster){
+    private JPanel createQueueControlsPanel(AudioMaster audioMaster, JFrame uiFrame){
         JPanel masterPanel = new JPanel(new BorderLayout());
         
         JPanel controlsPanel = new JPanel();
@@ -106,7 +106,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         int BUTTON_MARGIN = 8;
 
         JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", BUTTON_MARGIN);
-        playButton.addActionListener(e -> audioMaster.setJukeboxTruePause(false));
+        playButton.addActionListener(e -> audioMaster.unpauseCurrentSong());
         controlsPanel.add(playButton);
 
         JButton pauseButton = ButtonMaker.createIconButton("icons/stop.png", "Pause", BUTTON_MARGIN);
@@ -134,7 +134,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         optionsPanel.add(loopingBox);
 
         JButton requestButton = ButtonMaker.createIconButton("icons/add.png", "Make Request", 11);
-        requestButton.addActionListener(e -> new MakeRequestFrame(audioMaster));
+        requestButton.addActionListener(e -> new MakeRequestFrame(audioMaster, uiFrame));
         optionsPanel.add(requestButton);
 
         JButton shuffleButton = ButtonMaker.createIconButton("icons/shuffle.png", "Shuffle", 10);
