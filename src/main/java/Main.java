@@ -1,12 +1,12 @@
 import Audio.AudioMaster;
 import Commands.CommandInterpreter;
 import UI.UIFrame;
+import Utils.BotStatusManager;
 import Utils.FileIO;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
-import net.dv8tion.jda.api.entities.Activity;
 
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
@@ -39,37 +39,10 @@ public class Main {
         else
             jda.addEventListener(new CommandInterpreter(jda, audioMaster));
         new UIFrame(jda, audioMaster);
-        if (jda != null)
-            setupStatus(jda, Boolean.valueOf(SettingsLoader.getBotConfigValue("status_use_default")));
-    }
-
-    private static void setupStatus(JDA jda, boolean useDefault){
-        if (useDefault){
-            jda.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT, "sounds / type " + SettingsLoader.getBotConfigValue("command_char") + "help"));
-        } else {
-            try {
-                Activity.ActivityType type;
-                switch (SettingsLoader.getBotConfigValue("status_type").toUpperCase()){
-                    case "WATCHING":
-                        type = Activity.ActivityType.WATCHING;
-                        break;
-                    case "LISTENING":
-                        type = Activity.ActivityType.LISTENING;
-                        break;
-                    case "EMPTY":
-                        return;
-                    default:
-                    case "PLAYING":
-                        type = Activity.ActivityType.DEFAULT;
-                        break;
-                }
-                String message = SettingsLoader.getBotConfigValue("status_message");
-                message = message.replaceAll("%help%", SettingsLoader.getBotConfigValue("command_char").concat("help"));
-                jda.getPresence().setActivity(Activity.of(type, message));
-            } catch (NullPointerException | IllegalArgumentException e){
-                e.printStackTrace();
-                setupStatus(jda, true);
-            }
+        if (jda != null){
+            BotStatusManager botStatusManager = new BotStatusManager(jda, audioMaster);
+            botStatusManager.updateStatus();
+            audioMaster.setBotStatusManager(botStatusManager);
         }
     }
 }

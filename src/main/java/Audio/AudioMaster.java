@@ -4,6 +4,7 @@ import Commands.CommandInterpreter;
 import UI.AudioKeyPlaylistLoader;
 import UI.JukeboxUIWrapper;
 import UI.PlayerTrackListener;
+import Utils.BotStatusManager;
 import Utils.FileIO;
 import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -47,8 +48,9 @@ public class AudioMaster{
     private AudioKey currentlyPlayingSong;
     private JukeboxUIWrapper jukeboxUIWrapper;
     private boolean loopingCurrentSong = false;
-    private boolean jukeboxPaused = false; //The "true" state of teh jukebox controlled via UI, commands, etc.
+    private boolean jukeboxPaused = false; //The "true" state of the jukebox controlled via UI, commands, etc.
     private SongDurationTracker songDurationTracker;
+    private BotStatusManager botStatusManager;
 
     //Volumes are 0-1, scaled 0-1000 internally
     private double masterVolume;
@@ -165,10 +167,10 @@ public class AudioMaster{
                 else
                     setActiveStream(jukeboxPlayer);
                 //Fetch song and queue it up
-                if (request.getAudioKey().getLoadedTrack() == null)
+                if (request.getAudioKey().getLoadedTrack() == null) // If requested audio key already has a loaded track, don't need to fetch it from the internet again
                     playerManager.loadItem(request.getAudioKey().getUrl(),
                         new JukeboxQueueResultHandler(jukeboxPlayer, request.getIfSuccess(), request.getIfError()));
-                else {
+                else { // Fetch song from the internet
                     addTrackToJukeboxQueue(request.getAudioKey().getLoadedTrack());
                     request.getIfSuccess().doAction();
                     jukeboxSongIsProcessing.set(false);
@@ -400,6 +402,11 @@ public class AudioMaster{
 
     public void setCommandInterpreter(CommandInterpreter commandInterpreter) {
         this.commandInterpreter = commandInterpreter;
+    }
+
+    public void setBotStatusManager(BotStatusManager botStatusManager) {
+        this.botStatusManager = botStatusManager;
+        jukeboxPlayer.addListener(botStatusManager);
     }
 
     private class SoundboardPlayerListener implements PlayerTrackListener{

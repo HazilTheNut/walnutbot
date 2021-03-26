@@ -29,6 +29,7 @@ public class CommandInterpreter extends ListenerAdapter {
         addCommand(new RequestCommand());
         addCommand(new ListQueueCommand());
         addCommand(new SkipCommand());
+        addCommand(new EchoCommand(this));
     }
 
     private void addCommand(Command command){
@@ -53,7 +54,7 @@ public class CommandInterpreter extends ListenerAdapter {
     @Override public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         //Transcriber.print("Raw message: \"%1$s\"", event.getMessage().getContentRaw());
         //Input sanitation
-        if (Boolean.valueOf(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
+        if (!Boolean.valueOf(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
             return;
         //Fetch command character
         String commandCharStr = SettingsLoader.getBotConfigValue("command_char");
