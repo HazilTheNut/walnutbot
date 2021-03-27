@@ -3,10 +3,12 @@ package Commands;
 import Audio.AudioMaster;
 import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-public class EchoCommand implements Command {
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+
+public class EchoCommand extends Command {
 
     CommandInterpreter commandInterpreter;
 
@@ -15,10 +17,6 @@ public class EchoCommand implements Command {
     }
 
     @Override public String getCommandName() {
-        return "echo";
-    }
-
-    @Override public String getHelpName() {
         return "echo";
     }
 
@@ -32,13 +30,11 @@ public class EchoCommand implements Command {
             SettingsLoader.getBotConfigValue("command_char"));
     }
 
-    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
-        if (event.getChannel().getType().isGuild())
-            (event.getChannel().sendMessage(String.format("<@%1$s> I have sent a PM to you.", event.getAuthor().getId()))).queue();
+    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Build message
         String message = "".concat(SettingsLoader.getBotConfigValue("command_char")).concat("help");
         //Display message
-        User author = event.getAuthor();
-        author.openPrivateChannel().complete().sendMessage(message).queue();
+        feedbackHandler.sendAuthorPM(message);
     }
+
 }

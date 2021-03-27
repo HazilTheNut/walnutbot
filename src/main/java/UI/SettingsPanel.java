@@ -1,9 +1,11 @@
 package UI;
 
 import Audio.AudioMaster;
+import Commands.Command;
 import Commands.CommandInterpreter;
 import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
+import okhttp3.internal.http2.Settings;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -91,14 +93,14 @@ public class SettingsPanel extends JPanel {
         commandsAllowPanel.setLayout(new BoxLayout(commandsAllowPanel, BoxLayout.PAGE_AXIS));
         commandsAllowPanel.setAlignmentX(0);
 
-        CommandInterpreter commandInterpreter = audioMaster.getCommandInterpreter();
-        for (String key : commandInterpreter.getCommandMap().keySet()){
-            JCheckBox commandAllowBox = new JCheckBox(String.format("%1$s : %2$s", key, commandInterpreter.getCommandMap().get(key).getHelpDescription()));
+        for (Command command : audioMaster.getCommandInterpreter().getExpandedCommandList()){
+            JCheckBox commandAllowBox = new JCheckBox(String.format("%1$s : %2$s", command.getCommandTreeStr(), command.getHelpDescription()));
             commandAllowBox.addChangeListener(e -> {
-                SettingsLoader.modifySettingsValue(commandInterpreter.getCommandAllowanceSettingName(key), String.valueOf(commandAllowBox.isSelected()));
+                SettingsLoader.modifySettingsValue(command.getPermissionName(), (commandAllowBox.isSelected()) ? "3" : "2");
                 SettingsLoader.writeSettingsFile();
             });
-            commandAllowBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue(commandInterpreter.getCommandAllowanceSettingName(key), "true")));
+            String setting = SettingsLoader.getSettingsValue(command.getPermissionName(), "3");
+            commandAllowBox.setSelected(setting.equals("3"));
             commandsAllowPanel.add(commandAllowBox);
         }
 

@@ -3,18 +3,16 @@ package Commands;
 import Audio.AudioKey;
 import Audio.AudioMaster;
 import Audio.AudioKeyPlaylist;
-import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-public class SoundboardListCommand implements Command {
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SoundboardListCommand extends Command {
 
     @Override public String getCommandName() {
-        return "sblist";
-    }
-
-    @Override public String getHelpName() {
-        return "sblist";
+        return "list";
     }
 
     @Override public String getHelpDescription() {
@@ -25,7 +23,7 @@ public class SoundboardListCommand implements Command {
         return "Lists the available sounds in the Soundboard.";
     }
 
-    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
+    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         StringBuilder builder = new StringBuilder("**Available Sounds:**\n```\n");
         AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
         //Get longest sound name
@@ -52,7 +50,7 @@ public class SoundboardListCommand implements Command {
         }
         */
         builder.append("```");
-        (event.getChannel().sendMessage(builder.toString())).queue();
+        feedbackHandler.sendMessage(builder.toString());
     }
 
     private String createCommandNameSpacing(int length){

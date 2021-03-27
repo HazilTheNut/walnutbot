@@ -1,5 +1,6 @@
 package Utils;
 
+import Commands.CommandFeedbackHandler;
 import net.dv8tion.jda.api.entities.MessageChannel;
 
 import java.io.File;
@@ -29,9 +30,9 @@ public class Transcriber {
 //            transcriptReceiver.receiveMessage(message);
     }
 
-    public static void printAndPost(MessageChannel channel, String formattedString, Object... args){
+    public static void printAndPost(CommandFeedbackHandler commandFeedbackHandler, String formattedString, Object... args) {
         String message = String.format(formattedString, args);
-        (channel.sendMessage(message)).queue();
+        commandFeedbackHandler.sendMessage(message);
         System.out.println(message);
         for (TranscriptReceiver transcriptReceiver : transcriptReceivers)
             transcriptReceiver.receiveMessage(message);

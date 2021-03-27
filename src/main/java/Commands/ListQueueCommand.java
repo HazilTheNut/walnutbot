@@ -2,15 +2,14 @@ package Commands;
 
 import Audio.AudioMaster;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 
-public class ListQueueCommand implements Command {
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ListQueueCommand extends Command {
     @Override public String getCommandName() {
-        return "queue";
-    }
-
-    @Override public String getHelpName() {
-        return "queue";
+        return "list";
     }
 
     @Override public String getHelpDescription() {
@@ -21,7 +20,7 @@ public class ListQueueCommand implements Command {
         return "Prints a list of songs in the Jukebox queue.";
     }
 
-    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, MessageReceivedEvent event, String[] args) {
+    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         StringBuilder message = new StringBuilder("*Jukebox Queue:*\n```\n");
         if (audioMaster.getCurrentlyPlayingSong() != null)
             message.append("Now Playing: ").append(audioMaster.getCurrentlyPlayingSong().getTrackName()).append("\n===\n");
@@ -31,6 +30,6 @@ public class ListQueueCommand implements Command {
         if (audioMaster.getJukeboxQueueList().getAudioKeys().size() == 0)
             message.append("No songs are currently queued; playing random songs from default playlist.");
         message.append("\n```");
-        (event.getChannel().sendMessage(message.toString())).queue();
+        feedbackHandler.sendMessage(message.toString());
     }
 }
