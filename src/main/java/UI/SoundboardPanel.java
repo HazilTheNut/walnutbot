@@ -3,6 +3,9 @@ package UI;
 import Audio.AudioKey;
 import Audio.AudioKeyPlaylist;
 import Audio.AudioMaster;
+import Commands.Command;
+import Commands.CommandFeedbackHandler;
+import Commands.CommandInterpreter;
 import Utils.ButtonMaker;
 import Utils.FileIO;
 
@@ -10,30 +13,37 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Comparator;
 
-public class SoundboardPanel extends JPanel implements PlayerTrackListener{
+public class SoundboardPanel extends JPanel implements PlayerTrackListener, SoundboardUIWrapper{
 
     private JLabel playerStatusLabel;
+    private SoundsMainPanel soundsPanel;
 
-    public SoundboardPanel(AudioMaster master){
+    private CommandInterpreter commandInterpreter;
+    private UIFrame uiFrame;
+
+    public SoundboardPanel(AudioMaster master, CommandInterpreter commandInterpreter, UIFrame uiFrame){
+
+        this.commandInterpreter = commandInterpreter;
+        this.uiFrame = uiFrame;
 
         setLayout(new BorderLayout());
 
-        SoundsMainPanel soundsPanel = createSoundsPanel(master);
-        JPanel miscPanel = createMiscPanel(master, soundsPanel);
+        soundsPanel = createSoundsPanel(master);
+        JPanel miscPanel = createMiscPanel(master, soundsPanel, uiFrame);
 
         JScrollPane scrollPane = new JScrollPane(soundsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.validate();
 
         add(miscPanel, BorderLayout.PAGE_START);
         add(scrollPane, BorderLayout.CENTER);
-        add(createTempPlayPanel(master), BorderLayout.PAGE_END);
+        add(createTempPlayPanel(commandInterpreter, uiFrame), BorderLayout.PAGE_END);
 
         validate();
 
         master.getGenericTrackScheduler().addPlayerTrackListener(this);
     }
 
-    private JPanel createMiscPanel(AudioMaster audioMaster, SoundsMainPanel soundPanel){
+    private JPanel createMiscPanel(AudioMaster audioMaster, SoundsMainPanel soundPanel, UIFrame uiFrame){
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
 
@@ -42,13 +52,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         panel.add(addButton);
 
         JButton sortButton = new JButton("Sort A-Z");
-        sortButton.addActionListener(e -> {
-            audioMaster.getSoundboardList().getAudioKeys().sort(Comparator.comparing(AudioKey::getName));
-            audioMaster.saveSoundboard();
-            loadSoundboard(audioMaster, soundPanel);
-            soundPanel.revalidate();
-            soundPanel.repaint();
-        });
+        sortButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb sort", uiFrame.getCommandFeedbackHandler(), Command.ADMIN_MASK));
         panel.add(sortButton);
 
         playerStatusLabel = new JLabel("Status: ");
@@ -59,29 +63,31 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         stopButton.addActionListener(e -> audioMaster.resumeJukebox());
         panel.add(stopButton);
 
+        audioMaster.setSoundboardUIWrapper(this);
+
         return panel;
     }
 
     private SoundsMainPanel createSoundsPanel(AudioMaster audioMaster){
-        SoundsMainPanel panel = new SoundsMainPanel(audioMaster);
+        SoundsMainPanel panel = new SoundsMainPanel(audioMaster, commandInterpreter, uiFrame);
         panel.setLayout(new WrapLayout(WrapLayout.LEFT, 6, 2));
 
-        loadSoundboard(audioMaster, panel);
+        loadSoundboard(audioMaster, panel, commandInterpreter, uiFrame);
 
         panel.validate();
 
         return panel;
     }
 
-    private void loadSoundboard(AudioMaster audioMaster, SoundsMainPanel panel){
+    private void loadSoundboard(AudioMaster audioMaster, SoundsMainPanel panel, CommandInterpreter commandInterpreter, UIFrame uiFrame){
         panel.removeAll();
         AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
         for (AudioKey audioKey : soundboard.getAudioKeys()){
-            panel.add(new SoundButtonPanel(audioKey, audioMaster, panel));
+            panel.add(new SoundButtonPanel(audioKey, audioMaster,  commandInterpreter, uiFrame, panel));
         }
     }
 
-    private JPanel createTempPlayPanel(AudioMaster audioMaster){
+    private JPanel createTempPlayPanel(CommandInterpreter commandInterpreter, UIFrame uiFrame){
 
         JPanel panel = new JPanel();
 
@@ -90,8 +96,11 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         JTextField urlField = new JTextField("Enter URL Here for Instant Play");
         JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", 12);
         playButton.addActionListener(e -> {
-            System.out.printf("Soundboard Instant Play - Playing track of url: %1$s\n", urlField.getText());
-            audioMaster.playSoundboardSound(urlField.getText());
+            commandInterpreter.evaluateCommand(
+                String.format("sb url %1$s", urlField.getText()),
+                uiFrame.getCommandFeedbackHandler(),
+                Command.ADMIN_MASK
+            );
             urlField.setText("");
         });
 
@@ -128,16 +137,26 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         playerStatusLabel.repaint();
     }
 
+    @Override public void updateSoundboardSoundsList(AudioMaster audioMaster) {
+        loadSoundboard(audioMaster, soundsPanel, commandInterpreter, uiFrame);
+        soundsPanel.revalidate();
+        soundsPanel.repaint();
+    }
+
     private class SoundsMainPanel extends JPanel implements PlaylistUIWrapper{
 
         AudioMaster audioMaster;
+        CommandInterpreter commandInterpreter;
+        UIFrame uiFrame;
 
-        private SoundsMainPanel(AudioMaster audioMaster){
+        public SoundsMainPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame){
             this.audioMaster = audioMaster;
+            this.commandInterpreter = commandInterpreter;
+            this.uiFrame = uiFrame;
         }
 
         @Override public void addAudioKey(AudioKey key) {
-            add(new SoundButtonPanel(key, audioMaster, this));
+            add(new SoundButtonPanel(key, audioMaster, commandInterpreter, uiFrame, this));
             revalidate();
             repaint();
         }

@@ -27,7 +27,7 @@ public class Transcriber {
         String message = time.concat(String.format(formattedString, args));
         System.out.println(message);
 //        for (TranscriptReceiver transcriptReceiver : transcriptReceivers)
-//            transcriptReceiver.receiveMessage(message);
+//           transcriptReceiver.receiveMessage(message);
     }
 
     public static void printAndPost(CommandFeedbackHandler commandFeedbackHandler, String formattedString, Object... args) {
@@ -79,11 +79,13 @@ public class Transcriber {
 
         @Override public void print(String s) {
             fileOutStream.print(s);
+            //super.print(s);
             sendToReceivers(s);
         }
 
         @Override public void println(String x) {
             fileOutStream.println(x);
+            //super.println(x);
             sendToReceivers(x);
         }
     }

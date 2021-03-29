@@ -1,6 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
+import Utils.BotManager;
 import net.dv8tion.jda.api.JDA;
 
 import javax.annotation.Nonnull;
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ListQueueCommand extends Command {
-    @Override public String getCommandName() {
+    @Override public String getCommandKeyword() {
         return "list";
     }
 
@@ -20,7 +21,7 @@ public class ListQueueCommand extends Command {
         return "Prints a list of songs in the Jukebox queue.";
     }
 
-    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         StringBuilder message = new StringBuilder("*Jukebox Queue:*\n```\n");
         if (audioMaster.getCurrentlyPlayingSong() != null)
             message.append("Now Playing: ").append(audioMaster.getCurrentlyPlayingSong().getTrackName()).append("\n===\n");

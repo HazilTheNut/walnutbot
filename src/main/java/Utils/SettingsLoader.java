@@ -43,11 +43,11 @@ public class SettingsLoader {
     }
 
     private static String getConfigPath(){
-        return FileIO.getRootFilePath() + "config.txt";
+        return FileIO.getRootFilePath() + "config.ini";
     }
 
     private static String getSettingsPath(){
-        return FileIO.getRootFilePath() + "settings.txt";
+        return FileIO.getRootFilePath() + "settings.ini";
     }
 
     /**

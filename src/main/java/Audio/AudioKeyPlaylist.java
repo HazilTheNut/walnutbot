@@ -129,6 +129,36 @@ public class AudioKeyPlaylist {
         return audioKeys.remove(pos);
     }
 
+    public AudioKey removeAudioKey(String name){
+        for (int i = 0; i < audioKeys.size(); i++)
+            if (audioKeys.get(i).getName().equals(name)) {
+                if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
+                return audioKeys.remove(i);
+            }
+        return null;
+    }
+
+    /**
+     * Modifies a name-matching AudioKey in this AudioKeyPlaylist by substituting the name and url of the matching AudioKey with the input AudioKey.
+     * This method does not modify the loaded AudioTrack of the name-matching AudioKey.
+     *
+     * @param name The String name to match an AudioKey in this playlist.
+     * @param newData The AudioKey data to substitute into the name-matching AudioKey. Leaving either the name or the url null leaves the name-matching AudioKey's respective data unaltered.
+     * @return True if a name-matching AudioKey exists in this AudioKeyPlaylist, and false otherwise.
+     */
+    public boolean modifyAudioKey(String name, AudioKey newData){
+        for (int i = 0; i < audioKeys.size(); i++)
+            if (audioKeys.get(i).getName().equals(name)) {
+                if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
+                if (newData.getName() != null)
+                    audioKeys.get(i).setName(newData.getName());
+                if (newData.getUrl() != null)
+                    audioKeys.get(i).setUrl(newData.getUrl());
+                return true;
+            }
+        return false;
+    }
+
     public void saveToFile(File file){
         try {
             if (file.exists() && file.isFile()) file.delete();

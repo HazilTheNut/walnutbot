@@ -1,35 +1,35 @@
 package Commands;
 
 import Audio.AudioMaster;
+import Utils.BotManager;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import org.apache.commons.collections4.set.ListOrderedSet;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 public class CommandInterpreter extends ListenerAdapter {
 
     private HashMap<String, Command> commandMap;
-    private JDA jda;
+    private BotManager botManager;
     private AudioMaster audioMaster;
 
-    public CommandInterpreter(JDA jda, AudioMaster audioMaster){
+    public CommandInterpreter(BotManager botManager, AudioMaster audioMaster){
         commandMap = new HashMap<>();
-        this.jda = jda;
+        this.botManager = botManager;
         this.audioMaster = audioMaster;
         audioMaster.setCommandInterpreter(this);
         //Add commands to map
         addCommand(new HelpCommand(this));
         addCommand(new RequestCommand());
         addCommand(new SoundboardCommand());
-        addCommand(new EchoCommand(this));
+        addCommand(new ConnectCommand());
+        addCommand(new DisconnectCommand());
     }
 
     public List<Command> getExpandedCommandList(){
@@ -46,15 +46,15 @@ public class CommandInterpreter extends ListenerAdapter {
     }
 
     private void addCommand(Command command){
-        commandMap.put(command.getCommandName(), command);
-        command.setCommandTreeStr(command.getCommandName());
+        commandMap.put(command.getCommandKeyword(), command);
+        command.setCommandTreeStr(command.getCommandKeyword());
         command.updateSubCommandTreeStr();
     }
 
     public int getLongestCommandHelpName(){
         int max = 0;
         for (Command command : getExpandedCommandList())
-            max = Math.max(max, command.getHelpName().length());
+            max = Math.max(max, command.getHelpCommandUsage().length());
         return max;
     }
 
@@ -64,37 +64,53 @@ public class CommandInterpreter extends ListenerAdapter {
 
     @Override public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
         //Transcriber.print("Raw message: \"%1$s\"", event.getMessage().getContentRaw());
+
         //Input sanitation
+        Transcriber.print("My name: \'%1$s\"", botManager.getBotName());
         if (!Boolean.valueOf(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
             return;
-        //Fetch command character
+        //Ensure the bot doesn't get stuck in response loops
+        if (event.getAuthor().getAsTag().equals(botManager.getBotName()))
+            return;
 
         //Run command if incoming message starts with the command character
         String messageContent = event.getMessage().getContentRaw();
-        evaluateCommand(messageContent, new DiscordCommandFeedbackHandler(event), Command.USER_MASK);
+        evaluateCommand(removeCommandChar(messageContent), new DiscordCommandFeedbackHandler(event), Command.USER_MASK);
     }
 
-    private void evaluateCommand(String commandText, CommandFeedbackHandler commandFeedbackHandler, byte authorPermission){
+    private String removeCommandChar(String commandRawText){
         String commandCharStr = SettingsLoader.getBotConfigValue("command_char");
         if (commandCharStr == null || commandCharStr.length() <= 0) {
-            Transcriber.print("WARNING! config.txt malformed - \'command_char\' is missing!");
-            return;
+            Transcriber.print("WARNING! config.ini malformed - \'command_char\' is missing!");
+            return commandRawText;
         }
-        if (commandText.length() > commandCharStr.length() && commandText.substring(0, commandCharStr.length()).equals(commandCharStr)){
-            String commandStr = commandText.substring(commandCharStr.length()); //Clip off the command character from the rest of the command
-            Transcriber.print("command received: \'%1$s\' (from %2$s)", commandText, commandFeedbackHandler.getAuthor());
+        if (commandRawText.length() > commandCharStr.length() && commandRawText.substring(0, commandCharStr.length()).equals(commandCharStr)) {
+            return commandRawText.substring(commandCharStr.length());
+        }
+        return commandRawText;
+    }
 
-            String[] parts = commandStr.split(" ");
-            if (commandMap.containsKey(parts[0])){ //If command is valid
-                if (!Boolean.valueOf(SettingsLoader.getSettingsValue(getCommandAllowanceSettingName(parts[0]), "true"))) {
-                    commandFeedbackHandler.sendMessage("**WARNING:** This bot's admin has blocked usage of this command.");
-                    return;
-                }
-                String[] subarray = removeFirstElement(parts); //Either the command arguments or a command-args group of a subcommand
-                searchAndRunCommand(subarray, 0, commandMap.get(parts[0]), commandFeedbackHandler, authorPermission);
-            } else {
-                Transcriber.printAndPost(commandFeedbackHandler, "**ERROR:** Command `%1$s` was not recognized!", parts[0]);
+    /**
+     * Evaluates a String as a command to the discord bot.
+     * The input String is a space (' ') separated list of command and subcommand keywords followed by the command arguments.
+     * Additionally, the input String does not need to be preceded with the command_char described in config.txt
+     *
+     * @param commandText The text of the command.
+     * @param commandFeedbackHandler The CommandFeedbackHandler, which takes various forms of output from the Command and displays it however it wishes to.
+     * @param authorPermission The byte describing the command author's level of permission.
+     */
+    public void evaluateCommand(String commandText, CommandFeedbackHandler commandFeedbackHandler, byte authorPermission){
+        Transcriber.print("%1$s > %2$s", commandFeedbackHandler.getAuthor(), commandText);
+        String[] parts = splitCommandStr(commandText);
+        if (commandMap.containsKey(parts[0])){ //If command is valid
+            if (!Boolean.valueOf(SettingsLoader.getSettingsValue(getCommandAllowanceSettingName(parts[0]), "true"))) {
+                commandFeedbackHandler.sendMessage("**WARNING:** This bot's admin has blocked usage of this command.");
+                return;
             }
+            String[] subarray = removeFirstElement(parts); //Either the command arguments or a command-args group of a subcommand
+            searchAndRunCommand(subarray, 0, commandMap.get(parts[0]), commandFeedbackHandler, authorPermission);
+        } else {
+            Transcriber.printAndPost(commandFeedbackHandler, "**ERROR:** Command `%1$s` was not recognized!", parts[0]);
         }
     }
 
@@ -102,7 +118,7 @@ public class CommandInterpreter extends ListenerAdapter {
         Command foundSubCommand = null;
         if (depth < args.length) {
             for (Command command : baseCommand.getSubCommands()) {
-                if (command.getCommandName().equals(args[depth])) {
+                if (command.getCommandKeyword().equals(args[depth])) {
                     foundSubCommand = command;
                     break;
                 }
@@ -113,10 +129,51 @@ public class CommandInterpreter extends ListenerAdapter {
             searchAndRunCommand(subarray, depth + 1, foundSubCommand, feedbackHandler, authorPermission);
         } else {
             if (baseCommand.isPermissionSufficient(authorPermission))
-                baseCommand.onRunCommand(jda, audioMaster, feedbackHandler, authorPermission, args);
+                baseCommand.onRunCommand(botManager, audioMaster, feedbackHandler, authorPermission, args);
             else
                 feedbackHandler.sendMessage("**WARNING:** You do not have permission to run this command!");
         }
+    }
+
+    private String[] splitCommandStr(String commandStr){
+        String filteredText = removeCommandChar(commandStr);
+        ArrayList<String> partsList = new ArrayList<>();
+        StringBuilder builder = new StringBuilder();
+        boolean characterEscaped = false;
+        boolean withinQuotations = false;
+        for (int i = 0; i < filteredText.length(); i++) {
+            char c = filteredText.charAt(i);
+            if (c == ' '){
+                if (withinQuotations)
+                    builder.append(c);
+                else if (builder.length() > 0){
+                    partsList.add(builder.toString());
+                    builder.setLength(0);
+                }
+            } else if (c == '\\'){
+                if (!characterEscaped)
+                    characterEscaped = true;
+                else
+                    builder.append(c);
+            } else if (c == '\"'){
+                if (!characterEscaped) {
+                    if (withinQuotations){
+                        partsList.add(builder.toString());
+                        builder.setLength(0);
+                        withinQuotations = false;
+                    } else {
+                        withinQuotations = true;
+                    }
+                } else
+                    builder.append(c);
+            } else
+                builder.append(c);
+        }
+        partsList.add(builder.toString());
+        // Assemble array of strings
+        String[] parts = new String[partsList.size()];
+        for (int i = 0; i < partsList.size(); i++) parts[i] = partsList.get(i);
+        return parts;
     }
 
     private String[] removeFirstElement(String[] arr){

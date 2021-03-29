@@ -1,6 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
+import Utils.BotManager;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 import net.dv8tion.jda.api.JDA;
@@ -16,7 +17,7 @@ public class RequestCommand extends Command {
         addSubCommand(new SkipCommand());
     }
 
-    @Override public String getCommandName() {
+    @Override public String getCommandKeyword() {
         return "jb";
     }
 
@@ -32,16 +33,11 @@ public class RequestCommand extends Command {
         return "Places a song fetched from the url onto the Jukebox queue.\n\nurl - The website URL / file path to the desired song.";
     }
 
-    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Input Sanitation
         if (args.length <= 0) return;
-        //Check for Permissions
-        if (!Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")) && args[0].indexOf("http") != 0){
-            feedbackHandler.sendMessage("**WARNING:** This bot's admin has blocked access to local files.");
-            return;
-        }
-        //Make Request
-        audioMaster.queueJukeboxSong(args[0], () -> postQueueStatus(audioMaster, feedbackHandler), () -> postErrorStatus(feedbackHandler, args[0]));
+        if (sanitizeLocalAccess(args[0], feedbackHandler, permissions))
+            audioMaster.queueJukeboxSong(args[0], () -> postQueueStatus(audioMaster, feedbackHandler), () -> postErrorStatus(feedbackHandler, args[0]));
     }
 
     private void postQueueStatus(AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler){

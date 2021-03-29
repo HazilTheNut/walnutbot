@@ -1,11 +1,10 @@
 package Commands;
 
 import Audio.AudioMaster;
+import Utils.BotManager;
 import Utils.SettingsLoader;
-import net.dv8tion.jda.api.JDA;
 
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class HelpCommand extends Command {
@@ -16,7 +15,7 @@ public class HelpCommand extends Command {
         this.commandInterpreter = commandInterpreter;
     }
 
-    @Override public String getCommandName() {
+    @Override public String getCommandKeyword() {
         return "help";
     }
 
@@ -33,20 +32,22 @@ public class HelpCommand extends Command {
             SettingsLoader.getBotConfigValue("command_char"));
     }
 
-    @Override public void onRunCommand(JDA jda, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Build message
         String message;
         Command cmd = getSubCommandFromArgs(args);
         if (cmd != null) { //Getting help on a specific command
             message = String.format("```   %3$s%1$s\n-------------\n%2$s```",
-                cmd.getHelpName(),
+                cmd.getHelpCommandUsage(),
                 cmd.getSpecificHelpDescription(),
                 SettingsLoader.getBotConfigValue("command_char"));
         } else { //The general help info (or if asking specific help on a command that doesn't exist
             StringBuilder builder = new StringBuilder("**Available Commands:**\n```\n");
             int longestLength = commandInterpreter.getLongestCommandHelpName();
-            for (Command command : commandInterpreter.getExpandedCommandList()) {
-                String commandHelpName = command.getHelpName();
+            List<Command> commandList = commandInterpreter.getExpandedCommandList();
+            commandList.sort(Comparator.comparing(Command::getCommandTreeStr));
+            for (Command command : commandList) {
+                String commandHelpName = command.getHelpCommandUsage();
                 String commandDescription = command.getHelpDescription();
                 builder.append(String.format("%4$s%1$s%3$s : %2$s\n", commandHelpName, commandDescription,
                     createCommandNameSpacing(longestLength - commandHelpName.length()), SettingsLoader.getBotConfigValue("command_char")));

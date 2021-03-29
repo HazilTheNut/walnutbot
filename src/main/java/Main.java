@@ -1,10 +1,8 @@
 import Audio.AudioMaster;
+import Commands.Command;
 import Commands.CommandInterpreter;
 import UI.UIFrame;
-import Utils.BotStatusManager;
-import Utils.FileIO;
-import Utils.SettingsLoader;
-import Utils.Transcriber;
+import Utils.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 
@@ -36,13 +34,17 @@ public class Main {
         AudioMaster audioMaster = new AudioMaster();
         if (jda == null)
             Transcriber.print("WARNING: JDA is null!");
-        else
-            jda.addEventListener(new CommandInterpreter(jda, audioMaster));
-        new UIFrame(jda, audioMaster);
+        BotManager botManager = null;
         if (jda != null){
-            BotStatusManager botStatusManager = new BotStatusManager(jda, audioMaster);
-            botStatusManager.updateStatus();
-            audioMaster.setBotStatusManager(botStatusManager);
+            botManager = new DiscordBotManager(jda, audioMaster);
+            botManager.updateStatus();
+            audioMaster.setDiscordBotManager(botManager);
         }
+        CommandInterpreter commandInterpreter = null;
+        if (botManager != null) {
+            commandInterpreter = new CommandInterpreter(botManager, audioMaster);
+            jda.addEventListener(commandInterpreter);
+        }
+        new UIFrame(botManager, audioMaster, commandInterpreter, (jda != null));
     }
 }

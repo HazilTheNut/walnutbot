@@ -4,7 +4,9 @@ import Commands.CommandInterpreter;
 import UI.AudioKeyPlaylistLoader;
 import UI.JukeboxUIWrapper;
 import UI.PlayerTrackListener;
-import Utils.BotStatusManager;
+import UI.SoundboardUIWrapper;
+import Utils.BotManager;
+import Utils.DiscordBotManager;
 import Utils.FileIO;
 import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -22,7 +24,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.TimerTask;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioMaster{
@@ -31,12 +33,13 @@ public class AudioMaster{
 
     private CommandInterpreter commandInterpreter;
 
+    private VoiceChannel connectedChannel;
+
     //Soundboard
     private AudioPlayer soundboardPlayer;
     private GenericTrackScheduler genericTrackScheduler;
     private AudioKeyPlaylist soundboardList;
-
-    private VoiceChannel connectedChannel;
+    private SoundboardUIWrapper soundboardUIWrapper;
 
     //Jukebox
     private AudioPlayer jukeboxPlayer;
@@ -50,7 +53,6 @@ public class AudioMaster{
     private boolean loopingCurrentSong = false;
     private boolean jukeboxPaused = false; //The "true" state of the jukebox controlled via UI, commands, etc.
     private SongDurationTracker songDurationTracker;
-    private BotStatusManager botStatusManager;
 
     //Volumes are 0-1, scaled 0-1000 internally
     private double masterVolume;
@@ -186,7 +188,8 @@ public class AudioMaster{
         }
         else
             jukeboxQueueList.addAudioKey(new AudioKey(track));
-        jukeboxUIWrapper.refreshQueueList(this);
+        if (jukeboxUIWrapper != null)
+            jukeboxUIWrapper.refreshQueueList(this);
     }
 
     public void jukeboxSkipToNextSong() { jukeboxSkipToNextSong(false); }
@@ -207,7 +210,8 @@ public class AudioMaster{
         }
         currentlyPlayingSong = keyToPlay; //This can be null, as can discerned above. This is fine - currentlyPlayingSong being null means no song is being played.
         playCurrentSong();
-        jukeboxUIWrapper.refreshQueueList(this);
+        if (jukeboxUIWrapper != null)
+            jukeboxUIWrapper.refreshQueueList(this);
     }
     
     private void playCurrentSong(){
@@ -235,12 +239,14 @@ public class AudioMaster{
 
     public void clearJukeboxQueue(){
         jukeboxQueueList.clearPlaylist();
-        jukeboxUIWrapper.refreshQueueList(this);
+        if (jukeboxUIWrapper != null)
+            jukeboxUIWrapper.refreshQueueList(this);
     }
 
     public void shuffleJukeboxQueue(){
         jukeboxQueueList.shuffle();
-        jukeboxUIWrapper.refreshQueueList(this);
+        if (jukeboxUIWrapper != null)
+            jukeboxUIWrapper.refreshQueueList(this);
     }
 
     public AudioPlayer getSoundboardPlayer() {
@@ -404,9 +410,42 @@ public class AudioMaster{
         this.commandInterpreter = commandInterpreter;
     }
 
-    public void setBotStatusManager(BotStatusManager botStatusManager) {
-        this.botStatusManager = botStatusManager;
-        jukeboxPlayer.addListener(botStatusManager);
+    public void setDiscordBotManager(BotManager botManager) {
+        if (botManager instanceof DiscordBotManager)
+            jukeboxPlayer.addListener((DiscordBotManager)botManager);
+    }
+
+    public void sortSoundboardList(){
+        getSoundboardList().getAudioKeys().sort(Comparator.comparing(AudioKey::getName));
+        saveSoundboard();
+        if (soundboardUIWrapper != null)
+            soundboardUIWrapper.updateSoundboardSoundsList(this);
+    }
+
+    public void setSoundboardUIWrapper(SoundboardUIWrapper soundboardUIWrapper) {
+        this.soundboardUIWrapper = soundboardUIWrapper;
+    }
+
+    public void addSoundboardSound(AudioKey key){
+        soundboardList.addAudioKey(key);
+        if (soundboardUIWrapper != null)
+            soundboardUIWrapper.updateSoundboardSoundsList(this);
+    }
+
+    public AudioKey removeSoundboardSound(String soundName){
+        AudioKey removed = soundboardList.removeAudioKey(soundName);
+        if (removed != null && soundboardUIWrapper != null)
+            soundboardUIWrapper.updateSoundboardSoundsList(this);
+        return removed;
+    }
+
+    public boolean modifySoundboardSound(String soundName, AudioKey newData){
+        if (soundboardList.modifyAudioKey(soundName, newData)){
+            if (soundboardUIWrapper != null)
+                soundboardUIWrapper.updateSoundboardSoundsList(this);
+            return true;
+        }
+        return false;
     }
 
     private class SoundboardPlayerListener implements PlayerTrackListener{

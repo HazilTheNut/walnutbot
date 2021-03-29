@@ -3,6 +3,7 @@ package UI;
 import Audio.AudioMaster;
 import Commands.Command;
 import Commands.CommandInterpreter;
+import Utils.BotManager;
 import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
 import okhttp3.internal.http2.Settings;
@@ -18,17 +19,23 @@ public class SettingsPanel extends JPanel {
     private JSlider soundboardVolumeSlider;
     private JSlider musicVolumeSlider;
 
-    public SettingsPanel(JDA jda, AudioMaster audioMaster) {
+    public SettingsPanel(BotManager botManager, AudioMaster audioMaster, boolean botInitSuccessful) {
 
-        setLayout(new BorderLayout());
-        if (jda != null) {
-            add(new ConnectionPanel(jda, audioMaster), BorderLayout.PAGE_START);
+        BoxLayout layout = new BoxLayout(this, BoxLayout.PAGE_AXIS);
+        setLayout(layout);
+        if (botInitSuccessful) {
+            add(new ConnectionPanel(botManager, audioMaster), BorderLayout.PAGE_START);
             add(createMainPanel(audioMaster), BorderLayout.CENTER);
             add(createPermissionsPanel(audioMaster), BorderLayout.PAGE_END);
         } else
             add(new JLabel(
                     "WARNING! Looks like the bot failed to load! (Check output.txt for more info)"),
                 BorderLayout.CENTER);
+
+        for (Component c : getComponents())
+            if (c instanceof JComponent)
+                ((JComponent) c).setAlignmentX(Component.LEFT_ALIGNMENT);
+
 
         validate();
 
@@ -85,13 +92,16 @@ public class SettingsPanel extends JPanel {
             SettingsLoader.writeSettingsFile();
         });
         allowLocalAccessBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")));
+        allowLocalAccessBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(allowLocalAccessBox);
 
-        panel.add(new JLabel("Allowed Commands through Discord:"));
+        panel.add(new JLabel("Allowed Commands for Non-Admin Users:"));
 
         JPanel commandsAllowPanel = new JPanel();
         commandsAllowPanel.setLayout(new BoxLayout(commandsAllowPanel, BoxLayout.PAGE_AXIS));
         commandsAllowPanel.setAlignmentX(0);
+        JScrollPane allowCommandScrollPane = new JScrollPane(commandsAllowPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        int unitIncrement = 0;
 
         for (Command command : audioMaster.getCommandInterpreter().getExpandedCommandList()){
             JCheckBox commandAllowBox = new JCheckBox(String.format("%1$s : %2$s", command.getCommandTreeStr(), command.getHelpDescription()));
@@ -102,9 +112,12 @@ public class SettingsPanel extends JPanel {
             String setting = SettingsLoader.getSettingsValue(command.getPermissionName(), "3");
             commandAllowBox.setSelected(setting.equals("3"));
             commandsAllowPanel.add(commandAllowBox);
+            unitIncrement = Math.max(unitIncrement, (int)commandAllowBox.getMinimumSize().getHeight());
         }
 
-        panel.add(commandsAllowPanel);
+        allowCommandScrollPane.getVerticalScrollBar().setUnitIncrement(unitIncrement);
+        allowCommandScrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(allowCommandScrollPane);
 
         return panel;
     }

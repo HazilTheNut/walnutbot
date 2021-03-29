@@ -1,8 +1,11 @@
 package UI;
 
 import Audio.AudioMaster;
+import Commands.CommandFeedbackHandler;
+import Commands.CommandInterpreter;
+import Utils.BotManager;
 import Utils.SettingsLoader;
-import net.dv8tion.jda.api.JDA;
+import Utils.Transcriber;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,9 +14,12 @@ import java.awt.event.ComponentListener;
 
 public class UIFrame extends JFrame implements ComponentListener {
 
-    public UIFrame(JDA jda, AudioMaster master){
+    private UICommandFeedbackHandler commandFeedbackHandler;
+
+    public UIFrame(BotManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful){
 
         setTitle("Walnutbot Music & Soundboard Discord Bot");
+        commandFeedbackHandler = new UICommandFeedbackHandler();
 
         int width = Integer.valueOf(SettingsLoader.getSettingsValue("windowWidth", "645"));
         int height = Integer.valueOf(SettingsLoader.getSettingsValue("windowHeight", "545"));
@@ -23,10 +29,10 @@ public class UIFrame extends JFrame implements ComponentListener {
         addComponentListener(this);
 
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Settings", new SettingsPanel(jda, master));
-        if (jda != null) {
-            tabbedPane.addTab("Soundboard", new SoundboardPanel(master));
-            tabbedPane.addTab("Jukebox", new JukeboxPanel(master, this));
+        tabbedPane.addTab("Settings", new SettingsPanel(botManager, audioMaster, botInitSuccessful));
+        if (botInitSuccessful) {
+            tabbedPane.addTab("Soundboard", new SoundboardPanel(audioMaster, commandInterpreter, this));
+            tabbedPane.addTab("Jukebox", new JukeboxPanel(audioMaster, commandInterpreter, this));
         }
         tabbedPane.addTab("Log", new ConsolePanel());
 
@@ -34,6 +40,10 @@ public class UIFrame extends JFrame implements ComponentListener {
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
+    }
+
+    public CommandFeedbackHandler getCommandFeedbackHandler(){
+        return commandFeedbackHandler;
     }
 
     private void writeWindowSize(){
@@ -76,5 +86,42 @@ public class UIFrame extends JFrame implements ComponentListener {
      */
     @Override public void componentHidden(ComponentEvent e) {
 
+    }
+
+    private class UICommandFeedbackHandler implements CommandFeedbackHandler {
+
+        /**
+         * Sends a public message in the same channel as where the command is found.
+         *
+         * @param message The message to send
+         */
+        @Override public void sendMessage(String message) {
+            Transcriber.print(message);
+        }
+
+        /**
+         * @return True if the channel where the command is found is a public space, rather than a form of private message
+         */
+        @Override public boolean isChannelPublic() {
+            return true;
+        }
+
+        /**
+         * Sends a private message to the command author
+         *
+         * @param message The message to send
+         */
+        @Override public void sendAuthorPM(String message) {
+            Transcriber.print(message);
+        }
+
+        /**
+         * Gets a String describing the author of the command.
+         *
+         * @return A String describing the author of the command.
+         */
+        @Override public String getAuthor() {
+            return "UI";
+        }
     }
 }

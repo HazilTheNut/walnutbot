@@ -2,6 +2,8 @@ package UI;
 
 import Audio.AudioKey;
 import Audio.AudioMaster;
+import Commands.Command;
+import Commands.CommandInterpreter;
 import Utils.ButtonMaker;
 
 import javax.swing.*;
@@ -11,12 +13,16 @@ public class SoundButtonPanel extends JPanel implements AudioKeyUIWrapper {
     private AudioKey audioKey;
     private JButton playButton;
 
-    SoundButtonPanel(AudioKey key, AudioMaster audioMaster, PlaylistUIWrapper owningPanel){
+    SoundButtonPanel(AudioKey key, AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame, PlaylistUIWrapper owningPanel){
         audioKey = key;
         setLayout(new BorderLayout());
 
         playButton = new JButton(key.getName());
-        playButton.addActionListener(e -> audioMaster.playSoundboardSound(key.getUrl()));
+        playButton.addActionListener(e -> commandInterpreter.evaluateCommand(
+            String.format("sb %1$s", audioKey.getName()),
+            uiFrame.getCommandFeedbackHandler(),
+            Command.ADMIN_MASK
+        ));
         add(playButton, BorderLayout.CENTER);
 
         JButton menuButton = ButtonMaker.createIconButton("icons/menu.png", "Config", 2);

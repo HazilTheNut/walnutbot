@@ -1,23 +1,22 @@
 package Commands;
 
 import Audio.AudioMaster;
+import Utils.BotManager;
 import Utils.SettingsLoader;
-import net.dv8tion.jda.api.JDA;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 public class Command {
 
-    static final byte USER_MASK  = 0x01;
-    static final byte ADMIN_MASK = 0x02;
+    public static final byte USER_MASK  = 0x01;
+    public static final byte ADMIN_MASK = 0x02;
 
     private String commandTreeStr; // A String describing the command as a subcommand of a another one, such as "super sub"
     private List<Command> subcommands;
 
-    String getCommandName(){
+    String getCommandKeyword(){
         return "-";
     }
 
@@ -25,7 +24,7 @@ public class Command {
         return "";
     }
 
-    String getHelpName(){
+    String getHelpCommandUsage(){
         return String.format("%1$s %2$s", commandTreeStr, getHelpArgs()).trim();
     }
 
@@ -38,10 +37,10 @@ public class Command {
     }
 
     String getSpecificHelpDescription(){
-        return "-";
+        return getHelpDescription();
     }
 
-    void onRunCommand(JDA jda, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
+    void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
         // Override this for command's behavior
     }
 
@@ -63,7 +62,7 @@ public class Command {
         if (subcommands == null)
             subcommands = new LinkedList<>();
         for (Command subcommand : subcommands){
-            subcommand.setCommandTreeStr(String.format("%1$s %2$s", commandTreeStr, subcommand.getCommandName()));
+            subcommand.setCommandTreeStr(String.format("%1$s %2$s", commandTreeStr, subcommand.getCommandKeyword()));
             subcommand.updateSubCommandTreeStr();
         }
     }
@@ -84,5 +83,22 @@ public class Command {
     boolean isPermissionSufficient(byte permission){
         byte settingsPerms = Byte.valueOf(SettingsLoader.getSettingsValue(getPermissionName(), "3"));
         return (permission & settingsPerms) != 0;
+    }
+
+    /**
+     * Helper method for easier use; it checks the input URI against the permissions of the author and returns true if the input is allowed.
+     *
+     * @param uri The URI to check for instances of attempts at accessing the local disk without permission
+     * @param feedbackHandler The CommandFeedbackHandler to state that a certain action is disallowed if it is.
+     * @param authorPermission The permission vector of the command author.
+     * @return True if the author is allowed to use the URI.
+     */
+    boolean sanitizeLocalAccess(String uri, CommandFeedbackHandler feedbackHandler, byte authorPermission){
+        boolean uriAllowed = ((authorPermission & Command.ADMIN_MASK) == Command.ADMIN_MASK) ||
+            Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")) ||
+            !uri.contains("http");
+        if (!uriAllowed)
+            feedbackHandler.sendMessage("**WARNING:** This bot's admin has blocked access to local files.");
+        return uriAllowed;
     }
 }

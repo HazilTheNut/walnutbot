@@ -1,24 +1,22 @@
 package UI;
 
 import Audio.AudioMaster;
+import Utils.BotManager;
 import Utils.ButtonMaker;
-import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.VoiceChannel;
 
 import javax.swing.*;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 public class ConnectionPanel extends JPanel {
     
-    public ConnectionPanel(JDA jda, AudioMaster audioMaster){
+    public ConnectionPanel(BotManager botManager, AudioMaster audioMaster){
 
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
         JComboBox<VoiceChannelOption> channelSelect = new JComboBox<>();
         JButton listButton = new JButton("List Channels...");
-        listButton.addActionListener(e -> generateVoiceChannelOptions(channelSelect, jda));
+        listButton.addActionListener(e -> generateVoiceChannelOptions(channelSelect, botManager));
 
         add(listButton);
         add(channelSelect);
@@ -26,21 +24,12 @@ public class ConnectionPanel extends JPanel {
         JButton connectButton = ButtonMaker.createIconButton("icons/connect.png", "Connect", 10);
         connectButton.addActionListener(e -> {
             VoiceChannelOption selected = (VoiceChannelOption)channelSelect.getSelectedItem();
-            if (selected != null) {
-                selected.getVoiceChannel().getGuild().getAudioManager().openAudioConnection(selected.getVoiceChannel());
-                audioMaster.setConnectedChannel(selected.getVoiceChannel());
-            }
+            if (selected != null)
+                botManager.connectToVoiceChannel(selected.getServerName(), selected.getChannelName());
         });
 
         JButton disconnectButton = ButtonMaker.createIconButton("icons/disconnect.png", "Disconnect", 10);
-        disconnectButton.addActionListener(e -> {
-            VoiceChannelOption selected = (VoiceChannelOption)channelSelect.getSelectedItem();
-            if (selected != null) {
-                selected.getVoiceChannel().getGuild().getAudioManager().closeAudioConnection();
-                audioMaster.setConnectedChannel(null);
-                audioMaster.stopAllAudio();
-            }
-        });
+        disconnectButton.addActionListener(e -> botManager.disconnectFromVoiceChannel());
 
         add(connectButton);
         add(disconnectButton);
@@ -48,39 +37,34 @@ public class ConnectionPanel extends JPanel {
         setBorder(BorderFactory.createTitledBorder("Connection"));
     }
 
-    private void generateVoiceChannelOptions(JComboBox<VoiceChannelOption> selectionBox, JDA jda){
+    private void generateVoiceChannelOptions(JComboBox<VoiceChannelOption> selectionBox, BotManager botManager){
         selectionBox.removeAllItems();
-        ArrayList<VoiceChannel> voiceChannels = new ArrayList<>(jda.getVoiceChannels());
-        voiceChannels.sort(new Comparator<VoiceChannel>() {
-            @Override public int compare(VoiceChannel o1, VoiceChannel o2) {
-                return representVoiceChannel(o1).compareTo(representVoiceChannel(o2));
-            }
-        });
-        for (VoiceChannel channel : voiceChannels)
-            selectionBox.addItem(new VoiceChannelOption(channel, representVoiceChannel(channel)));
-    }
-
-    private String representVoiceChannel(VoiceChannel channel) {
-        return String.format("%1$s : %2$s", channel.getGuild().getName(), channel.getName());
+        List<String> channelList = botManager.getListOfVoiceChannels();
+        for (String channelInfo : channelList){
+            String[] parts = channelInfo.split(":");
+            selectionBox.addItem(new VoiceChannelOption(parts[0].trim(), parts[1].trim()));
+        }
     }
 
     private class VoiceChannelOption{
-        private VoiceChannel vc;
-        private String name;
+        private String serverName;
+        private String channelName;
 
-        public VoiceChannelOption(VoiceChannel vc, String name) {
-            this.vc = vc;
-            this.name = name;
+        public VoiceChannelOption(String serverName, String channelName) {
+            this.serverName = serverName;
+            this.channelName = channelName;
         }
-        public VoiceChannel getVoiceChannel() {
-            return vc;
+
+        public String getServerName() {
+            return serverName;
         }
-        public String getName() {
-            return name;
+
+        public String getChannelName() {
+            return channelName;
         }
 
         @Override public String toString() {
-            return getName();
+            return String.format("%1$s : %2$s", serverName, channelName);
         }
     }
     

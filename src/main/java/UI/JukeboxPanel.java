@@ -4,6 +4,7 @@ import Audio.AudioKey;
 import Audio.AudioKeyPlaylist;
 import Audio.AudioMaster;
 import Audio.SongDurationTracker;
+import Commands.CommandInterpreter;
 import Utils.ButtonMaker;
 import Utils.Transcriber;
 
@@ -21,7 +22,7 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
     private JLabel currentPlayingSongLabel;
     private static final String noSongText = "Song currently not playing";
 
-    public JukeboxPanel(AudioMaster audioMaster, JFrame uiFrame){
+    public JukeboxPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, JFrame uiFrame){
         audioMaster.setJukeboxUIWrapper(this);
 
         setLayout(new BorderLayout());
@@ -40,6 +41,12 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         defaultListTable = new TrackListingTable(audioMaster, false);
 
         JScrollPane scrollPane = new JScrollPane(defaultListTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        int unitIncrement = 0;
+        for (Component component : scrollPane.getComponents())
+            unitIncrement = Math.max(unitIncrement, (int)component.getMinimumSize().getHeight());
+
+        scrollPane.getVerticalScrollBar().setUnitIncrement(unitIncrement);
 
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(createDefaultListControlsPanel(audioMaster, defaultListTable), BorderLayout.PAGE_START);
