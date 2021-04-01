@@ -1,6 +1,7 @@
 package UI;
 
 import Audio.AudioKey;
+import Audio.AudioKeyPlaylistScraper;
 import Audio.AudioMaster;
 import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -10,11 +11,10 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
 
 public class AddPlaylistFrame extends JFrame {
 
-    public AddPlaylistFrame(AudioMaster audioMaster, PlaylistUIWrapper playlistUIWrapper){
+    public AddPlaylistFrame(AudioMaster audioMaster){
 
         setLayout(new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS));
         setTitle("Import Playlist");
@@ -37,7 +37,7 @@ public class AddPlaylistFrame extends JFrame {
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
 
         JButton confirmButton = new JButton("Import");
-        confirmButton.addActionListener(e -> importPlaylist(urlField.getText(), audioMaster, playlistUIWrapper));
+        confirmButton.addActionListener(e -> importPlaylist(urlField.getText(), audioMaster));
         buttonPanel.add(confirmButton);
 
         JButton cancelButton = new JButton("Cancel");
@@ -49,16 +49,10 @@ public class AddPlaylistFrame extends JFrame {
         setVisible(true);
     }
 
-    private void importPlaylist(String url, AudioMaster audioMaster, PlaylistUIWrapper playlistUIWrapper){
-        Transcriber.print("Loading playlist from %1$s", url);
-        ArrayList<AudioKey> loadedFromFile = AudioKeyPlaylistLoader.grabKeysFromPlaylist(url);
-        if (loadedFromFile.size() > 0){
-            for (AudioKey audioKey : loadedFromFile){
-                audioMaster.getPlayerManager().loadItem(audioKey.getUrl(), new PlaylistScraper(audioMaster, playlistUIWrapper));
-            }
-            audioMaster.saveJukeboxDefault();
-        } else
-            audioMaster.getPlayerManager().loadItem(url, new PlaylistScraper(audioMaster, playlistUIWrapper));
+    private void importPlaylist(String url, AudioMaster audioMaster){
+        Transcriber.printRaw("Loading playlist from %1$s", url);
+        (new AudioKeyPlaylistScraper(audioMaster)).populateAudioKeyPlaylist(url, audioMaster.getJukeboxDefaultList(),
+            audioMaster::saveJukeboxDefault);
         dispose();
     }
 

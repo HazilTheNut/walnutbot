@@ -32,6 +32,6 @@ public class ConnectListCommand extends Command {
         }
         builder.append("```");
 
-        feedbackHandler.sendMessage(builder.toString());
+        feedbackHandler.sendAuthorPM(builder.toString());
     }
 }

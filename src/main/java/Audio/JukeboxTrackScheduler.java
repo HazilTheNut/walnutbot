@@ -29,14 +29,14 @@ public class JukeboxTrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
-        Transcriber.print("Track \'%1$s\' starting (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+        Transcriber.printTimestamped("Track \'%1$s\' starting (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         audioMaster.getSongDurationTracker().onSongStart(track);
         // A track started playing
     }
 
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
-        Transcriber.print("Track \'%1$s\' ended (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+        Transcriber.printTimestamped("Track \'%1$s\' ended (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         if (endReason.mayStartNext) {
             audioMaster.jukeboxSkipToNextSong();
         }
@@ -53,14 +53,14 @@ public class JukeboxTrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
         // An already playing track threw an exception (track end event will still be received separately)
-        Transcriber.print(exception.getMessage());
+        Transcriber.printTimestamped(exception.getMessage());
         exception.printStackTrace();
         audioMaster.getSongDurationTracker().onSongEnd();
     }
 
     @Override
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
-        Transcriber.print("Track \'%1$s\' got stuck (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+        Transcriber.printTimestamped("Track \'%1$s\' got stuck (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         // Audio track has been unable to provide us any audio, might want to just start a new track
         audioMaster.jukeboxSkipToNextSong();
         audioMaster.getSongDurationTracker().onSongEnd();

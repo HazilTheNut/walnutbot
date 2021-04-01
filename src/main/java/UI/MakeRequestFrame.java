@@ -1,6 +1,5 @@
 package UI;
 
-import Audio.AudioKey;
 import Audio.AudioMaster;
 import Utils.ButtonMaker;
 import Utils.FileIO;
@@ -9,10 +8,8 @@ import Utils.Transcriber;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
 import java.io.File;
-import java.util.ArrayList;
 
 public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
@@ -79,11 +76,11 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
      * @param e the event to be processed
      */
     @Override public void windowStateChanged(WindowEvent e) {
-        Transcriber.print("Window State Change: %s)", e.paramString());
+        Transcriber.printTimestamped("Window State Change: %s)", e.paramString());
         if ((e.getNewState() & 1) == 0) {
             setState(Frame.NORMAL);
             setVisible(true);
-            Transcriber.print("Manual song request window setting itself to visible.");
+            Transcriber.printTimestamped("Manual song request window setting itself to visible.");
         }
     }
 }

@@ -36,9 +36,7 @@ public class SettingsPanel extends JPanel {
             if (c instanceof JComponent)
                 ((JComponent) c).setAlignmentX(Component.LEFT_ALIGNMENT);
 
-
         validate();
-
     }
 
     private JPanel createMainPanel(AudioMaster audioMaster) {
@@ -86,7 +84,7 @@ public class SettingsPanel extends JPanel {
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         panel.setBorder(BorderFactory.createTitledBorder("Permissions"));
 
-        JCheckBox allowLocalAccessBox = new JCheckBox("Allow Discord users to access local files (for Soundboard or Jukebox requests)");
+        JCheckBox allowLocalAccessBox = new JCheckBox("Allow Non-admin users to access local files (for Soundboard or Jukebox requests)");
         allowLocalAccessBox.addChangeListener(e -> {
             SettingsLoader.modifySettingsValue("discordAllowLocalAccess", String.valueOf(allowLocalAccessBox.isSelected()));
             SettingsLoader.writeSettingsFile();

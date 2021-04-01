@@ -3,6 +3,7 @@ package Commands;
 import Audio.AudioMaster;
 import Utils.BotManager;
 import Utils.SettingsLoader;
+import Utils.Transcriber;
 
 import javax.annotation.Nonnull;
 import java.util.LinkedList;
@@ -10,8 +11,9 @@ import java.util.List;
 
 public class Command {
 
-    public static final byte USER_MASK  = 0x01;
-    public static final byte ADMIN_MASK = 0x02;
+    public static final byte USER_MASK  = 0x01;     //For non-admin users
+    public static final byte ADMIN_MASK = 0x02;     //For admin users
+    public static final byte INTERNAL_MASK = 0x04;  //For the bot sending commands to itself
 
     private String commandTreeStr; // A String describing the command as a subcommand of a another one, such as "super sub"
     private List<Command> subcommands;
@@ -81,6 +83,7 @@ public class Command {
      * @return If the AuthorPermission is sufficient to run this command
      */
     boolean isPermissionSufficient(byte permission){
+        if ((permission & INTERNAL_MASK) != 0) return true;
         byte settingsPerms = Byte.valueOf(SettingsLoader.getSettingsValue(getPermissionName(), "3"));
         return (permission & settingsPerms) != 0;
     }
@@ -94,11 +97,31 @@ public class Command {
      * @return True if the author is allowed to use the URI.
      */
     boolean sanitizeLocalAccess(String uri, CommandFeedbackHandler feedbackHandler, byte authorPermission){
+        if ((authorPermission & INTERNAL_MASK) != 0) return true;
         boolean uriAllowed = ((authorPermission & Command.ADMIN_MASK) == Command.ADMIN_MASK) ||
             Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")) ||
             !uri.contains("http");
         if (!uriAllowed)
-            feedbackHandler.sendMessage("**WARNING:** This bot's admin has blocked access to local files.");
+            Transcriber.printAndPost(feedbackHandler, "**WARNING:** This bot's admin has blocked access to local files.");
         return uriAllowed;
+    }
+
+    /**
+     * Checks to see if there are not enough arguments in the arguments array.
+     * If there isn't, the method will automatically print and post a formatted message about it.
+     *
+     * The intended usage of this method is:
+     * @code if (argsInsufficient(args, n)) return;
+     *
+     * @param args The array of String arguments
+     * @param minLength The minimum number of arguments
+     * @return True if there are not enough arguments and false otherwise.
+     */
+    boolean argsInsufficient(String[] args, int minLength, CommandFeedbackHandler feedbackHandler){
+        if (args.length < minLength){
+            Transcriber.printAndPost(feedbackHandler, "**ERROR:** Not enough arguments. Usage: `%1$s`", getHelpCommandUsage());
+            return true;
+        }
+        return false;
     }
 }

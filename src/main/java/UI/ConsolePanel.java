@@ -22,7 +22,7 @@ public class ConsolePanel extends JPanel implements TranscriptReceiver {
 
         add(scrollPane, BorderLayout.CENTER);
 
-        Transcriber.print("Console successfully connected to system output!");
+        Transcriber.printTimestamped("Console successfully connected to system output!");
     }
 
     @Override public void receiveMessage(String message) {

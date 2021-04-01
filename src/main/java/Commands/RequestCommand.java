@@ -2,17 +2,12 @@ package Commands;
 
 import Audio.AudioMaster;
 import Utils.BotManager;
-import Utils.SettingsLoader;
 import Utils.Transcriber;
-import net.dv8tion.jda.api.JDA;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
 
 public class RequestCommand extends Command {
 
     public RequestCommand(){
+        addSubCommand(new JukeboxDefaultListCommand());
         addSubCommand(new ListQueueCommand());
         addSubCommand(new SkipCommand());
     }

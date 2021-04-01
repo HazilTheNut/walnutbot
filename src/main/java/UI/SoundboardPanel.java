@@ -1,19 +1,16 @@
 package UI;
 
-import Audio.AudioKey;
-import Audio.AudioKeyPlaylist;
-import Audio.AudioMaster;
+import Audio.*;
 import Commands.Command;
-import Commands.CommandFeedbackHandler;
 import Commands.CommandInterpreter;
 import Utils.ButtonMaker;
 import Utils.FileIO;
+import Utils.Transcriber;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.Comparator;
 
-public class SoundboardPanel extends JPanel implements PlayerTrackListener, SoundboardUIWrapper{
+public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
     private JLabel playerStatusLabel;
     private SoundsMainPanel soundsPanel;
@@ -29,7 +26,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener, Soun
         setLayout(new BorderLayout());
 
         soundsPanel = createSoundsPanel(master);
-        JPanel miscPanel = createMiscPanel(master, soundsPanel, uiFrame);
+        JPanel miscPanel = createMiscPanel(master, uiFrame, commandInterpreter);
 
         JScrollPane scrollPane = new JScrollPane(soundsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.validate();
@@ -43,16 +40,16 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener, Soun
         master.getGenericTrackScheduler().addPlayerTrackListener(this);
     }
 
-    private JPanel createMiscPanel(AudioMaster audioMaster, SoundsMainPanel soundPanel, UIFrame uiFrame){
+    private JPanel createMiscPanel(AudioMaster audioMaster, UIFrame uiFrame, CommandInterpreter commandInterpreter){
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
 
         JButton addButton = new JButton("Add Sound");
-        addButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, soundPanel, null, audioMaster.getSoundboardList(), audioMaster::saveSoundboard));
+        addButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, new AudioKey("",""), -1, commandInterpreter, ModifyAudioKeyFrame.ModificationType.ADD, ModifyAudioKeyFrame.TargetList.SOUNDBOARD, uiFrame));
         panel.add(addButton);
 
         JButton sortButton = new JButton("Sort A-Z");
-        sortButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb sort", uiFrame.getCommandFeedbackHandler(), Command.ADMIN_MASK));
+        sortButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb sort", Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK));
         panel.add(sortButton);
 
         playerStatusLabel = new JLabel("Status: ");
@@ -63,7 +60,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener, Soun
         stopButton.addActionListener(e -> audioMaster.resumeJukebox());
         panel.add(stopButton);
 
-        audioMaster.setSoundboardUIWrapper(this);
+        //audioMaster.setSoundboardUIWrapper(this);
 
         return panel;
     }
@@ -72,19 +69,11 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener, Soun
         SoundsMainPanel panel = new SoundsMainPanel(audioMaster, commandInterpreter, uiFrame);
         panel.setLayout(new WrapLayout(WrapLayout.LEFT, 6, 2));
 
-        loadSoundboard(audioMaster, panel, commandInterpreter, uiFrame);
+        panel.loadSoundboard();
 
         panel.validate();
 
         return panel;
-    }
-
-    private void loadSoundboard(AudioMaster audioMaster, SoundsMainPanel panel, CommandInterpreter commandInterpreter, UIFrame uiFrame){
-        panel.removeAll();
-        AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
-        for (AudioKey audioKey : soundboard.getAudioKeys()){
-            panel.add(new SoundButtonPanel(audioKey, audioMaster,  commandInterpreter, uiFrame, panel));
-        }
     }
 
     private JPanel createTempPlayPanel(CommandInterpreter commandInterpreter, UIFrame uiFrame){
@@ -98,8 +87,8 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener, Soun
         playButton.addActionListener(e -> {
             commandInterpreter.evaluateCommand(
                 String.format("sb url %1$s", urlField.getText()),
-                uiFrame.getCommandFeedbackHandler(),
-                Command.ADMIN_MASK
+                Transcriber.getGenericCommandFeedBackHandler(),
+                Command.INTERNAL_MASK
             );
             urlField.setText("");
         });
@@ -137,13 +126,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener, Soun
         playerStatusLabel.repaint();
     }
 
-    @Override public void updateSoundboardSoundsList(AudioMaster audioMaster) {
-        loadSoundboard(audioMaster, soundsPanel, commandInterpreter, uiFrame);
-        soundsPanel.revalidate();
-        soundsPanel.repaint();
-    }
-
-    private class SoundsMainPanel extends JPanel implements PlaylistUIWrapper{
+    private class SoundsMainPanel extends JPanel implements AudioKeyPlaylistListener {
 
         AudioMaster audioMaster;
         CommandInterpreter commandInterpreter;
@@ -153,36 +136,70 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener, Soun
             this.audioMaster = audioMaster;
             this.commandInterpreter = commandInterpreter;
             this.uiFrame = uiFrame;
+            audioMaster.getSoundboardList().addAudioKeyPlaylistListener(this);
         }
 
-        @Override public void addAudioKey(AudioKey key) {
-            add(new SoundButtonPanel(key, audioMaster, commandInterpreter, uiFrame, this));
+        private void loadSoundboard(){
+            removeAll();
+            AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
+            for (int i = 0; i < soundboard.getAudioKeys().size(); i++) {
+                AudioKey key = soundboard.getKey(i);
+                add(new SoundButtonPanel(key, i, audioMaster, commandInterpreter, uiFrame));
+            }
+        }
+
+        @Override public void onAddition(AudioKeyPlaylistEvent event) {
+            add(new SoundButtonPanel(event.getKey(), event.getPos(), audioMaster, commandInterpreter, uiFrame));
             revalidate();
             repaint();
         }
 
-        @Override public int getAudioKeyID(AudioKeyUIWrapper keyUIWrapper) {
-            if (keyUIWrapper == null) return -1;
-            for (int i = 0; i < getComponents().length; i++) {
-                if (getComponent(i) instanceof AudioKeyUIWrapper) {
-                    AudioKeyUIWrapper uiWrapper = (AudioKeyUIWrapper) getComponent(i);
-                    if (uiWrapper.getData().equals(keyUIWrapper.getData()))
-                        return i;
-                }
-            }
-            return -1;
+        @Override public void onRemoval(AudioKeyPlaylistEvent event) {
+            loadSoundboard();
+            revalidate();
+            repaint();
         }
 
-        @Override public void modifyAudioKey(int keyID, AudioKey newData) {
-            Component c = getComponent(keyID);
-            if (c instanceof AudioKeyUIWrapper) {
-                AudioKeyUIWrapper audioKeyUIWrapper = (AudioKeyUIWrapper) c;
-                audioKeyUIWrapper.setData(newData);
+        /**
+         * Called when an element of the AudioKeyPlaylist has been modified.
+         * This method is called after the element has been modified.
+         *
+         * @param event The AudioKeyPlaylistEvent describing the details of the event.
+         */
+        @Override public void onModification(AudioKeyPlaylistEvent event) {
+            if (getComponent(event.getPos()) instanceof AudioKeyUIWrapper) {
+                ((AudioKeyUIWrapper)getComponent(event.getPos())).setData(event.getKey());
+                revalidate();
+                repaint();
             }
         }
 
-        @Override public void removeAudioKey(int keyID) {
-            remove(keyID);
+        /**
+         * Called when the AudioKeyPlaylist has been cleared.
+         */
+        @Override public void onClear() {
+            removeAll();
+            revalidate();
+            repaint();
+        }
+
+        /**
+         * Called when the AudioKeyPlaylist has been shuffled.
+         */
+        @Override public void onShuffle() {
+            loadSoundboard();
+            revalidate();
+            repaint();
+        }
+
+        @Override public void onSort() {
+            loadSoundboard();
+            revalidate();
+            repaint();
+        }
+
+        @Override public void onNewPlaylist() {
+            loadSoundboard();
             revalidate();
             repaint();
         }

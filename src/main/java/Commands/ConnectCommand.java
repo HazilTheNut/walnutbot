@@ -2,6 +2,7 @@ package Commands;
 
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.Transcriber;
 
 public class ConnectCommand extends Command {
 
@@ -27,14 +28,14 @@ public class ConnectCommand extends Command {
 
     @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (args.length < 2){
-            feedbackHandler.sendMessage(String.format("**ERROR:** Too few arguments. Usage: `%s`", getHelpCommandUsage()));
+            Transcriber.printAndPost(feedbackHandler, "**ERROR:** Too few arguments. Usage: `%s`", getHelpCommandUsage());
         } else {
             String server   = args[0];
             String channel  = args[1];
             if (botManager.connectToVoiceChannel(server, channel))
-                feedbackHandler.sendMessage(String.format("Connected to channel `%1$s` on server `%2$s`", channel, server));
+                Transcriber.printAndPost(feedbackHandler, "Connected to channel `%1$s` on server `%2$s`", channel, server);
             else
-                feedbackHandler.sendMessage(String.format("**ERROR:** Channel `%1$s` does not exist on server `%2$s`", channel, server));
+                Transcriber.printAndPost(feedbackHandler, "**ERROR:** Channel `%1$s` does not exist on server `%2$s`", channel, server);
         }
     }
 }

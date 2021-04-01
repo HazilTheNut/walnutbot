@@ -1,5 +1,6 @@
 package Audio;
 
+import Commands.Command;
 import Commands.CommandInterpreter;
 import UI.AudioKeyPlaylistLoader;
 import UI.JukeboxUIWrapper;
@@ -50,8 +51,11 @@ public class AudioMaster{
     private AudioKeyPlaylist jukeboxDefaultList; //The list of songs to randomly select when the request queue is exhausted
     private AudioKey currentlyPlayingSong;
     private JukeboxUIWrapper jukeboxUIWrapper;
+
+    private AudioKeyPlaylistListener jukeboxDefaultListListener;
     private boolean loopingCurrentSong = false;
     private boolean jukeboxPaused = false; //The "true" state of the jukebox controlled via UI, commands, etc.
+    private boolean jukeboxDefaultListIsLocalFile = false;
     private SongDurationTracker songDurationTracker;
 
     //Volumes are 0-1, scaled 0-1000 internally
@@ -117,7 +121,7 @@ public class AudioMaster{
 
     public void playSoundboardSound(String url){
         if (getConnectedChannel() == null) {
-            Transcriber.print("Warning! This bot is currently not connected to any channel!");
+            Transcriber.printRaw("Warning! This bot is currently not connected to any channel!");
             return;
         }
         jukeboxPlayer.setPaused(true);
@@ -165,7 +169,7 @@ public class AudioMaster{
             if (request.requestType == RequestType.ADD_TO_QUEUE) { //If this request is to add it to the queue
                 //Set up audio stream
                 if (getConnectedChannel() == null)
-                    Transcriber.print("Warning! This bot is currently not connected to any channel!");
+                    Transcriber.printRaw("Warning! This bot is currently not connected to any channel!");
                 else
                     setActiveStream(jukeboxPlayer);
                 //Fetch song and queue it up
@@ -222,7 +226,7 @@ public class AudioMaster{
                 jukeboxPlayer.startTrack(currentlyPlayingSong.getLoadedTrack(), false);
             else
                 playerManager.loadItem(currentlyPlayingSong.getUrl(), new JukeboxPlayResultHandler(jukeboxPlayer, () -> {}, () -> {
-                    Transcriber.print("WARNING: Song url \"%1$s\" is invalid!", currentlyPlayingSong.getUrl());
+                    Transcriber.printRaw("WARNING: Song url \"%1$s\" is invalid!", currentlyPlayingSong.getUrl());
                     jukeboxSkipToNextSong();
                 }));
         } else
@@ -274,7 +278,7 @@ public class AudioMaster{
     }
 
     public void saveJukeboxDefault(){
-        if (jukeboxDefaultList != null)
+        if (jukeboxDefaultListIsLocalFile && jukeboxDefaultList != null)
             jukeboxDefaultList.saveToFile(new File(jukeboxDefaultList.getUrl()));
     }
 
@@ -288,7 +292,7 @@ public class AudioMaster{
             //jukeboxDefaultList.getAudioKeys().clear(); //The Playlist will see that the file DNE and insert an AudioKey in there. This removes that to create a clean, totally-new playlist.
             uiWrapper.refreshDefaultList(this);
             uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
-            Transcriber.print("Current playlist: %1$s", jukeboxDefaultList.toString());
+            Transcriber.printRaw("Current playlist: %1$s", jukeboxDefaultList.toString());
         }
     }
 
@@ -308,19 +312,30 @@ public class AudioMaster{
         if (result == JFileChooser.APPROVE_OPTION){
             AudioKeyPlaylist playlist = new AudioKeyPlaylist(fileChooser.getSelectedFile(), true);
             if (playlist.isURLValid()) {
-                jukeboxDefaultList = playlist;
-                uiWrapper.refreshDefaultList(this);
-                uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
-                Transcriber.print("Current playlist: %1$s", jukeboxDefaultList.toString());
+                loadJukeboxPlaylist(playlist, uiWrapper);
             }
         }
     }
 
     public void emptyJukeboxPlaylist(JukeboxUIWrapper uiWrapper){
-        jukeboxDefaultList = null;
+        loadJukeboxPlaylist(null, uiWrapper);
+    }
+
+    public void loadJukeBoxPlaylist(AudioKeyPlaylist playlist, boolean jukeboxDefaultListIsLocalFile){
+        loadJukeboxPlaylist(playlist, jukeboxUIWrapper);
+        this.jukeboxDefaultListIsLocalFile = jukeboxDefaultListIsLocalFile;
+    }
+
+    private void loadJukeboxPlaylist(AudioKeyPlaylist playlist, JukeboxUIWrapper uiWrapper){
+        jukeboxDefaultList = playlist;
         uiWrapper.refreshDefaultList(this);
-        uiWrapper.updateDefaultPlaylistLabel("");
-        Transcriber.print("Playlist set to an empty one.");
+        uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
+        if (playlist != null) {
+            Transcriber.printRaw("Current playlist: %1$s", jukeboxDefaultList.toString());
+            jukeboxDefaultList.addAudioKeyPlaylistListener(jukeboxDefaultListListener);
+        }
+        else
+            Transcriber.printRaw("Playlist set to an empty one.");
     }
 
     public void stopAllAudio() {
@@ -416,10 +431,10 @@ public class AudioMaster{
     }
 
     public void sortSoundboardList(){
-        getSoundboardList().getAudioKeys().sort(Comparator.comparing(AudioKey::getName));
+        getSoundboardList().sort();
+        //Transcriber.printTimestamped("Sorting: data complete");
         saveSoundboard();
-        if (soundboardUIWrapper != null)
-            soundboardUIWrapper.updateSoundboardSoundsList(this);
+        //Transcriber.printTimestamped("Sorting: disk write complete");
     }
 
     public void setSoundboardUIWrapper(SoundboardUIWrapper soundboardUIWrapper) {
@@ -430,12 +445,22 @@ public class AudioMaster{
         soundboardList.addAudioKey(key);
         if (soundboardUIWrapper != null)
             soundboardUIWrapper.updateSoundboardSoundsList(this);
+        saveSoundboard();
     }
 
-    public AudioKey removeSoundboardSound(String soundName){
-        AudioKey removed = soundboardList.removeAudioKey(soundName);
-        if (removed != null && soundboardUIWrapper != null)
+    public AudioKey removeSoundboardSound(String id){
+        AudioKey removed = null;
+        // Try to evaluate String as an integer and remove from a particular position
+        try {
+            removed = soundboardList.removeAudioKey(Integer.valueOf(id));
+        } catch (NumberFormatException ignored){}
+        // If id is not an integer, search by name-matching
+        if (removed == null)
+            removed = soundboardList.removeAudioKey(id);
+        if (removed != null && soundboardUIWrapper != null) {
             soundboardUIWrapper.updateSoundboardSoundsList(this);
+            saveSoundboard();
+        }
         return removed;
     }
 
@@ -443,9 +468,17 @@ public class AudioMaster{
         if (soundboardList.modifyAudioKey(soundName, newData)){
             if (soundboardUIWrapper != null)
                 soundboardUIWrapper.updateSoundboardSoundsList(this);
+            saveSoundboard();
             return true;
         }
         return false;
+    }
+
+    public void setJukeboxDefaultListListener(AudioKeyPlaylistListener jukeboxDefaultListListener) {
+        this.jukeboxDefaultListListener = jukeboxDefaultListListener;
+        if (jukeboxDefaultList != null) {
+            jukeboxDefaultList.addAudioKeyPlaylistListener(jukeboxDefaultListListener);
+        }
     }
 
     private class SoundboardPlayerListener implements PlayerTrackListener{
@@ -547,10 +580,10 @@ public class AudioMaster{
         }
 
         @Override public void trackLoaded(AudioTrack track) {
-            Transcriber.print("Track \'%1$s\' loaded! (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+            Transcriber.printTimestamped("Track \'%1$s\' loaded! (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
             currentlyPlayingSong = new AudioKey(track);
             if (!audioPlayer.startTrack(track, false))
-                Transcriber.print("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+                Transcriber.printTimestamped("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
             super.trackLoaded(track);
         }
     }

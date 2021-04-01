@@ -46,6 +46,6 @@ public class SoundboardModifyCommand extends Command {
         if (audioMaster.modifySoundboardSound(args[0], newData))
             Transcriber.printAndPost(feedbackHandler, "Sound `%1$s` successfully modified.", args[0]);
         else
-            Transcriber.printAndPost(feedbackHandler, "**ERROR:** Sound `%1$s` not found!");
+            Transcriber.printAndPost(feedbackHandler, "**ERROR:** Sound `%1$s` not found!", args[0]);
     }
 }

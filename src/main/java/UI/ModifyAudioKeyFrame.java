@@ -1,22 +1,34 @@
 package UI;
 
 import Audio.AudioKey;
-import Audio.AudioKeyPlaylist;
 import Audio.AudioMaster;
+import Commands.Command;
+import Commands.CommandInterpreter;
 import Utils.ButtonMaker;
 import Utils.FileIO;
+import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
+import javax.annotation.Nonnull;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 
 public class ModifyAudioKeyFrame extends JFrame {
 
-    ModifyAudioKeyFrame(AudioMaster audioMaster, PlaylistUIWrapper playlistUIWrapper, AudioKeyUIWrapper audioKeyUIWrapper, AudioKeyPlaylist playlist, SaveAfterChangesAction afterChangesAction){
+    public enum ModificationType {
+        ADD, MODIFY, REMOVE
+    }
+
+    public enum TargetList {
+        SOUNDBOARD, JUKEBOX_DEFAULT, JUKEBOX_QUEUE
+    }
+
+    ModifyAudioKeyFrame(AudioMaster audioMaster, @Nonnull AudioKey base, int pos, CommandInterpreter commandInterpreter,
+                        ModificationType modificationType, TargetList targetList, UIFrame uiFrame){
 
         Container c = getContentPane();
 
@@ -24,7 +36,6 @@ public class ModifyAudioKeyFrame extends JFrame {
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 
         int FIELD_MARGIN = 10;
-        int keyIDtoEdit = playlistUIWrapper.getAudioKeyID(audioKeyUIWrapper);
 
         //Row for the AudioKey's name
         JPanel namePanel = new JPanel();
@@ -32,7 +43,7 @@ public class ModifyAudioKeyFrame extends JFrame {
         namePanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
         namePanel.add(new JLabel("Name: "), BorderLayout.LINE_START);
         JTextField nameField = new JTextField();
-        if (audioKeyUIWrapper != null) nameField.setText(audioKeyUIWrapper.getData().getName());
+        if (base != null) nameField.setText(base.getName());
         namePanel.add(nameField, BorderLayout.CENTER);
 
         //Row for the AudioKey's URL
@@ -41,7 +52,7 @@ public class ModifyAudioKeyFrame extends JFrame {
         urlPanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
         urlPanel.add(new JLabel("URL: "), BorderLayout.LINE_START);
         JTextField urlField = new JTextField();
-        if (audioKeyUIWrapper != null) urlField.setText(audioKeyUIWrapper.getData().getUrl());
+        if (base != null) urlField.setText(base.getUrl());
         urlPanel.add(urlField, BorderLayout.CENTER);
         urlPanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
 
@@ -72,15 +83,13 @@ public class ModifyAudioKeyFrame extends JFrame {
         buttonsPanel.add(openButton);
 
         //Add Sound Button
-        if (audioKeyUIWrapper == null) { //If the audioKeyUIWrapper is null, we are creating a new one
+        if (modificationType == ModificationType.ADD) {
             JButton addSoundButton = new JButton("Add to Playlist");
             addSoundButton.addActionListener(e -> {
                 AudioKey key = new AudioKey(nameField.getText(), urlField.getText());
                 if (key.isValid()) {
-                    playlist.addAudioKey(key);
-                    //playlist.printPlaylist();
-                    playlistUIWrapper.addAudioKey(key);
-                    afterChangesAction.save();
+                    commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.ADD, targetList, -1, base.getName()),
+                        Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK);
                 }
                 dispose();
             });
@@ -88,27 +97,20 @@ public class ModifyAudioKeyFrame extends JFrame {
         }
 
         //Remove Button
-        if (audioKeyUIWrapper != null){ //If audioKeyUIWrapper is nonnull, we are modifying one
-            JButton removeButton = new JButton("Remove");
-            removeButton.addActionListener(e -> {
-                playlist.removeAudioKey(audioKeyUIWrapper.getData());
-                //playlist.printPlaylist();
-                playlistUIWrapper.removeAudioKey(keyIDtoEdit);
-                afterChangesAction.save();
-                dispose();
-            });
-            buttonsPanel.add(removeButton);
-        }
+        if (modificationType == ModificationType.MODIFY) {
+                JButton removeButton = new JButton("Remove");
+                removeButton.addActionListener(e -> {
+                    commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.REMOVE, targetList, pos, base.getName()), Transcriber.getGenericCommandFeedBackHandler(),
+                        Command.INTERNAL_MASK);
+                    dispose();
+                });
+                buttonsPanel.add(removeButton);
 
-        //Apply (Changes) Button
-        if (audioKeyUIWrapper != null){
+            //Apply (Changes) Button
             JButton applyButton = new JButton("Apply");
             applyButton.addActionListener(e -> {
-                if (nameField.getText().length() > 0 && urlField.getText().length() > 0) {
-                    playlistUIWrapper.modifyAudioKey(keyIDtoEdit, new AudioKey(nameField.getText(), urlField.getText()));
-                    //playlist.printPlaylist();
-                    afterChangesAction.save();
-                }
+                commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.MODIFY, targetList, pos, base.getName()), Transcriber.getGenericCommandFeedBackHandler(),
+                    Command.INTERNAL_MASK);
                 dispose();
             });
             buttonsPanel.add(applyButton);
@@ -126,9 +128,41 @@ public class ModifyAudioKeyFrame extends JFrame {
         c.add(panel);
         c.validate();
 
-        setTitle("Sound Editor");
+        setTitle(String.format("Sound Editor (pos: %1$d)", pos));
         setSize(new Dimension(430, 110));
         setVisible(true);
+    }
+
+    private String buildCommand(JTextField nameField, JTextField urlField, ModificationType modificationType, TargetList targetList, int pos, String originalName){
+        String name = nameField.getText();
+        String url  = urlField.getText();
+        switch (targetList){
+            case SOUNDBOARD: {
+                switch (modificationType){
+                    case ADD: return String.format("sb add \"%1$s\" %2$s", name, url);
+                    case MODIFY: return String.format("sb modify \"%1$s\" -name \"%2$s\" -url %3$s", originalName, name, url);
+                    case REMOVE: return String.format("sb remove %1$d", pos);
+                }
+                return "ERROR";
+            }
+            case JUKEBOX_QUEUE: {
+                switch (modificationType){
+                    case ADD: return String.format("jb %1$s", url);
+                    case MODIFY: return "ERROR";
+                    case REMOVE: return "ERROR";
+                }
+                return "ERROR";
+            }
+            case JUKEBOX_DEFAULT:
+                switch (modificationType){
+                    case ADD: return String.format("jb dfl add %1$s", url);
+                    case MODIFY: return String.format("jb dfl modify %1$d -name \"%2$s\" -url %3$s", pos, name, url);
+                    case REMOVE: return String.format("jb dfl remove %1$d", pos);
+                }
+                return "ERROR";
+            default:
+                return "ERROR ";
+        }
     }
 
     private class InfoFetchLoadResultHandler implements AudioLoadResultHandler {

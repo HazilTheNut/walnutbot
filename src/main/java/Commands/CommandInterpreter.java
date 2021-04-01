@@ -63,10 +63,10 @@ public class CommandInterpreter extends ListenerAdapter {
     }
 
     @Override public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
-        //Transcriber.print("Raw message: \"%1$s\"", event.getMessage().getContentRaw());
+        //Transcriber.printTimestamped("Raw message: \"%1$s\"", event.getMessage().getContentRaw());
 
         //Input sanitation
-        Transcriber.print("My name: \'%1$s\"", botManager.getBotName());
+        //Transcriber.printTimestamped("My name: \'%1$s\"", botManager.getBotName());
         if (!Boolean.valueOf(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
             return;
         //Ensure the bot doesn't get stuck in response loops
@@ -75,13 +75,20 @@ public class CommandInterpreter extends ListenerAdapter {
 
         //Run command if incoming message starts with the command character
         String messageContent = event.getMessage().getContentRaw();
-        evaluateCommand(removeCommandChar(messageContent), new DiscordCommandFeedbackHandler(event), Command.USER_MASK);
+        if (isADiscordCommand(messageContent))
+            evaluateCommand(removeCommandChar(messageContent), new DiscordCommandFeedbackHandler(event), Command.USER_MASK);
+    }
+
+    private boolean isADiscordCommand(String commandRawText){
+        String commandCharStr = SettingsLoader.getBotConfigValue("command_char");
+        if (commandCharStr == null) return false;
+        return commandRawText.length() > commandCharStr.length() && commandRawText.substring(0, commandCharStr.length()).equals(commandCharStr);
     }
 
     private String removeCommandChar(String commandRawText){
         String commandCharStr = SettingsLoader.getBotConfigValue("command_char");
         if (commandCharStr == null || commandCharStr.length() <= 0) {
-            Transcriber.print("WARNING! config.ini malformed - \'command_char\' is missing!");
+            Transcriber.printRaw("WARNING! config.ini malformed - \'command_char\' is missing!");
             return commandRawText;
         }
         if (commandRawText.length() > commandCharStr.length() && commandRawText.substring(0, commandCharStr.length()).equals(commandCharStr)) {
@@ -100,11 +107,11 @@ public class CommandInterpreter extends ListenerAdapter {
      * @param authorPermission The byte describing the command author's level of permission.
      */
     public void evaluateCommand(String commandText, CommandFeedbackHandler commandFeedbackHandler, byte authorPermission){
-        Transcriber.print("%1$s > %2$s", commandFeedbackHandler.getAuthor(), commandText);
+        Transcriber.printTimestamped("%1$s > %2$s", commandFeedbackHandler.getAuthor(), commandText);
         String[] parts = splitCommandStr(commandText);
         if (commandMap.containsKey(parts[0])){ //If command is valid
             if (!Boolean.valueOf(SettingsLoader.getSettingsValue(getCommandAllowanceSettingName(parts[0]), "true"))) {
-                commandFeedbackHandler.sendMessage("**WARNING:** This bot's admin has blocked usage of this command.");
+                Transcriber.printAndPost(commandFeedbackHandler, "**WARNING:** This bot's admin has blocked usage of this command.");
                 return;
             }
             String[] subarray = removeFirstElement(parts); //Either the command arguments or a command-args group of a subcommand
@@ -116,12 +123,10 @@ public class CommandInterpreter extends ListenerAdapter {
 
     private void searchAndRunCommand(String[] args, int depth, Command baseCommand, CommandFeedbackHandler feedbackHandler, byte authorPermission){
         Command foundSubCommand = null;
-        if (depth < args.length) {
-            for (Command command : baseCommand.getSubCommands()) {
-                if (command.getCommandKeyword().equals(args[depth])) {
-                    foundSubCommand = command;
-                    break;
-                }
+        for (Command command : baseCommand.getSubCommands()) {
+            if (command.getCommandKeyword().equals(args[0])) {
+                foundSubCommand = command;
+                break;
             }
         }
         if (foundSubCommand != null) {
@@ -131,7 +136,7 @@ public class CommandInterpreter extends ListenerAdapter {
             if (baseCommand.isPermissionSufficient(authorPermission))
                 baseCommand.onRunCommand(botManager, audioMaster, feedbackHandler, authorPermission, args);
             else
-                feedbackHandler.sendMessage("**WARNING:** You do not have permission to run this command!");
+                Transcriber.printAndPost(feedbackHandler, "**WARNING:** You do not have permission to run this command!");
         }
     }
 
@@ -139,7 +144,6 @@ public class CommandInterpreter extends ListenerAdapter {
         String filteredText = removeCommandChar(commandStr);
         ArrayList<String> partsList = new ArrayList<>();
         StringBuilder builder = new StringBuilder();
-        boolean characterEscaped = false;
         boolean withinQuotations = false;
         for (int i = 0; i < filteredText.length(); i++) {
             char c = filteredText.charAt(i);
@@ -151,21 +155,17 @@ public class CommandInterpreter extends ListenerAdapter {
                     builder.setLength(0);
                 }
             } else if (c == '\\'){
-                if (!characterEscaped)
-                    characterEscaped = true;
-                else
-                    builder.append(c);
+                i++;
+                if (i < filteredText.length())
+                    builder.append(filteredText.charAt(i));
             } else if (c == '\"'){
-                if (!characterEscaped) {
-                    if (withinQuotations){
-                        partsList.add(builder.toString());
-                        builder.setLength(0);
-                        withinQuotations = false;
-                    } else {
-                        withinQuotations = true;
-                    }
-                } else
-                    builder.append(c);
+                if (withinQuotations){
+                    partsList.add(builder.toString());
+                    builder.setLength(0);
+                    withinQuotations = false;
+                } else {
+                    withinQuotations = true;
+                }
             } else
                 builder.append(c);
         }

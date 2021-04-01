@@ -17,9 +17,9 @@ public class GenericLoadResultHandler implements AudioLoadResultHandler {
 
     @Override
     public void trackLoaded(AudioTrack track) {
-        Transcriber.print("Track \'%1$s\' loaded! (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+        Transcriber.printTimestamped("Track \'%1$s\' loaded! (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         if (!audioPlayer.startTrack(track, false))
-            Transcriber.print("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+            Transcriber.printTimestamped("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
     }
 
     @Override
@@ -31,13 +31,13 @@ public class GenericLoadResultHandler implements AudioLoadResultHandler {
 
     @Override
     public void noMatches() {
-        Transcriber.print("URL passed in got no matches!");
+        Transcriber.printTimestamped("URL passed in got no matches!");
         // Notify the user that we've got nothing
     }
 
     @Override
     public void loadFailed(FriendlyException throwable) {
-        Transcriber.print("Failure to load track!");
+        Transcriber.printTimestamped("Failure to load track!");
         throwable.printStackTrace();
         // Notify the user that everything exploded
     }

@@ -1,5 +1,4 @@
 import Audio.AudioMaster;
-import Commands.Command;
 import Commands.CommandInterpreter;
 import UI.UIFrame;
 import Utils.*;
@@ -33,7 +32,7 @@ public class Main {
         }
         AudioMaster audioMaster = new AudioMaster();
         if (jda == null)
-            Transcriber.print("WARNING: JDA is null!");
+            Transcriber.printTimestamped("WARNING: JDA is null!");
         BotManager botManager = null;
         if (jda != null){
             botManager = new DiscordBotManager(jda, audioMaster);

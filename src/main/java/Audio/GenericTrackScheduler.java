@@ -9,7 +9,6 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class GenericTrackScheduler extends AudioEventAdapter {
 
@@ -41,7 +40,7 @@ public class GenericTrackScheduler extends AudioEventAdapter {
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
         for (PlayerTrackListener listener : listeners)
             listener.onTrackStart();
-        Transcriber.print("Track \'%1$s\' starting (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+        Transcriber.printTimestamped("Track \'%1$s\' starting (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         // A track started playing
     }
 
@@ -49,7 +48,7 @@ public class GenericTrackScheduler extends AudioEventAdapter {
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         for (PlayerTrackListener listener : listeners)
             listener.onTrackStop();
-        Transcriber.print("Track \'%1$s\' ended (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+        Transcriber.printTimestamped("Track \'%1$s\' ended (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         if (endReason.mayStartNext) {
             // Start next track
         }
@@ -66,7 +65,7 @@ public class GenericTrackScheduler extends AudioEventAdapter {
     public void onTrackException(AudioPlayer player, AudioTrack track, FriendlyException exception) {
         for (PlayerTrackListener listener : listeners)
             listener.onTrackError();
-        Transcriber.print(exception.getMessage());
+        Transcriber.printTimestamped(exception.getMessage());
         exception.printStackTrace();
         // An already playing track threw an exception (track end event will still be received separately)
     }
@@ -75,7 +74,7 @@ public class GenericTrackScheduler extends AudioEventAdapter {
     public void onTrackStuck(AudioPlayer player, AudioTrack track, long thresholdMs) {
         for (PlayerTrackListener listener : listeners)
             listener.onTrackError();
-        Transcriber.print("Track \'%1$s\' got stuck (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+        Transcriber.printTimestamped("Track \'%1$s\' got stuck (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         // Audio track has been unable to provide us any audio, might want to just start a new track
     }
 }

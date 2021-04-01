@@ -13,29 +13,36 @@ import java.util.Date;
 public class Transcriber {
 
     private static ArrayList<TranscriptReceiver> transcriptReceivers;
+    private static CommandFeedbackHandler genericCommandFeedBackHandler;
 
     static {
         transcriptReceivers = new ArrayList<>();
+        genericCommandFeedBackHandler = new GenericCommandFeedbackHandler();
+    }
+
+    public static CommandFeedbackHandler getGenericCommandFeedBackHandler() {
+        return genericCommandFeedBackHandler;
     }
 
     public static void addTranscriptReceiver(TranscriptReceiver receiver){
         transcriptReceivers.add(receiver);
     }
 
-    public static void print(String formattedString, Object... args){
+    public static void printTimestamped(String formattedString, Object... args){
         String time = String.format("[%1$s] ", (new SimpleDateFormat("MM/dd/yyyy kk:mm:ss")).format(new Date()));
         String message = time.concat(String.format(formattedString, args));
         System.out.println(message);
-//        for (TranscriptReceiver transcriptReceiver : transcriptReceivers)
-//           transcriptReceiver.receiveMessage(message);
     }
 
     public static void printAndPost(CommandFeedbackHandler commandFeedbackHandler, String formattedString, Object... args) {
         String message = String.format(formattedString, args);
-        commandFeedbackHandler.sendMessage(message);
         System.out.println(message);
-        for (TranscriptReceiver transcriptReceiver : transcriptReceivers)
-            transcriptReceiver.receiveMessage(message);
+        commandFeedbackHandler.sendMessage(message);
+    }
+
+    public static void printRaw(String formattedString, Object... args){
+        String message = String.format(formattedString, args);
+        System.out.println(message);
     }
 
     public static void startTranscription(){
@@ -79,7 +86,7 @@ public class Transcriber {
 
         @Override public void print(String s) {
             fileOutStream.print(s);
-            //super.print(s);
+            //super.printTimestamped(s);
             sendToReceivers(s);
         }
 
@@ -87,6 +94,43 @@ public class Transcriber {
             fileOutStream.println(x);
             //super.println(x);
             sendToReceivers(x);
+        }
+    }
+
+    private static class GenericCommandFeedbackHandler implements CommandFeedbackHandler {
+
+        /**
+         * Sends a public message in the same channel as where the command is found.
+         *
+         * @param message The message to send
+         */
+        @Override public void sendMessage(String message) {
+            //Transcriber.printRaw(message);
+        }
+
+        /**
+         * @return True if the channel where the command is found is a public space, rather than a form of private message
+         */
+        @Override public boolean isChannelPublic() {
+            return true;
+        }
+
+        /**
+         * Sends a private message to the command author
+         *
+         * @param message The message to send
+         */
+        @Override public void sendAuthorPM(String message) {
+            //Transcriber.printRaw(message);
+        }
+
+        /**
+         * Gets a String describing the author of the command.
+         *
+         * @return A String describing the author of the command.
+         */
+        @Override public String getAuthor() {
+            return "Bot";
         }
     }
 }

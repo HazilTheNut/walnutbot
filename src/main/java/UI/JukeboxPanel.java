@@ -1,15 +1,17 @@
 package UI;
 
-import Audio.AudioKey;
-import Audio.AudioKeyPlaylist;
-import Audio.AudioMaster;
-import Audio.SongDurationTracker;
+import Audio.*;
+import Commands.Command;
 import Commands.CommandInterpreter;
 import Utils.ButtonMaker;
+import Utils.FileIO;
 import Utils.Transcriber;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 
 public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
 
@@ -22,23 +24,24 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
     private JLabel currentPlayingSongLabel;
     private static final String noSongText = "Song currently not playing";
 
-    public JukeboxPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, JFrame uiFrame){
+    public JukeboxPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame){
         audioMaster.setJukeboxUIWrapper(this);
 
         setLayout(new BorderLayout());
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, false, createDefaultListPanel(audioMaster), createQueuePanel(audioMaster, uiFrame));
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, false, createDefaultListPanel(audioMaster, commandInterpreter, uiFrame), createQueuePanel(audioMaster, uiFrame, commandInterpreter));
         splitPane.setDividerLocation(75);
 
         add(splitPane, BorderLayout.CENTER);
         validate();
     }
 
-    private JPanel createDefaultListPanel(AudioMaster audioMaster){
+    private JPanel createDefaultListPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame){
         JPanel panel = new JPanel();
         panel.setLayout(new BorderLayout());
 
-        defaultListTable = new TrackListingTable(audioMaster, false);
+        defaultListTable = new TrackListingTable(audioMaster, uiFrame, commandInterpreter, false);
+        audioMaster.setJukeboxDefaultListListener(defaultListTable);
 
         JScrollPane scrollPane = new JScrollPane(defaultListTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
@@ -49,17 +52,17 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         scrollPane.getVerticalScrollBar().setUnitIncrement(unitIncrement);
 
         panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(createDefaultListControlsPanel(audioMaster, defaultListTable), BorderLayout.PAGE_START);
+        panel.add(createDefaultListControlsPanel(audioMaster, commandInterpreter), BorderLayout.PAGE_START);
 
         return panel;
     }
 
-    private JPanel createDefaultListControlsPanel(AudioMaster audioMaster, PlaylistUIWrapper playlistUIWrapper){
+    private JPanel createDefaultListControlsPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter){
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.LINE_AXIS));
         
         JButton openButton = ButtonMaker.createIconButton("icons/open.png", "Open", 8);
-        openButton.addActionListener(e -> audioMaster.openJukeboxPlaylist(this));
+        openButton.addActionListener(e -> openJukeboxPlaylist(commandInterpreter));
         mainPanel.add(openButton);
 
         JButton newButton = ButtonMaker.createIconButton("icons/new.png", "New", 8);
@@ -70,6 +73,10 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         emptyButton.addActionListener(e -> audioMaster.emptyJukeboxPlaylist(this));
         mainPanel.add(emptyButton);
 
+        JButton quickLoadButton = ButtonMaker.createIconButton("icons/quick_menu.png", "Quick Load", 8);
+        quickLoadButton.addActionListener(e -> openQuickLoadMenu(quickLoadButton, commandInterpreter));
+        mainPanel.add(quickLoadButton);
+
         mainPanel.add(Box.createHorizontalStrut(5));
 
         playlistLabel = new JLabel();
@@ -78,22 +85,33 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         mainPanel.add(Box.createHorizontalGlue());
 
         addSongButton = new JButton("Add Song");
-        addSongButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, playlistUIWrapper, null, audioMaster.getJukeboxDefaultList(), audioMaster::saveJukeboxDefault));
+        //addSongButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, playlistUIWrapper, null, audioMaster.getJukeboxDefaultList(), audioMaster::saveJukeboxDefault));
         addSongButton.setEnabled(false);
         mainPanel.add(addSongButton);
 
         addPlaylistButton = new JButton("Import Playlist");
-        addPlaylistButton.addActionListener(e -> new AddPlaylistFrame(audioMaster, playlistUIWrapper));
+        addPlaylistButton.addActionListener(e -> new AddPlaylistFrame(audioMaster));
         addPlaylistButton.setEnabled(false);
         mainPanel.add(addPlaylistButton);
 
         return mainPanel;
     }
 
-    private JPanel createQueuePanel(AudioMaster audioMaster, JFrame uiFrame){
+    public void openJukeboxPlaylist(CommandInterpreter commandInterpreter){
+        JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
+        int result = fileChooser.showOpenDialog(null);
+        if (result == JFileChooser.APPROVE_OPTION){
+            File chosen = fileChooser.getSelectedFile();
+            commandInterpreter.evaluateCommand("jb dfl load ".concat(chosen.getPath().replace("\\","\\\\")),
+                Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK);
+        }
+    }
+
+    private JPanel createQueuePanel(AudioMaster audioMaster, UIFrame uiFrame, CommandInterpreter commandInterpreter){
         JPanel panel = new JPanel(new BorderLayout());
 
-        queueTable = new TrackListingTable(audioMaster, true);
+        queueTable = new TrackListingTable(audioMaster, uiFrame, commandInterpreter, true);
         queueTable.pullAudioKeyList(audioMaster.getJukeboxQueueList());
 
         JScrollPane scrollPane = new JScrollPane(queueTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -185,22 +203,36 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         playlistLabel.repaint();
     }
 
-    private class TrackListingTable extends JPanel implements PlaylistUIWrapper{
+    private void openQuickLoadMenu(Component invoker, CommandInterpreter commandInterpreter){
+        JPopupMenu popupMenu = new JPopupMenu("./playlists/");
+        for (File file : FileIO.getFilesInDirectory(FileIO.getRootFilePath().concat("playlists/"))) {
+            JMenuItem item = new JMenuItem(file.getName());
+            item.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl load ".concat(file.getPath().replace("\\","\\\\")), Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK));
+            popupMenu.add(item);
+        }
+        popupMenu.show(invoker, 0, 0);
+    }
+
+    private class TrackListingTable extends JPanel implements AudioKeyPlaylistListener {
 
         AudioMaster audioMaster;
+        UIFrame uiFrame;
+        CommandInterpreter commandInterpreter;
         boolean isQueueList;
 
-        private TrackListingTable(AudioMaster audioMaster, boolean isQueueList){
+        private TrackListingTable(AudioMaster audioMaster, UIFrame uiFrame, CommandInterpreter commandInterpreter, boolean isQueueList){
             setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
             this.audioMaster = audioMaster;
             this.isQueueList = isQueueList;
+            this.commandInterpreter = commandInterpreter;
+            this.uiFrame = uiFrame;
         }
 
         private void pullAudioKeyList(AudioKeyPlaylist playlist){
             removeAll();
             if (playlist != null) {
-                for (AudioKey audioKey : playlist.getAudioKeys()) {
-                    add(new TrackListing(audioKey, audioMaster, this, isQueueList));
+                for (int i = 0; i < playlist.getAudioKeys().size(); i++) {
+                    add(new TrackListing(playlist.getKey(i), audioMaster, commandInterpreter, uiFrame, this, isQueueList));
                 }
                 if (isQueueList && playlist.isEmpty()) {
                     JLabel endOfQueueLabel = new JLabel("Queue Empty - Playing random songs from Default List (above)");
@@ -214,36 +246,68 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
             repaint();
         }
 
-        @Override public void addAudioKey(AudioKey key) {
-            add(new TrackListing(key, audioMaster, this, isQueueList));
+        @Override public void onAddition(AudioKeyPlaylistEvent event) {
+            add(new TrackListing(event.getKey(), audioMaster, commandInterpreter, uiFrame, this, isQueueList));
             revalidate();
             repaint();
         }
 
-        @Override public int getAudioKeyID(AudioKeyUIWrapper keyUIWrapper) {
-            if (keyUIWrapper == null) return -1;
-            for (int i = 0; i < getComponents().length; i++) {
-                if (getComponent(i) instanceof AudioKeyUIWrapper) {
-                    AudioKeyUIWrapper uiWrapper = (AudioKeyUIWrapper) getComponent(i);
-                    if (uiWrapper.getData().equals(keyUIWrapper.getData()))
-                        return i;
-                }
-            }
-            return -1;
-        }
-
-        @Override public void modifyAudioKey(int keyID, AudioKey newData) {
-            Component c = getComponent(keyID);
-            if (c instanceof AudioKeyUIWrapper) {
-                AudioKeyUIWrapper audioKeyUIWrapper = (AudioKeyUIWrapper) c;
-                audioKeyUIWrapper.setData(newData);
-            }
-        }
-
-        @Override public void removeAudioKey(int keyID) {
-            remove(keyID);
+        @Override public void onRemoval(AudioKeyPlaylistEvent event) {
+            remove(event.getPos());
             revalidate();
             repaint();
+        }
+
+        /**
+         * Called when an element of the AudioKeyPlaylist has been modified.
+         * This method is called after the element has been modified.
+         *
+         * @param event The AudioKeyPlaylistEvent describing the details of the event.
+         */
+        @Override public void onModification(AudioKeyPlaylistEvent event) {
+            if (getComponent(event.getPos()) instanceof TrackListing) {
+                TrackListing component = (TrackListing) getComponent(event.getPos());
+                component.setData(event.getKey());
+                revalidate();
+                repaint();
+            }
+        }
+
+        /**
+         * Called when the AudioKeyPlaylist has been cleared.
+         */
+        @Override public void onClear() {
+            removeAll();
+            revalidate();
+            repaint();
+        }
+
+        private void refresh(){
+            if (isQueueList)
+                pullAudioKeyList(audioMaster.getJukeboxQueueList());
+            else
+                pullAudioKeyList(audioMaster.getJukeboxDefaultList());
+        }
+
+        /**
+         * Called when the AudioKeyPlaylist has been shuffled.
+         */
+        @Override public void onShuffle() {
+            refresh();
+        }
+
+        /**
+         * Called when the AudioKeyPlaylist has been sorted.
+         */
+        @Override public void onSort() {
+            refresh();
+        }
+
+        /**
+         * Called when the AudioKeyPlaylist changes for a new one.
+         */
+        @Override public void onNewPlaylist() {
+            refresh();
         }
     }
 
@@ -253,36 +317,59 @@ public class JukeboxPanel extends JPanel implements JukeboxUIWrapper{
         private JTextField nameText;
         private JTextField urlText;
 
-        private TrackListing(AudioKey audioKey, AudioMaster audioMaster, TrackListingTable trackLister, boolean isInQueueList){
+        private java.util.UUID UUID;
+
+        private int findMyPosition(){
+            for (int i = 0; i < getParent().getComponents().length; i++) {
+                if (getParent().getComponents()[i] instanceof TrackListing) {
+                    TrackListing trackListing = (TrackListing) getParent().getComponents()[i];
+                    if (trackListing.getUUID().equals(UUID))
+                        return i;
+                }
+            }
+            return -1;
+        }
+
+        java.util.UUID getUUID() {
+            return UUID;
+        }
+
+        private TrackListing(AudioKey audioKey, AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame, TrackListingTable trackLister, boolean isInQueueList){
+            UUID = java.util.UUID.randomUUID();
             this.audioKey = audioKey;
             setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
             JButton buttonToMeasure;
             if (isInQueueList){
                 JButton postponeButton = ButtonMaker.createIconButton("icons/queue.png", "Postpone", 3);
                 postponeButton.addActionListener(e -> {
+                    /*
                     int pos = trackLister.getAudioKeyID(this);
                     trackLister.removeAudioKey(pos);
                     audioMaster.getJukeboxQueueList().removeAudioKey(pos);
                     audioMaster.queueJukeboxSong(audioKey, () -> {}, () -> {});
+                    */
                 });
+
                 add(postponeButton);
                 JButton removeButton = ButtonMaker.createIconButton("icons/cancel.png", "Remove", 3);
                 removeButton.addActionListener(e -> {
+                    /*
                     int pos = trackLister.getAudioKeyID(this);
                     trackLister.removeAudioKey(pos);
                     audioMaster.getJukeboxQueueList().removeAudioKey(pos);
+                    */
                 });
                 add(removeButton);
                 buttonToMeasure = removeButton;
             } else {
                 //Queue Button
                 JButton queueButton = ButtonMaker.createIconButton("icons/queue.png", "Queue", 4);
-                queueButton.addActionListener(e -> audioMaster.queueJukeboxSong(audioKey, () -> {}, () -> Transcriber.print("ERROR: Audio key is invalid: %1$s", audioKey.toString())));
+                queueButton.addActionListener(e -> audioMaster.queueJukeboxSong(audioKey, () -> {}, () -> Transcriber.printTimestamped("ERROR: Audio key is invalid: %1$s", audioKey.toString())));
                 add(queueButton);
                 //Edit Button
                 JButton editButton = ButtonMaker.createIconButton("icons/menu.png", "Edit", 4);
                 editButton.addActionListener(
-                    e -> new ModifyAudioKeyFrame(audioMaster, trackLister, this, audioMaster.getJukeboxDefaultList(), audioMaster::saveJukeboxDefault));
+                    e -> new ModifyAudioKeyFrame(audioMaster, audioKey, findMyPosition(), commandInterpreter, ModifyAudioKeyFrame.ModificationType.MODIFY, ModifyAudioKeyFrame.TargetList.JUKEBOX_DEFAULT, uiFrame));
                 add(editButton);
                 buttonToMeasure = editButton;
             }

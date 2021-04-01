@@ -1,8 +1,13 @@
 package Utils;
 
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.List;
 
 public class FileIO {
 
@@ -43,5 +48,14 @@ public class FileIO {
         int sepIndex = uri.lastIndexOf(File.separatorChar);
         int dotIndex = uri.lastIndexOf('.');
         return uri.substring(Math.max(0, sepIndex), Math.min(uri.length(), dotIndex));
+    }
+
+    public static File[] getFilesInDirectory(String uri){
+        File folder = new File(uri);
+        if (folder.isDirectory()){
+            FileFilter filter = new SuffixFileFilter(".playlist");
+            return folder.listFiles(filter);
+        }
+        return new File[0];
     }
 }
