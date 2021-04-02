@@ -35,7 +35,7 @@ public class EchoCommand extends Command {
         //Build message
         String message = "".concat(SettingsLoader.getBotConfigValue("command_char")).concat("help");
         //Display message
-        feedbackHandler.sendAuthorPM(message);
+        feedbackHandler.sendAuthorPM(message, false);
     }
 
 }

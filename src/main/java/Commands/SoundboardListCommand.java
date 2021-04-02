@@ -51,7 +51,7 @@ public class SoundboardListCommand extends Command {
         }
         */
         builder.append("```");
-        feedbackHandler.sendMessage(builder.toString());
+        feedbackHandler.sendMessage(builder.toString(), false);
     }
 
     private String createCommandNameSpacing(int length){

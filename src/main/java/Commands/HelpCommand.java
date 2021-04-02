@@ -47,12 +47,12 @@ public class HelpCommand extends Command {
             StringBuilder builder = new StringBuilder("**Available Commands:**\n```\n");
             List<Command> commandList = getAvailableCommands(permissions);
             commandList.sort(Comparator.comparing(Command::getCommandTreeStr));
-            builder.append(generateGeneralHelpList(args, commandList));
+            builder.append(generateGeneralHelpList(args, commandList, feedbackHandler.getListPageSize(CommandFeedbackHandler.CommandType.HELP)));
             builder.append("```");
             message = builder.toString();
         }
         //Display message
-        feedbackHandler.sendAuthorPM(message);
+        feedbackHandler.sendAuthorPM(message, false);
     }
 
     private String createCommandNameSpacing(int length){
@@ -87,9 +87,7 @@ public class HelpCommand extends Command {
         return max;
     }
 
-    private static final int PAGE_SIZE = 15;
-
-    private String generateGeneralHelpList(String[] args, List<Command> commands){
+    private String generateGeneralHelpList(String[] args, List<Command> commands, int pageSize){
         int page = 1;
         if (args.length >= 1) {
             try {
@@ -99,15 +97,15 @@ public class HelpCommand extends Command {
         StringBuilder list = new StringBuilder();
 
         // Get number of pages
-        int pagecount = (int) Math.ceil((float) commands.size() / PAGE_SIZE);
+        int pagecount = (int) Math.ceil((float) commands.size() / pageSize);
         if (pagecount > 1)
             list.append(String.format("Page %1$d of %2$d:\n", page, pagecount));
 
         // List elements
-        int baseAddr = (page - 1) * PAGE_SIZE;
+        int baseAddr = (page - 1) * pageSize;
         int longestLength = getLongestCommandHelpName(commands);
         ListIterator<Command> iterator = commands.listIterator(baseAddr);
-        for (int i = 0; i < PAGE_SIZE; i++) {
+        for (int i = 0; i < pageSize; i++) {
             int addr = baseAddr + i;
             if (addr >= commands.size())
                 break;

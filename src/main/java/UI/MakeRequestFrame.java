@@ -69,7 +69,8 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
     }
 
     private void makeRequest(String baseCommand, CommandInterpreter commandInterpreter, String url){
-        commandInterpreter.evaluateCommand(baseCommand.concat(url), Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK);
+        commandInterpreter.evaluateCommand(baseCommand.concat(url),
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
     }
 
     /**

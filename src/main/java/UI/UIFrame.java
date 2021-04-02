@@ -29,7 +29,7 @@ public class UIFrame extends JFrame implements ComponentListener {
             tabbedPane.addTab("Soundboard", new SoundboardPanel(audioMaster, commandInterpreter));
             tabbedPane.addTab("Jukebox", new JukeboxPanel(audioMaster, commandInterpreter, this));
         }
-        tabbedPane.addTab("Log", new ConsolePanel());
+        tabbedPane.addTab("Log", new ConsolePanel(commandInterpreter));
 
         getContentPane().add(tabbedPane);
 

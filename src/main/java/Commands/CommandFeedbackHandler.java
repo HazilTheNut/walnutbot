@@ -9,8 +9,9 @@ public interface CommandFeedbackHandler {
      * Sends a public message in the same channel as where the command is found.
      *
      * @param message The message to send
+     * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
      */
-    void sendMessage(String message);
+    void sendMessage(String message, boolean isCopiedToConsole);
 
     /**
      * @return True if the channel where the command is found is a public space, rather than a form of private message
@@ -21,8 +22,9 @@ public interface CommandFeedbackHandler {
      * Sends a private message to the command author
      *
      * @param message The message to send
+     * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
      */
-    void sendAuthorPM(String message);
+    void sendAuthorPM(String message, boolean isCopiedToConsole);
 
     /**
      * Gets a String describing the author of the command.
@@ -30,4 +32,17 @@ public interface CommandFeedbackHandler {
      * @return A String describing the author of the command.
      */
     String getAuthor();
+
+
+    enum CommandType {
+        HELP, QUEUE, DEFAULT, CONNECT
+    }
+
+    /**
+     * Returns the size of pages to display for listing commands such as help, jb list, etc.
+     *
+     * @param commandType The command to distinguish page sizes for
+     * @return The number of elements to list on a given page.
+     */
+    int getListPageSize(CommandType commandType);
 }

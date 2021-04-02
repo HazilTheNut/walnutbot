@@ -4,10 +4,7 @@ import Commands.CommandInterpreter;
 import UI.AudioKeyPlaylistLoader;
 import UI.JukeboxListener;
 import UI.PlayerTrackListener;
-import Utils.BotManager;
-import Utils.DiscordBotManager;
-import Utils.FileIO;
-import Utils.Transcriber;
+import Utils.*;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -54,12 +51,13 @@ public class AudioMaster{
     private boolean jukeboxDefaultListIsLocalFile = false;
     private SongDurationTracker songDurationTracker;
 
-    //Volumes are 0-1, scaled 0-1000 internally
-    private double masterVolume;
-    private double soundboardVolume;
-    private double jukeboxVolume;
-    public static final double VOLUME_DEFAULT = 0.5d;
+    //Volumes are 0-100, scaled 0-1000 internally
+    private int mainVolume;
+    private int soundboardVolume;
+    private int jukeboxVolume;
+    public static final int VOLUME_DEFAULT = 50;
     private static final int VOLUME_MAX = 150;
+    private VolumeChangeListener volumeChangeListener;
 
     public AudioMaster(){
 
@@ -75,9 +73,9 @@ public class AudioMaster{
         soundboardList = new AudioKeyPlaylist(new File(FileIO.getRootFilePath() + "soundboard.playlist"), false);
         soundboardList.printPlaylist();
 
-        masterVolume = VOLUME_DEFAULT;
-        soundboardVolume = VOLUME_DEFAULT;
-        jukeboxVolume = VOLUME_DEFAULT;
+        mainVolume = getSettingsVolume("mainVolume");
+        soundboardVolume = getSettingsVolume("soundboardVolume");
+        jukeboxVolume = getSettingsVolume("jukeboxVolume");
 
         jukeboxPlayer = playerManager.createPlayer();
         jukeboxTrackScheduler = new JukeboxTrackScheduler(this);
@@ -331,24 +329,56 @@ public class AudioMaster{
         jukeboxPaused = paused;
     }
 
-    public void setMasterVolume(double masterVolume) {
-        this.masterVolume = masterVolume;
+    public void setMainVolume(int mainVolume) {
+        this.mainVolume = mainVolume;
+        SettingsLoader.modifySettingsValue("mainVolume", String.valueOf(mainVolume));
+        SettingsLoader.writeSettingsFile();
+        volumeChangeListener.onMainVolumeChange(mainVolume, this);
         updatePlayerVolumes();
     }
 
-    public void setSoundboardVolume(double soundboardVolume) {
+    public void setSoundboardVolume(int soundboardVolume) {
         this.soundboardVolume = soundboardVolume;
+        SettingsLoader.modifySettingsValue("soundboardVolume", String.valueOf(soundboardVolume));
+        SettingsLoader.writeSettingsFile();
+        volumeChangeListener.onSoundboardVolumeChange(soundboardVolume, this);
         updatePlayerVolumes();
     }
 
-    public void setJukeboxVolume(double jukeboxVolume) {
+    public void setJukeboxVolume(int jukeboxVolume) {
         this.jukeboxVolume = jukeboxVolume;
+        SettingsLoader.modifySettingsValue("jukeboxVolume", String.valueOf(jukeboxVolume));
+        SettingsLoader.writeSettingsFile();
+        volumeChangeListener.onJukeboxVolumeChange(jukeboxVolume, this);
         updatePlayerVolumes();
+    }
+
+    public int getMainVolume() {
+        return mainVolume;
+    }
+
+    public int getSoundboardVolume() {
+        return soundboardVolume;
+    }
+
+    public int getJukeboxVolume() {
+        return jukeboxVolume;
     }
 
     private void updatePlayerVolumes(){
-        soundboardPlayer.setVolume((int)(VOLUME_MAX * masterVolume * soundboardVolume));
-        jukeboxPlayer.setVolume((int)(VOLUME_MAX * masterVolume * jukeboxVolume));
+        double mainVolPercent = (double)mainVolume / VOLUME_MAX;
+        double soundboardVolPercent = (double)soundboardVolume / VOLUME_MAX;
+        double jukeboxVolPercent = (double)jukeboxVolume / VOLUME_MAX;
+        soundboardPlayer.setVolume((int)(VOLUME_MAX * mainVolPercent * soundboardVolPercent));
+        jukeboxPlayer.setVolume((int)(VOLUME_MAX * mainVolPercent * jukeboxVolPercent));
+    }
+
+    private int getSettingsVolume(String setting){
+        try {
+            return Integer.valueOf(SettingsLoader.getSettingsValue(setting, String.valueOf(VOLUME_DEFAULT)));
+        } catch (NumberFormatException e){
+            return VOLUME_DEFAULT;
+        }
     }
 
     public SongDurationTracker getSongDurationTracker() {
@@ -444,6 +474,10 @@ public class AudioMaster{
         if (jukeboxDefaultList != null) {
             jukeboxDefaultList.addAudioKeyPlaylistListener(jukeboxDefaultListListener);
         }
+    }
+
+    public void setVolumeChangeListener(VolumeChangeListener volumeChangeListener) {
+        this.volumeChangeListener = volumeChangeListener;
     }
 
     private class SoundboardPlayerListener implements PlayerTrackListener{

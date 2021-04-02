@@ -36,11 +36,13 @@ public class JukeboxDefaultListCommand extends Command {
             message.append("No active Default List.");
         } else {
             if (args.length < 1)
-                message.append(PlaylistLister.listItems(audioMaster.getJukeboxDefaultList(), null, getHelpCommandUsage()));
+                message.append(PlaylistLister.listItems(audioMaster.getJukeboxDefaultList(), null, getHelpCommandUsage(), feedbackHandler.getListPageSize(
+                    CommandFeedbackHandler.CommandType.DEFAULT)));
             else
-                message.append(PlaylistLister.listItems(audioMaster.getJukeboxDefaultList(), args[0], getHelpCommandUsage()));
+                message.append(PlaylistLister.listItems(audioMaster.getJukeboxDefaultList(), args[0], getHelpCommandUsage(), feedbackHandler.getListPageSize(
+                    CommandFeedbackHandler.CommandType.DEFAULT)));
         }
         message.append("\n```");
-        feedbackHandler.sendMessage(message.toString());
+        feedbackHandler.sendMessage(message.toString(), false);
     }
 }

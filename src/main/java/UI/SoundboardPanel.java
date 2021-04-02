@@ -47,7 +47,8 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         panel.add(addButton);
 
         JButton sortButton = new JButton("Sort A-Z");
-        sortButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb sort", Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK));
+        sortButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb sort",
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
         panel.add(sortButton);
 
         playerStatusLabel = new JLabel("Status: ");
@@ -55,7 +56,8 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         panel.add(playerStatusLabel);
 
         JButton stopButton = ButtonMaker.createIconButton("icons/stop.png", "Stop", 8);
-        stopButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb stop", Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK));
+        stopButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb stop",
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
         panel.add(stopButton);
 
         //audioMaster.setSoundboardUIWrapper(this);
@@ -85,7 +87,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         playButton.addActionListener(e -> {
             commandInterpreter.evaluateCommand(
                 String.format("sb url %1$s", urlField.getText()),
-                Transcriber.getGenericCommandFeedBackHandler(),
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI),
                 Command.INTERNAL_MASK
             );
             urlField.setText("");

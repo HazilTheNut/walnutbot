@@ -30,6 +30,7 @@ public class CommandInterpreter extends ListenerAdapter {
         addCommand(new SoundboardCommand());
         addCommand(new ConnectCommand());
         addCommand(new DisconnectCommand());
+        addCommand(new VolumeCommand());
     }
 
     public List<Command> getExpandedCommandList(){
@@ -185,8 +186,14 @@ public class CommandInterpreter extends ListenerAdapter {
             this.event = event;
         }
 
-        @Override public void sendMessage(String message) {
-            (event.getChannel().sendMessage(message)).queue(); //I can't remember why I did the extra parenthesis wrapping, but I'm too scared to try it without.
+        /**
+         * Sends a public message in the same channel as where the command is found.
+         *
+         * @param message           The message to send
+         * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
+         */
+        @Override public void sendMessage(String message, boolean isCopiedToConsole) {
+            event.getChannel().sendMessage(message).queue();
         }
 
         /**
@@ -199,12 +206,13 @@ public class CommandInterpreter extends ListenerAdapter {
         /**
          * Sends a private message to the command author
          *
-         * @param message The message to send
+         * @param message           The message to send
+         * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
          */
-        @Override public void sendAuthorPM(String message) {
+        @Override public void sendAuthorPM(String message, boolean isCopiedToConsole) {
             if (isChannelPublic())
-                (event.getChannel().sendMessage(String.format("<@%1$s> I have sent a PM to you.", event.getAuthor().getId()))).queue();
-            (event.getAuthor().openPrivateChannel().complete().sendMessage(message)).queue();
+                event.getChannel().sendMessage(String.format("<@%1$s> I have sent a PM to you.", event.getAuthor().getId())).queue();
+            event.getAuthor().openPrivateChannel().complete().sendMessage(message).queue();
         }
 
         /**
@@ -214,6 +222,22 @@ public class CommandInterpreter extends ListenerAdapter {
          */
         @Override public String getAuthor() {
             return event.getAuthor().getAsTag();
+        }
+
+        /**
+         * Returns the size of pages to display for listing commands such as help, jb list, etc.
+         *
+         * @param commandType The command to distinguish page sizes for
+         * @return The number of elements to list on a given page.
+         */
+        @Override public int getListPageSize(CommandType commandType) {
+            switch (commandType){
+                case HELP: return 15;
+                case QUEUE: return 10;
+                case DEFAULT: return 10;
+                case CONNECT: return 15;
+                default: return 10;
+            }
         }
     }
 }

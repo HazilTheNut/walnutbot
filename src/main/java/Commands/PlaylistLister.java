@@ -5,9 +5,7 @@ import Utils.SettingsLoader;
 
 class PlaylistLister {
 
-    private static final int PAGE_SIZE = 13;
-
-    static String listItems(AudioKeyPlaylist playlist, String pageNumber, String helpCommandUsage){
+    static String listItems(AudioKeyPlaylist playlist, String pageNumber, String helpCommandUsage, int pageSize){
         // Get page number
         int page = 1;
         if (pageNumber != null) {
@@ -18,13 +16,13 @@ class PlaylistLister {
         StringBuilder list = new StringBuilder();
 
         // Get number of pages
-        int pagecount = (int) Math.ceil((float) playlist.getAudioKeys().size() / PAGE_SIZE);
+        int pagecount = (int) Math.ceil((float) playlist.getAudioKeys().size() / pageSize);
         if (pagecount > 1)
             list.append(String.format("Page %1$d of %2$d:\n", page, pagecount));
 
         // List elements
-        int baseAddr = (page - 1) * PAGE_SIZE;
-        for (int i = 0; i < PAGE_SIZE; i++) {
+        int baseAddr = (page - 1) * pageSize;
+        for (int i = 0; i < pageSize; i++) {
             int addr = baseAddr + i;
             if (addr >= playlist.getAudioKeys().size())
                 break;

@@ -1,29 +1,34 @@
 package UI;
 
 import Audio.AudioMaster;
+import Audio.VolumeChangeListener;
 import Commands.Command;
 import Commands.CommandInterpreter;
 import Utils.BotManager;
 import Utils.SettingsLoader;
+import Utils.Transcriber;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 
-public class SettingsPanel extends JPanel {
+public class SettingsPanel extends JPanel implements VolumeChangeListener {
 
     private static final int VOLUME_SLIDER_SCALE_MAX = 100;
-    private JSlider masterVolumeSlider;
+    private JSlider mainVolumeSlider;
     private JSlider soundboardVolumeSlider;
-    private JSlider musicVolumeSlider;
+    private JSlider jukeboxVolumeSlider;
+
+    private JLabel volumeInfoLabel;
 
     public SettingsPanel(BotManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful) {
 
         BoxLayout layout = new BoxLayout(this, BoxLayout.PAGE_AXIS);
         setLayout(layout);
         if (botInitSuccessful) {
+            audioMaster.setVolumeChangeListener(this);
             add(new ConnectionPanel(botManager, commandInterpreter), BorderLayout.PAGE_START);
-            add(createMainPanel(audioMaster), BorderLayout.CENTER);
+            add(createMainPanel(audioMaster, commandInterpreter), BorderLayout.CENTER);
             add(createPermissionsPanel(audioMaster), BorderLayout.PAGE_END);
         } else
             add(new JLabel(
@@ -37,42 +42,45 @@ public class SettingsPanel extends JPanel {
         validate();
     }
 
-    private JPanel createMainPanel(AudioMaster audioMaster) {
+    private JPanel createMainPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter) {
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         panel.setBorder(new TitledBorder("Volume"));
 
-        JLabel volumeInfoLabel = new JLabel("");
+        volumeInfoLabel = new JLabel("");
 
-        masterVolumeSlider = generateVolumeSlider(SettingsLoader.getSettingsValue("masterVolume", "null"));
-        masterVolumeSlider.addChangeListener(e -> {
-            assignAudioMasterVolumes(audioMaster);
-            updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
+        mainVolumeSlider = generateVolumeSlider(audioMaster.getMainVolume());
+        mainVolumeSlider.addChangeListener(e -> {
+            if (mainVolumeSlider.getValue() != audioMaster.getMainVolume())
+                commandInterpreter.evaluateCommand(String.format("vol main %1$d", mainVolumeSlider.getValue()),
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
         });
-        panel.add(new JLabel("Master Volume (%)"));
-        panel.add(masterVolumeSlider);
+        panel.add(new JLabel("Main Volume (%)"));
+        panel.add(mainVolumeSlider);
 
-        soundboardVolumeSlider = generateVolumeSlider(SettingsLoader.getSettingsValue("soundboardVolume", "null"));
+        soundboardVolumeSlider = generateVolumeSlider(audioMaster.getSoundboardVolume());
         soundboardVolumeSlider.addChangeListener(e -> {
-            assignAudioMasterVolumes(audioMaster);
-            updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
+            if (soundboardVolumeSlider.getValue() != audioMaster.getSoundboardVolume())
+                commandInterpreter.evaluateCommand(String.format("vol sb %1$d", soundboardVolumeSlider.getValue()),
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
         });
         panel.add(new JLabel("Soundboard Volume (%)"));
         panel.add(soundboardVolumeSlider);
 
-        musicVolumeSlider = generateVolumeSlider(SettingsLoader.getSettingsValue("jukeboxVolume", "null"));
-        musicVolumeSlider.addChangeListener(e -> {
-            assignAudioMasterVolumes(audioMaster);
-            updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
+        jukeboxVolumeSlider = generateVolumeSlider(audioMaster.getJukeboxVolume());
+        jukeboxVolumeSlider.addChangeListener(e -> {
+            if (jukeboxVolumeSlider.getValue() != audioMaster.getJukeboxVolume())
+                commandInterpreter.evaluateCommand(String.format("vol jb %1$d", jukeboxVolumeSlider.getValue()),
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
         });
         panel.add(new JLabel("Jukebox Volume (%)"));
-        panel.add(musicVolumeSlider);
+        panel.add(jukeboxVolumeSlider);
 
         panel.add(volumeInfoLabel);
 
         assignAudioMasterVolumes(audioMaster);
-        updateVolumeInfoLabel(volumeInfoLabel, audioMaster);
+        updateVolumeInfoLabel(audioMaster);
 
         return panel;
     }
@@ -118,13 +126,8 @@ public class SettingsPanel extends JPanel {
         return panel;
     }
 
-    private JSlider generateVolumeSlider(String initValue) {
-        JSlider slider;
-        try {
-            slider = new JSlider(SwingConstants.HORIZONTAL, 0, VOLUME_SLIDER_SCALE_MAX, Integer.valueOf(initValue));
-        } catch (NumberFormatException e) {
-            slider = new JSlider(SwingConstants.HORIZONTAL, 0, VOLUME_SLIDER_SCALE_MAX, (int) (VOLUME_SLIDER_SCALE_MAX * AudioMaster.VOLUME_DEFAULT));
-        }
+    private JSlider generateVolumeSlider(int initValue) {
+        JSlider slider = new JSlider(SwingConstants.HORIZONTAL, 0, VOLUME_SLIDER_SCALE_MAX, initValue);
         slider.setMajorTickSpacing(VOLUME_SLIDER_SCALE_MAX / 5);
         slider.setMinorTickSpacing(VOLUME_SLIDER_SCALE_MAX / 20);
         slider.setPaintLabels(true);
@@ -132,18 +135,47 @@ public class SettingsPanel extends JPanel {
         return slider;
     }
 
-    private void updateVolumeInfoLabel(JLabel infoLabel, AudioMaster audioMaster){
-        infoLabel.setText(String.format("RAW VOLUMES - Soundboard: %1$d Jukebox: %2$d", audioMaster.getSoundboardPlayer().getVolume(), audioMaster.getJukeboxPlayer().getVolume()));
-        infoLabel.repaint();
-        SettingsLoader.modifySettingsValue("masterVolume", String.valueOf(masterVolumeSlider.getValue()));
-        SettingsLoader.modifySettingsValue("soundboardVolume", String.valueOf(soundboardVolumeSlider.getValue()));
-        SettingsLoader.modifySettingsValue("jukeboxVolume", String.valueOf(musicVolumeSlider.getValue()));
-        SettingsLoader.writeSettingsFile();
+    private void updateVolumeInfoLabel(AudioMaster audioMaster){
+        volumeInfoLabel.setText(String.format("RAW VOLUMES - Soundboard: %1$d Jukebox: %2$d", audioMaster.getSoundboardPlayer().getVolume(), audioMaster.getJukeboxPlayer().getVolume()));
+        volumeInfoLabel.repaint();
     }
 
     private void assignAudioMasterVolumes(AudioMaster audioMaster){
-        audioMaster.setMasterVolume(masterVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
-        audioMaster.setSoundboardVolume(soundboardVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
-        audioMaster.setJukeboxVolume(musicVolumeSlider.getValue() / (double)VOLUME_SLIDER_SCALE_MAX);
+        audioMaster.setMainVolume(mainVolumeSlider.getValue());
+        audioMaster.setSoundboardVolume(soundboardVolumeSlider.getValue());
+        audioMaster.setJukeboxVolume(jukeboxVolumeSlider.getValue());
+    }
+
+    /**
+     * Called when the Main Volume changes.
+     *
+     * @param vol A value ranging from 0 to 100 describing the Main Volume
+     * @param audioMaster The AudioMaster which called this method
+     */
+    @Override public void onMainVolumeChange(int vol, AudioMaster audioMaster) {
+        mainVolumeSlider.setValue(vol);
+        updateVolumeInfoLabel(audioMaster);
+    }
+
+    /**
+     * Called when the Soundboard Volume changes.
+     *
+     * @param vol A value ranging from 0 to 100 describing the Soundboard Volume
+     * @param audioMaster The AudioMaster which called this method
+     */
+    @Override public void onSoundboardVolumeChange(int vol, AudioMaster audioMaster) {
+        soundboardVolumeSlider.setValue(vol);
+        updateVolumeInfoLabel(audioMaster);
+    }
+
+    /**
+     * Called when the Jukebox Volume changes.
+     *
+     * @param vol A value ranging from 0 to 100 describing the Jukebox Volume
+     * @param audioMaster The AudioMaster which called this method
+     */
+    @Override public void onJukeboxVolumeChange(int vol, AudioMaster audioMaster) {
+        jukeboxVolumeSlider.setValue(vol);
+        updateVolumeInfoLabel(audioMaster);
     }
 }

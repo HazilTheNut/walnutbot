@@ -2,7 +2,11 @@ package Commands;
 
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.SettingsLoader;
 import Utils.Transcriber;
+
+import java.util.List;
+import java.util.ListIterator;
 
 public class ConnectListCommand extends Command {
 
@@ -15,23 +19,53 @@ public class ConnectListCommand extends Command {
     }
 
     @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        StringBuilder builder = new StringBuilder("```List of available voice channels to connect to.\n"
+        String message = "```List of available voice channels to connect to.\n"
             + "Format: \"<Server Name> <Channel Name>\"\n"
-            + "Server and channel names with spaces are wrapped in quotation marks for ease of copy-and-pasting.\n\n");
-        for (String s : botManager.getListOfVoiceChannels()) {
-            String[] parts = s.split(":");
-            for (String p : parts) {
+            + "Server and channel names with spaces are wrapped in quotation marks for ease of copy-and-pasting.\n\n"
+            + listItems(botManager.getListOfVoiceChannels(), args[0], getHelpCommandUsage(),
+            feedbackHandler.getListPageSize(CommandFeedbackHandler.CommandType.CONNECT))
+            + "```";
+        feedbackHandler.sendAuthorPM(message, false);
+    }
+
+    private String listItems(List<String> voiceChannels, String pageNumber, String helpCommandUsage, int pageSize){
+        // Get page number
+        int page = 1;
+        if (pageNumber != null) {
+            try {
+                page = Math.max(1, Integer.valueOf(pageNumber));
+            } catch (NumberFormatException ignored) { }
+        }
+        StringBuilder list = new StringBuilder();
+
+        // Get number of pages
+        int pagecount = (int) Math.ceil((float) voiceChannels.size() / pageSize);
+        if (pagecount > 1)
+            list.append(String.format("Page %1$d of %2$d:\n", page, pagecount));
+
+        // List elements
+        int baseAddr = (page - 1) * pageSize;
+        ListIterator<String> iterator = voiceChannels.listIterator(baseAddr);
+        for (int i = 0; i < pageSize; i++) {
+            int addr = baseAddr + i;
+            if (addr >= voiceChannels.size())
+                break;
+            for (String p : iterator.next().split(":")) {
                 String part = p.trim();
                 if (part.contains(" "))
-                    builder.append('\"').append(part).append('\"');
+                    list.append('\"').append(part).append('\"');
                 else
-                    builder.append(part);
-                builder.append(' ');
+                    list.append(part);
+                list.append(' ');
             }
-            builder.append('\n');
+            list.append('\n');
         }
-        builder.append("```");
 
-        feedbackHandler.sendAuthorPM(builder.toString());
+        // Remind usage of command to get more pages
+        if (pagecount > 1)
+            list.append("\nDo ").append(SettingsLoader.getBotConfigValue("command_char"))
+                .append(helpCommandUsage).append(" to see further into the list.");
+        // Return
+        return list.toString();
     }
 }

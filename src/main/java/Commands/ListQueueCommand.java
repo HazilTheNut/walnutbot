@@ -30,11 +30,13 @@ public class ListQueueCommand extends Command {
             message.append("No songs are currently queued; playing random songs from default playlist.");
         else {
             if (args.length < 1)
-                message.append(PlaylistLister.listItems(audioMaster.getJukeboxQueueList(), null, getHelpCommandUsage()));
+                message.append(PlaylistLister.listItems(audioMaster.getJukeboxQueueList(), null, getHelpCommandUsage(), feedbackHandler.getListPageSize(
+                    CommandFeedbackHandler.CommandType.QUEUE)));
             else
-                message.append(PlaylistLister.listItems(audioMaster.getJukeboxQueueList(), args[0], getHelpCommandUsage()));
+                message.append(PlaylistLister.listItems(audioMaster.getJukeboxQueueList(), args[0], getHelpCommandUsage(), feedbackHandler.getListPageSize(
+                    CommandFeedbackHandler.CommandType.QUEUE)));
         }
         message.append("\n```");
-        feedbackHandler.sendMessage(message.toString());
+        feedbackHandler.sendMessage(message.toString(), false);
     }
 }

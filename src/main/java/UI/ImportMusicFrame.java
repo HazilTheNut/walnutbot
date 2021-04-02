@@ -42,7 +42,7 @@ public class ImportMusicFrame extends JFrame {
         JButton confirmButton = new JButton("Import");
         confirmButton.addActionListener(e -> {
             commandInterpreter.evaluateCommand(String.format("%1$s %2$s", baseCommand, urlField.getText()),
-                Transcriber.getGenericCommandFeedBackHandler(),
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI),
                 Command.INTERNAL_MASK);
             dispose();
         });

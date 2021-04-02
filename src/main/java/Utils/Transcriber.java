@@ -13,15 +13,16 @@ import java.util.Date;
 public class Transcriber {
 
     private static ArrayList<TranscriptReceiver> transcriptReceivers;
-    private static CommandFeedbackHandler genericCommandFeedBackHandler;
+
+    public static final String AUTTH_UI = "UI";
+    public static final String AUTTH_CONSOLE = "";
 
     static {
         transcriptReceivers = new ArrayList<>();
-        genericCommandFeedBackHandler = new GenericCommandFeedbackHandler();
     }
 
-    public static CommandFeedbackHandler getGenericCommandFeedBackHandler() {
-        return genericCommandFeedBackHandler;
+    public static CommandFeedbackHandler getGenericCommandFeedBackHandler(String author) {
+        return new GenericCommandFeedbackHandler(author);
     }
 
     public static void addTranscriptReceiver(TranscriptReceiver receiver){
@@ -37,7 +38,7 @@ public class Transcriber {
     public static void printAndPost(CommandFeedbackHandler commandFeedbackHandler, String formattedString, Object... args) {
         String message = String.format(formattedString, args);
         System.out.println(message);
-        commandFeedbackHandler.sendMessage(message);
+        commandFeedbackHandler.sendMessage(message, true);
     }
 
     public static void printRaw(String formattedString, Object... args){
@@ -99,13 +100,20 @@ public class Transcriber {
 
     private static class GenericCommandFeedbackHandler implements CommandFeedbackHandler {
 
+        private String author;
+
+        private GenericCommandFeedbackHandler(String author){
+            this.author = author;
+        }
+
         /**
          * Sends a public message in the same channel as where the command is found.
          *
-         * @param message The message to send
+         * @param message           The message to send
+         * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
          */
-        @Override public void sendMessage(String message) {
-            //Transcriber.printRaw(message);
+        @Override public void sendMessage(String message, boolean isCopiedToConsole) {
+
         }
 
         /**
@@ -118,10 +126,11 @@ public class Transcriber {
         /**
          * Sends a private message to the command author
          *
-         * @param message The message to send
+         * @param message           The message to send
+         * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
          */
-        @Override public void sendAuthorPM(String message) {
-            //Transcriber.printRaw(message);
+        @Override public void sendAuthorPM(String message, boolean isCopiedToConsole) {
+
         }
 
         /**
@@ -130,7 +139,17 @@ public class Transcriber {
          * @return A String describing the author of the command.
          */
         @Override public String getAuthor() {
-            return "Bot";
+            return author;
+        }
+
+        /**
+         * Returns the size of pages to display for listing commands such as help, jb list, etc.
+         *
+         * @param commandType The command to distinguish page sizes for
+         * @return The number of elements to list on a given page.
+         */
+        @Override public int getListPageSize(CommandType commandType) {
+            return Integer.MAX_VALUE;
         }
     }
 }
