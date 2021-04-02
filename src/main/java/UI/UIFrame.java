@@ -1,11 +1,9 @@
 package UI;
 
 import Audio.AudioMaster;
-import Commands.CommandFeedbackHandler;
 import Commands.CommandInterpreter;
 import Utils.BotManager;
 import Utils.SettingsLoader;
-import Utils.Transcriber;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,9 +24,9 @@ public class UIFrame extends JFrame implements ComponentListener {
         addComponentListener(this);
 
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Settings", new SettingsPanel(botManager, audioMaster, botInitSuccessful));
+        tabbedPane.addTab("Settings", new SettingsPanel(botManager, audioMaster, commandInterpreter, botInitSuccessful));
         if (botInitSuccessful) {
-            tabbedPane.addTab("Soundboard", new SoundboardPanel(audioMaster, commandInterpreter, this));
+            tabbedPane.addTab("Soundboard", new SoundboardPanel(audioMaster, commandInterpreter));
             tabbedPane.addTab("Jukebox", new JukeboxPanel(audioMaster, commandInterpreter, this));
         }
         tabbedPane.addTab("Log", new ConsolePanel());

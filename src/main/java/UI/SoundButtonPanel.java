@@ -9,12 +9,16 @@ import Utils.Transcriber;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.UUID;
 
 public class SoundButtonPanel extends JPanel implements AudioKeyUIWrapper {
     private AudioKey audioKey;
     private JButton playButton;
+    private UUID uuid;
 
-    SoundButtonPanel(AudioKey audioKey, int listPos, AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame){
+    SoundButtonPanel(AudioKey audioKey, AudioMaster audioMaster,
+        CommandInterpreter commandInterpreter){
+        uuid = UUID.randomUUID();
         this.audioKey = audioKey;
         setLayout(new BorderLayout());
 
@@ -27,13 +31,31 @@ public class SoundButtonPanel extends JPanel implements AudioKeyUIWrapper {
         add(playButton, BorderLayout.CENTER);
 
         JButton menuButton = ButtonMaker.createIconButton("icons/menu.png", "Config", 2);
-        menuButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, audioMaster.getSoundboardList().getKey(listPos), listPos,
-                commandInterpreter, ModifyAudioKeyFrame.ModificationType.MODIFY, ModifyAudioKeyFrame.TargetList.SOUNDBOARD, uiFrame));
+        menuButton.addActionListener(e -> {
+            int listPos = findMyPosition();
+            new ModifyAudioKeyFrame(audioMaster, audioMaster.getSoundboardList().getKey(listPos), listPos,
+                commandInterpreter, ModifyAudioKeyFrame.ModificationType.MODIFY, ModifyAudioKeyFrame.TargetList.SOUNDBOARD);
+        });
         add(menuButton, BorderLayout.LINE_END);
     }
 
     public AudioKey getAudioKey() {
         return audioKey;
+    }
+
+    private int findMyPosition(){
+        for (int i = 0; i < getParent().getComponents().length; i++) {
+            if (getParent().getComponents()[i] instanceof SoundButtonPanel) {
+                SoundButtonPanel trackListing = (SoundButtonPanel) getParent().getComponents()[i];
+                if (trackListing.getUUID().equals(uuid))
+                    return i;
+            }
+        }
+        return -1;
+    }
+
+    public UUID getUUID() {
+        return uuid;
     }
 
     public void setAudioKey(AudioKey audioKey) {

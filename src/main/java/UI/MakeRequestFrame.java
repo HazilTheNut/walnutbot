@@ -1,6 +1,8 @@
 package UI;
 
 import Audio.AudioMaster;
+import Commands.Command;
+import Commands.CommandInterpreter;
 import Utils.ButtonMaker;
 import Utils.FileIO;
 import Utils.Transcriber;
@@ -15,9 +17,9 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
     private String previousFilePath;
 
-    public MakeRequestFrame(AudioMaster audioMaster, JFrame uiFrame){
+    public MakeRequestFrame(String baseCommand, String windowTitle, CommandInterpreter commandInterpreter, JFrame uiFrame){
         setLayout(new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS));
-        setTitle("Request Songs");
+        setTitle(windowTitle);
         setSize(new Dimension(550, 100));
 
         int FIELD_MARGIN = 10;
@@ -51,7 +53,7 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
         JButton confirmButton = new JButton("Request");
         confirmButton.addActionListener(e -> {
-            makeRequest(audioMaster, urlField.getText());
+            makeRequest(baseCommand, commandInterpreter, urlField.getText());
             urlField.setText("");
         });
         buttonPanel.add(confirmButton);
@@ -66,8 +68,8 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
         uiFrame.addWindowStateListener(this);
     }
 
-    private void makeRequest(AudioMaster audioMaster, String url){
-        audioMaster.queueJukeboxSong(url, () -> {}, () -> {});
+    private void makeRequest(String baseCommand, CommandInterpreter commandInterpreter, String url){
+        commandInterpreter.evaluateCommand(baseCommand.concat(url), Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK);
     }
 
     /**

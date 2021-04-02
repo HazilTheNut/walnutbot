@@ -26,7 +26,7 @@ public class JukeboxDefaultListCommand extends Command {
     }
 
     @Override String getSpecificHelpDescription() {
-        return String.format("%1$s\n\n <page> - The page of the list you would like to view", getHelpDescription());
+        return String.format("%1$s\n\npage - The page of the list you would like to view", getHelpDescription());
     }
 
     @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {

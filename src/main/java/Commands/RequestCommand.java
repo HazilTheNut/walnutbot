@@ -7,8 +7,21 @@ import Utils.Transcriber;
 public class RequestCommand extends Command {
 
     public RequestCommand(){
+        addSubCommand(new GenericCommand("clearqueue", "Clears the Jukebox Queue", (audioMaster, feedbackHandler) -> {
+            audioMaster.clearJukeboxQueue();
+            Transcriber.printAndPost(feedbackHandler, "Jukebox Queue cleared.");
+        }));
         addSubCommand(new JukeboxDefaultListCommand());
+        addSubCommand(new JukeboxDequeCommand());
         addSubCommand(new ListQueueCommand());
+        addSubCommand(new JukeboxLoopCommand());
+        addSubCommand(new GenericCommand("pause", "Pauses the Jukebox player", ((audioMaster, feedbackHandler) -> audioMaster.setJukeboxTruePause(true))));
+        addSubCommand(new GenericCommand("play", "Starts / unpauses the Jukebox player", ((audioMaster, feedbackHandler) -> audioMaster.unpauseCurrentSong())));
+        addSubCommand(new JukeboxPostponeCommand());
+        addSubCommand(new GenericCommand("shuffle", "Shuffles the Jukebox Queue", (audioMaster, feedbackHandler) -> {
+            audioMaster.shuffleJukeboxQueue();
+            Transcriber.printAndPost(feedbackHandler, "Jukebox Queue shuffled.");
+        }));
         addSubCommand(new SkipCommand());
     }
 

@@ -51,13 +51,6 @@ public class CommandInterpreter extends ListenerAdapter {
         command.updateSubCommandTreeStr();
     }
 
-    public int getLongestCommandHelpName(){
-        int max = 0;
-        for (Command command : getExpandedCommandList())
-            max = Math.max(max, command.getHelpCommandUsage().length());
-        return max;
-    }
-
     public String getCommandAllowanceSettingName(String command){
         return String.format("allowCommand_%1$s", command);
     }

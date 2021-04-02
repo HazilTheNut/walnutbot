@@ -1,11 +1,9 @@
 package Audio;
 
-import Commands.Command;
 import Commands.CommandInterpreter;
 import UI.AudioKeyPlaylistLoader;
-import UI.JukeboxUIWrapper;
+import UI.JukeboxListener;
 import UI.PlayerTrackListener;
-import UI.SoundboardUIWrapper;
 import Utils.BotManager;
 import Utils.DiscordBotManager;
 import Utils.FileIO;
@@ -25,7 +23,6 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioMaster{
@@ -40,7 +37,6 @@ public class AudioMaster{
     private AudioPlayer soundboardPlayer;
     private GenericTrackScheduler genericTrackScheduler;
     private AudioKeyPlaylist soundboardList;
-    private SoundboardUIWrapper soundboardUIWrapper;
 
     //Jukebox
     private AudioPlayer jukeboxPlayer;
@@ -50,7 +46,7 @@ public class AudioMaster{
     private AudioKeyPlaylist jukeboxQueueList; //The list of requested songs to exhaust through first
     private AudioKeyPlaylist jukeboxDefaultList; //The list of songs to randomly select when the request queue is exhausted
     private AudioKey currentlyPlayingSong;
-    private JukeboxUIWrapper jukeboxUIWrapper;
+    private JukeboxListener jukeboxListener;
 
     private AudioKeyPlaylistListener jukeboxDefaultListListener;
     private boolean loopingCurrentSong = false;
@@ -192,8 +188,6 @@ public class AudioMaster{
         }
         else
             jukeboxQueueList.addAudioKey(new AudioKey(track));
-        if (jukeboxUIWrapper != null)
-            jukeboxUIWrapper.refreshQueueList(this);
     }
 
     public void jukeboxSkipToNextSong() { jukeboxSkipToNextSong(false); }
@@ -214,8 +208,6 @@ public class AudioMaster{
         }
         currentlyPlayingSong = keyToPlay; //This can be null, as can discerned above. This is fine - currentlyPlayingSong being null means no song is being played.
         playCurrentSong();
-        if (jukeboxUIWrapper != null)
-            jukeboxUIWrapper.refreshQueueList(this);
     }
     
     private void playCurrentSong(){
@@ -243,14 +235,10 @@ public class AudioMaster{
 
     public void clearJukeboxQueue(){
         jukeboxQueueList.clearPlaylist();
-        if (jukeboxUIWrapper != null)
-            jukeboxUIWrapper.refreshQueueList(this);
     }
 
     public void shuffleJukeboxQueue(){
         jukeboxQueueList.shuffle();
-        if (jukeboxUIWrapper != null)
-            jukeboxUIWrapper.refreshQueueList(this);
     }
 
     public AudioPlayer getSoundboardPlayer() {
@@ -282,7 +270,7 @@ public class AudioMaster{
             jukeboxDefaultList.saveToFile(new File(jukeboxDefaultList.getUrl()));
     }
 
-    public void createNewJukeboxPlaylist(JukeboxUIWrapper uiWrapper){
+    public void createNewJukeboxPlaylist(JukeboxListener uiWrapper){
         JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
         fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
         int result = fileChooser.showSaveDialog(null);
@@ -290,7 +278,6 @@ public class AudioMaster{
             File file = new File(enforceFileExtension(fileChooser.getSelectedFile().getAbsolutePath()));
             jukeboxDefaultList = new AudioKeyPlaylist(file, false);
             //jukeboxDefaultList.getAudioKeys().clear(); //The Playlist will see that the file DNE and insert an AudioKey in there. This removes that to create a clean, totally-new playlist.
-            uiWrapper.refreshDefaultList(this);
             uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
             Transcriber.printRaw("Current playlist: %1$s", jukeboxDefaultList.toString());
         }
@@ -305,37 +292,24 @@ public class AudioMaster{
             return path.substring(0, extIndex).concat(ext);
     }
 
-    public void openJukeboxPlaylist(JukeboxUIWrapper uiWrapper){
-        JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
-        int result = fileChooser.showOpenDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION){
-            AudioKeyPlaylist playlist = new AudioKeyPlaylist(fileChooser.getSelectedFile(), true);
-            if (playlist.isURLValid()) {
-                loadJukeboxPlaylist(playlist, uiWrapper);
-            }
-        }
+    public void emptyJukeboxPlaylist(){
+        loadJukeboxPlaylist(null);
     }
 
-    public void emptyJukeboxPlaylist(JukeboxUIWrapper uiWrapper){
-        loadJukeboxPlaylist(null, uiWrapper);
-    }
-
-    public void loadJukeBoxPlaylist(AudioKeyPlaylist playlist, boolean jukeboxDefaultListIsLocalFile){
-        loadJukeboxPlaylist(playlist, jukeboxUIWrapper);
+    public void loadJukeboxPlaylist(AudioKeyPlaylist playlist, boolean jukeboxDefaultListIsLocalFile){
+        loadJukeboxPlaylist(playlist);
         this.jukeboxDefaultListIsLocalFile = jukeboxDefaultListIsLocalFile;
     }
 
-    private void loadJukeboxPlaylist(AudioKeyPlaylist playlist, JukeboxUIWrapper uiWrapper){
+    private void loadJukeboxPlaylist(AudioKeyPlaylist playlist){
         jukeboxDefaultList = playlist;
-        uiWrapper.refreshDefaultList(this);
-        uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
         if (playlist != null) {
             Transcriber.printRaw("Current playlist: %1$s", jukeboxDefaultList.toString());
             jukeboxDefaultList.addAudioKeyPlaylistListener(jukeboxDefaultListListener);
-        }
-        else
+        } else {
+            jukeboxDefaultListListener.onClear();
             Transcriber.printRaw("Playlist set to an empty one.");
+        }
     }
 
     public void stopAllAudio() {
@@ -411,10 +385,11 @@ public class AudioMaster{
 
     public void setLoopingCurrentSong(boolean loopingCurrentSong) {
         this.loopingCurrentSong = loopingCurrentSong;
+        jukeboxListener.onJukeboxChangeLoopState(loopingCurrentSong);
     }
 
-    public void setJukeboxUIWrapper(JukeboxUIWrapper jukeboxUIWrapper) {
-        this.jukeboxUIWrapper = jukeboxUIWrapper;
+    public void setJukeboxListener(JukeboxListener jukeboxListener) {
+        this.jukeboxListener = jukeboxListener;
     }
 
     public CommandInterpreter getCommandInterpreter() {
@@ -437,14 +412,8 @@ public class AudioMaster{
         //Transcriber.printTimestamped("Sorting: disk write complete");
     }
 
-    public void setSoundboardUIWrapper(SoundboardUIWrapper soundboardUIWrapper) {
-        this.soundboardUIWrapper = soundboardUIWrapper;
-    }
-
     public void addSoundboardSound(AudioKey key){
         soundboardList.addAudioKey(key);
-        if (soundboardUIWrapper != null)
-            soundboardUIWrapper.updateSoundboardSoundsList(this);
         saveSoundboard();
     }
 
@@ -457,17 +426,13 @@ public class AudioMaster{
         // If id is not an integer, search by name-matching
         if (removed == null)
             removed = soundboardList.removeAudioKey(id);
-        if (removed != null && soundboardUIWrapper != null) {
-            soundboardUIWrapper.updateSoundboardSoundsList(this);
+        if (removed != null)
             saveSoundboard();
-        }
         return removed;
     }
 
     public boolean modifySoundboardSound(String soundName, AudioKey newData){
         if (soundboardList.modifyAudioKey(soundName, newData)){
-            if (soundboardUIWrapper != null)
-                soundboardUIWrapper.updateSoundboardSoundsList(this);
             saveSoundboard();
             return true;
         }

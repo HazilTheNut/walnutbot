@@ -18,6 +18,7 @@ public class SoundboardCommand extends Command {
         addSubCommand(new SoundboardModifyCommand());
         addSubCommand(new SoundboardRemoveCommand());
         addSubCommand(new SoundboardSortCommand());
+        addSubCommand(new GenericCommand("stop", "Forcibly stops the Soundboard player.", ((audioMaster, feedbackHandler) -> audioMaster.resumeJukebox())));
         addSubCommand(new InstantPlayCommand());
     }
 

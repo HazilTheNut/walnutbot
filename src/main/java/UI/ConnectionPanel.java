@@ -1,8 +1,11 @@
 package UI;
 
 import Audio.AudioMaster;
+import Commands.Command;
+import Commands.CommandInterpreter;
 import Utils.BotManager;
 import Utils.ButtonMaker;
+import Utils.Transcriber;
 
 import javax.swing.*;
 import java.util.Comparator;
@@ -10,7 +13,7 @@ import java.util.List;
 
 public class ConnectionPanel extends JPanel {
     
-    public ConnectionPanel(BotManager botManager, AudioMaster audioMaster){
+    public ConnectionPanel(BotManager botManager, CommandInterpreter commandInterpreter){
 
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
@@ -25,11 +28,14 @@ public class ConnectionPanel extends JPanel {
         connectButton.addActionListener(e -> {
             VoiceChannelOption selected = (VoiceChannelOption)channelSelect.getSelectedItem();
             if (selected != null)
-                botManager.connectToVoiceChannel(selected.getServerName(), selected.getChannelName());
+                //botManager.connectToVoiceChannel(selected.getServerName(), selected.getChannelName());
+                commandInterpreter.evaluateCommand(String.format("connect \"%1$s\" \"%2$s\"", selected.getServerName().replace("\"", "\\\""), selected.getChannelName()),
+                    Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK);
         });
 
         JButton disconnectButton = ButtonMaker.createIconButton("icons/disconnect.png", "Disconnect", 10);
-        disconnectButton.addActionListener(e -> botManager.disconnectFromVoiceChannel());
+        disconnectButton.addActionListener(e -> commandInterpreter.evaluateCommand("disconnect",
+            Transcriber.getGenericCommandFeedBackHandler(), Command.INTERNAL_MASK));
 
         add(connectButton);
         add(disconnectButton);

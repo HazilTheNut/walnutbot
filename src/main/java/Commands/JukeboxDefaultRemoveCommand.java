@@ -19,7 +19,7 @@ public class JukeboxDefaultRemoveCommand extends Command {
     }
 
     @Override String getSpecificHelpDescription() {
-        return String.format("%1$s\n\n pos - The position in the list you wish to remove from.", getHelpDescription());
+        return String.format("%1$s\n\npos - The position in the list you wish to remove from.", getHelpDescription());
     }
 
     @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
@@ -32,7 +32,7 @@ public class JukeboxDefaultRemoveCommand extends Command {
             audioMaster.getJukeboxDefaultList().removeAudioKey(pos);
             audioMaster.saveJukeboxDefault();
         } catch (NumberFormatException e){
-            Transcriber.printAndPost(feedbackHandler, "**ERROR:** `pos` was not an integer.");
+            Transcriber.printAndPost(feedbackHandler, "**ERROR:** `pos` is not an integer value.");
         }
     }
 }

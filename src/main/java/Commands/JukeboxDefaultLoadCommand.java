@@ -32,11 +32,11 @@ public class JukeboxDefaultLoadCommand extends Command {
             return;
         File file = new File(args[0]);
         if (file.isFile()){
-            audioMaster.loadJukeBoxPlaylist(new AudioKeyPlaylist(file), true);
+            audioMaster.loadJukeboxPlaylist(new AudioKeyPlaylist(file), true);
             Transcriber.printAndPost(feedbackHandler, "Playlist at location `%1$s` loaded!", file.getAbsolutePath());
         } else {
             AudioKeyPlaylist playlist = new AudioKeyPlaylist(args[0], args[0]);
-            audioMaster.loadJukeBoxPlaylist(playlist, false);
+            audioMaster.loadJukeboxPlaylist(playlist, false);
             AudioKeyPlaylistScraper scraper = new AudioKeyPlaylistScraper(audioMaster);
             scraper.populateAudioKeyPlaylist(args[0], playlist, () -> {});
         }

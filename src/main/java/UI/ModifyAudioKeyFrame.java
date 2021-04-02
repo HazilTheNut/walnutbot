@@ -28,7 +28,7 @@ public class ModifyAudioKeyFrame extends JFrame {
     }
 
     ModifyAudioKeyFrame(AudioMaster audioMaster, @Nonnull AudioKey base, int pos, CommandInterpreter commandInterpreter,
-                        ModificationType modificationType, TargetList targetList, UIFrame uiFrame){
+        ModificationType modificationType, TargetList targetList){
 
         Container c = getContentPane();
 
@@ -134,8 +134,8 @@ public class ModifyAudioKeyFrame extends JFrame {
     }
 
     private String buildCommand(JTextField nameField, JTextField urlField, ModificationType modificationType, TargetList targetList, int pos, String originalName){
-        String name = nameField.getText();
-        String url  = urlField.getText();
+        String name = nameField.getText().replace("\\", "\\\\");
+        String url  = urlField.getText().replace("\\", "\\\\");
         switch (targetList){
             case SOUNDBOARD: {
                 switch (modificationType){

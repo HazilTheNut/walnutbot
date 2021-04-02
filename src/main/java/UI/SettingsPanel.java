@@ -5,8 +5,6 @@ import Commands.Command;
 import Commands.CommandInterpreter;
 import Utils.BotManager;
 import Utils.SettingsLoader;
-import net.dv8tion.jda.api.JDA;
-import okhttp3.internal.http2.Settings;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -19,12 +17,12 @@ public class SettingsPanel extends JPanel {
     private JSlider soundboardVolumeSlider;
     private JSlider musicVolumeSlider;
 
-    public SettingsPanel(BotManager botManager, AudioMaster audioMaster, boolean botInitSuccessful) {
+    public SettingsPanel(BotManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful) {
 
         BoxLayout layout = new BoxLayout(this, BoxLayout.PAGE_AXIS);
         setLayout(layout);
         if (botInitSuccessful) {
-            add(new ConnectionPanel(botManager, audioMaster), BorderLayout.PAGE_START);
+            add(new ConnectionPanel(botManager, commandInterpreter), BorderLayout.PAGE_START);
             add(createMainPanel(audioMaster), BorderLayout.CENTER);
             add(createPermissionsPanel(audioMaster), BorderLayout.PAGE_END);
         } else

@@ -48,7 +48,7 @@ public class JukeboxDefaultModifyCommand extends Command {
             Transcriber.printAndPost(feedbackHandler, "Song `%1$s` successfully modified to \"%1$s\".", originalName, audioMaster.getJukeboxDefaultList().getKey(pos).toString());
             audioMaster.saveJukeboxDefault();
         } catch (NumberFormatException e){
-            Transcriber.printAndPost(feedbackHandler, "**ERROR:** `pos` was not an integer.");
+            Transcriber.printAndPost(feedbackHandler, "**ERROR:** `pos` is not an integer value");
         }
     }
 }
