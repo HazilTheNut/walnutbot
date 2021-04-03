@@ -103,8 +103,10 @@ public class AudioMaster{
     }
 
     private void setActiveStream(AudioPlayer player){
-        AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
-        audioManager.setSendingHandler(new AudioPlayerSendHandler(player));
+        if (connectedChannel != null) {
+            AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
+            audioManager.setSendingHandler(new AudioPlayerSendHandler(player));
+        }
     }
 
     public void resumeJukebox(){
@@ -259,6 +261,10 @@ public class AudioMaster{
         return soundboardList;
     }
 
+    public boolean isJukeboxDefaultListIsLocalFile() {
+        return jukeboxDefaultListIsLocalFile;
+    }
+
     public void saveSoundboard(){
         soundboardList.saveToFile(new File(FileIO.getRootFilePath() + "soundboard.playlist"));
     }
@@ -268,17 +274,9 @@ public class AudioMaster{
             jukeboxDefaultList.saveToFile(new File(jukeboxDefaultList.getUrl()));
     }
 
-    public void createNewJukeboxPlaylist(JukeboxListener uiWrapper){
-        JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
-        int result = fileChooser.showSaveDialog(null);
-        if (result == JFileChooser.APPROVE_OPTION){
-            File file = new File(enforceFileExtension(fileChooser.getSelectedFile().getAbsolutePath()));
-            jukeboxDefaultList = new AudioKeyPlaylist(file, false);
-            //jukeboxDefaultList.getAudioKeys().clear(); //The Playlist will see that the file DNE and insert an AudioKey in there. This removes that to create a clean, totally-new playlist.
-            uiWrapper.updateDefaultPlaylistLabel(jukeboxDefaultList.getName());
-            Transcriber.printRaw("Current playlist: %1$s", jukeboxDefaultList.toString());
-        }
+    public void createNewJukeboxDefaultList(String path){
+        File file = new File(enforceFileExtension(path));
+        loadJukeboxPlaylist(new AudioKeyPlaylist(file, false), true);
     }
 
     private String enforceFileExtension(String path){
@@ -291,21 +289,19 @@ public class AudioMaster{
     }
 
     public void emptyJukeboxPlaylist(){
-        loadJukeboxPlaylist(null);
+        loadJukeboxPlaylist(null, false);
     }
 
     public void loadJukeboxPlaylist(AudioKeyPlaylist playlist, boolean jukeboxDefaultListIsLocalFile){
-        loadJukeboxPlaylist(playlist);
-        this.jukeboxDefaultListIsLocalFile = jukeboxDefaultListIsLocalFile;
-    }
-
-    private void loadJukeboxPlaylist(AudioKeyPlaylist playlist){
         jukeboxDefaultList = playlist;
+        this.jukeboxDefaultListIsLocalFile = jukeboxDefaultListIsLocalFile;
         if (playlist != null) {
             Transcriber.printRaw("Current playlist: %1$s", jukeboxDefaultList.toString());
             jukeboxDefaultList.addAudioKeyPlaylistListener(jukeboxDefaultListListener);
+            jukeboxListener.onDefaultListChange(this);
         } else {
             jukeboxDefaultListListener.onClear();
+            jukeboxListener.onDefaultListChange(this);
             Transcriber.printRaw("Playlist set to an empty one.");
         }
     }

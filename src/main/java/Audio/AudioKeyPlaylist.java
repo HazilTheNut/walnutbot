@@ -40,7 +40,11 @@ public class AudioKeyPlaylist {
     public AudioKeyPlaylist(File file, boolean loopback){
         this(file.getName());
         audioKeys = new ArrayList<>();
-        url = file.getPath();
+        try {
+            url = file.getCanonicalPath();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         isURLValid = false;
         if (file.exists() && file.isFile()){
             if (FileIO.getFileExtension(url).equals("playlist")) {

@@ -3,7 +3,6 @@ package UI;
 import Audio.*;
 import Commands.Command;
 import Commands.CommandInterpreter;
-import Utils.ButtonMaker;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -65,11 +64,12 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         mainPanel.add(openButton);
 
         JButton newButton = ButtonMaker.createIconButton("icons/new.png", "New", 8);
-        newButton.addActionListener(e -> audioMaster.createNewJukeboxPlaylist(this));
+        newButton.addActionListener(e -> createNewJukeboxPlaylist(commandInterpreter));
         mainPanel.add(newButton);
 
         JButton emptyButton = ButtonMaker.createIconButton("icons/empty.png", "Empty Playlist", 8);
-        emptyButton.addActionListener(e -> audioMaster.emptyJukeboxPlaylist());
+        emptyButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl disable",
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
         mainPanel.add(emptyButton);
 
         JButton quickLoadButton = ButtonMaker.createIconButton("icons/quick_menu.png", "Quick Load", 8);
@@ -83,8 +83,12 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
 
         mainPanel.add(Box.createHorizontalGlue());
 
+        JButton remotePlaylistButton = new JButton("Remote Playlist");
+        remotePlaylistButton.addActionListener(e -> new MakeRequestFrame("jb dfl load ", "Remote Playlist", commandInterpreter, uiFrame, false));
+        mainPanel.add(remotePlaylistButton);
+
         addPlaylistButton = new JButton("Import Music");
-        addPlaylistButton.addActionListener(e -> new MakeRequestFrame("jb dfl add", "Import Music", commandInterpreter, uiFrame));
+        addPlaylistButton.addActionListener(e -> new MakeRequestFrame("jb dfl add ", "Import Music", commandInterpreter, uiFrame));
         addPlaylistButton.setEnabled(false);
         mainPanel.add(addPlaylistButton);
 
@@ -98,6 +102,17 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         if (result == JFileChooser.APPROVE_OPTION){
             File chosen = fileChooser.getSelectedFile();
             commandInterpreter.evaluateCommand("jb dfl load ".concat(chosen.getPath().replace("\\","\\\\")),
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+        }
+    }
+
+    public void createNewJukeboxPlaylist(CommandInterpreter commandInterpreter){
+        JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
+        int result = fileChooser.showSaveDialog(null);
+        if (result == JFileChooser.APPROVE_OPTION){
+            File chosen = fileChooser.getSelectedFile();
+            commandInterpreter.evaluateCommand("jb dfl new ".concat(chosen.getPath().replace("\\","\\\\")),
                 Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
         }
     }
@@ -178,9 +193,22 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         return masterPanel;
     }
 
-    @Override public void updateDefaultPlaylistLabel(String playlistName) {
-        playlistLabel.setText(playlistName);
-        playlistLabel.repaint();
+    private void updateDefaultPlaylistLabel(AudioMaster audioMaster) {
+        if (audioMaster.getJukeboxDefaultList() == null) {
+            playlistLabel.setIcon(null);
+            playlistLabel.setText("");
+            playlistLabel.setToolTipText("");
+        } else {
+            playlistLabel.setText(audioMaster.getJukeboxDefaultList().getName());
+            if (audioMaster.isJukeboxDefaultListIsLocalFile()) {
+                playlistLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat("icons/save.png")));
+                playlistLabel.setToolTipText("This playlist is a local file; Auto-Save is enabled.");
+            } else {
+                playlistLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat("icons/internet.png")));
+                playlistLabel.setToolTipText("This playlist was loaded from the Internet; Auto-Save is disabled.");
+            }
+            playlistLabel.repaint();
+        }
     }
 
     private void openQuickLoadMenu(Component invoker, CommandInterpreter commandInterpreter){
@@ -198,6 +226,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         defaultListTable.pullAudioKeyList(audioMaster.getJukeboxDefaultList());
         boolean listValid = audioMaster.getJukeboxDefaultList() != null;
         addPlaylistButton.setEnabled(listValid);
+        updateDefaultPlaylistLabel(audioMaster);
     }
 
     @Override public void onJukeboxChangeLoopState(boolean isLoopingSong) {
@@ -210,6 +239,8 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         UIFrame uiFrame;
         CommandInterpreter commandInterpreter;
         boolean isQueueList;
+
+        JLabel endOfQueueLabel = new JLabel("");
 
         private TrackListingTable(AudioMaster audioMaster, UIFrame uiFrame, CommandInterpreter commandInterpreter, boolean isQueueList){
             setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
@@ -227,7 +258,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
                         isQueueList));
                 }
                 if (isQueueList && playlist.isEmpty()) {
-                    JLabel endOfQueueLabel = new JLabel("Queue Empty - Playing random songs from Default List (above)");
+                    endOfQueueLabel = new JLabel("Queue Empty - Playing random songs from Default List (above)");
                     Font italic = new Font(endOfQueueLabel.getFont().getName(), Font.ITALIC,
                         endOfQueueLabel.getFont().getSize());
                     endOfQueueLabel.setFont(italic);
@@ -239,6 +270,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         }
 
         @Override public void onAddition(AudioKeyPlaylistEvent event) {
+            remove(endOfQueueLabel);
             add(new TrackListing(event.getKey(), audioMaster, commandInterpreter, isQueueList));
             revalidate();
             repaint();
@@ -246,6 +278,8 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
 
         @Override public void onRemoval(AudioKeyPlaylistEvent event) {
             remove(event.getPos());
+            if (getComponents().length <= 0)
+                add(endOfQueueLabel);
             revalidate();
             repaint();
         }
@@ -270,6 +304,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
          */
         @Override public void onClear() {
             removeAll();
+            add(endOfQueueLabel);
             revalidate();
             repaint();
         }

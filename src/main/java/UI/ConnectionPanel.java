@@ -1,14 +1,11 @@
 package UI;
 
-import Audio.AudioMaster;
 import Commands.Command;
 import Commands.CommandInterpreter;
 import Utils.BotManager;
-import Utils.ButtonMaker;
 import Utils.Transcriber;
 
 import javax.swing.*;
-import java.util.Comparator;
 import java.util.List;
 
 public class ConnectionPanel extends JPanel {

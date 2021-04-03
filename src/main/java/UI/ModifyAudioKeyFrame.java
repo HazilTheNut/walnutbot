@@ -4,7 +4,6 @@ import Audio.AudioKey;
 import Audio.AudioMaster;
 import Commands.Command;
 import Commands.CommandInterpreter;
-import Utils.ButtonMaker;
 import Utils.FileIO;
 import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -134,8 +133,8 @@ public class ModifyAudioKeyFrame extends JFrame {
     }
 
     private String buildCommand(JTextField nameField, JTextField urlField, ModificationType modificationType, TargetList targetList, int pos, String originalName){
-        String name = nameField.getText().replace("\\", "\\\\");
-        String url  = urlField.getText().replace("\\", "\\\\");
+        String name = nameField.getText().replace("\\", "\\\\").replace("\"", "\\\"");
+        String url  = urlField.getText().replace("\\", "\\\\").replace("\"", "\\\"");
         switch (targetList){
             case SOUNDBOARD: {
                 switch (modificationType){

@@ -1,9 +1,7 @@
 package UI;
 
-import Audio.AudioMaster;
 import Commands.Command;
 import Commands.CommandInterpreter;
-import Utils.ButtonMaker;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -16,8 +14,13 @@ import java.io.File;
 public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
     private String previousFilePath;
+    private JCheckBox keepWindowOpenCheckBox;
 
     public MakeRequestFrame(String baseCommand, String windowTitle, CommandInterpreter commandInterpreter, JFrame uiFrame){
+        this(baseCommand, windowTitle, commandInterpreter, uiFrame, true);
+    }
+
+    public MakeRequestFrame(String baseCommand, String windowTitle, CommandInterpreter commandInterpreter, JFrame uiFrame, boolean enableFileDialog){
         setLayout(new BoxLayout(getContentPane(), BoxLayout.PAGE_AXIS));
         setTitle(windowTitle);
         setSize(new Dimension(550, 100));
@@ -38,22 +41,25 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.LINE_AXIS));
 
-        JButton openFileButton = ButtonMaker.createIconButton("icons/open.png", "Open File...", 4);
-        openFileButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
-            if (previousFilePath != null)
-                fileChooser.setSelectedFile(new File(previousFilePath));
-            int result = fileChooser.showOpenDialog(null);
-            if (result == JFileChooser.APPROVE_OPTION) {
-                previousFilePath = fileChooser.getSelectedFile().getAbsolutePath();
-                urlField.setText(previousFilePath);
-            }
-        });
-        buttonPanel.add(openFileButton);
+        if (enableFileDialog) {
+            JButton openFileButton =
+                ButtonMaker.createIconButton("icons/open.png", "Open File...", 4);
+            openFileButton.addActionListener(e -> {
+                JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
+                if (previousFilePath != null)
+                    fileChooser.setSelectedFile(new File(previousFilePath));
+                int result = fileChooser.showOpenDialog(null);
+                if (result == JFileChooser.APPROVE_OPTION) {
+                    previousFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+                    urlField.setText(previousFilePath);
+                }
+            });
+            buttonPanel.add(openFileButton);
+        }
 
         JButton confirmButton = new JButton("Request");
         confirmButton.addActionListener(e -> {
-            makeRequest(baseCommand, commandInterpreter, urlField.getText());
+            makeRequest(baseCommand, commandInterpreter, sanitizeInput(urlField.getText()));
             urlField.setText("");
         });
         buttonPanel.add(confirmButton);
@@ -62,15 +68,24 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
         cancelButton.addActionListener(e -> dispose());
         buttonPanel.add(cancelButton);
 
+        keepWindowOpenCheckBox = new JCheckBox("Keep this window open");
+        buttonPanel.add(keepWindowOpenCheckBox);
+
         add(buttonPanel);
 
         setVisible(true);
         uiFrame.addWindowStateListener(this);
     }
 
+    private String sanitizeInput(String input){
+        return String.format("\"%1$s\"", input.replace("\\", "\\\\").replace("\"", "\\\""));
+    }
+
     private void makeRequest(String baseCommand, CommandInterpreter commandInterpreter, String url){
         commandInterpreter.evaluateCommand(baseCommand.concat(url),
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+        if (!keepWindowOpenCheckBox.isSelected())
+            dispose();
     }
 
     /**

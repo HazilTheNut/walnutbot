@@ -3,7 +3,6 @@ package UI;
 import Audio.*;
 import Commands.Command;
 import Commands.CommandInterpreter;
-import Utils.ButtonMaker;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -86,7 +85,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", 12);
         playButton.addActionListener(e -> {
             commandInterpreter.evaluateCommand(
-                String.format("sb url %1$s", urlField.getText()),
+                String.format("sb url %1$s", urlField.getText().replace("\\", "\\\\").replace("\"", "\\\"")),
                 Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI),
                 Command.INTERNAL_MASK
             );
