@@ -88,7 +88,7 @@ public class ModifyAudioKeyFrame extends JFrame {
                 AudioKey key = new AudioKey(nameField.getText(), urlField.getText());
                 if (key.isValid()) {
                     commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.ADD, targetList, -1, base.getName()),
-                        Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                        Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
                 }
                 dispose();
             });
@@ -100,7 +100,7 @@ public class ModifyAudioKeyFrame extends JFrame {
                 JButton removeButton = new JButton("Remove");
                 removeButton.addActionListener(e -> {
                     commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.REMOVE, targetList, pos, base.getName()),
-                        Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                        Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
                     dispose();
                 });
                 buttonsPanel.add(removeButton);
@@ -109,7 +109,7 @@ public class ModifyAudioKeyFrame extends JFrame {
             JButton applyButton = new JButton("Apply");
             applyButton.addActionListener(e -> {
                 commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.MODIFY, targetList, pos, base.getName()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
                 dispose();
             });
             buttonsPanel.add(applyButton);

@@ -11,7 +11,14 @@ import javax.swing.*;
 public class Main {
 
     public static void main(String[] args){
-        Transcriber.startTranscription();
+
+        // Read CLA's
+        boolean headlessMode = false;
+        for (String arg : args)
+            if(arg.equals("-headless"))
+                headlessMode = true;
+
+        Transcriber.startTranscription(headlessMode);
         System.out.println(FileIO.getRootFilePath());
         SettingsLoader.initialize();
         String token = SettingsLoader.getBotConfigValue("token");
@@ -44,6 +51,12 @@ public class Main {
             commandInterpreter = new CommandInterpreter(botManager, audioMaster);
             jda.addEventListener(commandInterpreter);
         }
-        new UIFrame(botManager, audioMaster, commandInterpreter, (jda != null));
+        if (headlessMode) {
+            if (commandInterpreter != null)
+                commandInterpreter.readHeadlessInput();
+            else
+                System.out.println("ERROR: Discord bot did not properly initialize!");
+        } else
+            new UIFrame(botManager, audioMaster, commandInterpreter, (jda != null));
     }
 }

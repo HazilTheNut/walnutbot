@@ -11,6 +11,7 @@ import Utils.Transcriber;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.Comparator;
 
 public class SettingsPanel extends JPanel implements VolumeChangeListener {
 
@@ -54,7 +55,7 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
         mainVolumeSlider.addChangeListener(e -> {
             if (mainVolumeSlider.getValue() != audioMaster.getMainVolume())
                 commandInterpreter.evaluateCommand(String.format("vol main %1$d", mainVolumeSlider.getValue()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
         panel.add(new JLabel("Main Volume (%)"));
         panel.add(mainVolumeSlider);
@@ -63,7 +64,7 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
         soundboardVolumeSlider.addChangeListener(e -> {
             if (soundboardVolumeSlider.getValue() != audioMaster.getSoundboardVolume())
                 commandInterpreter.evaluateCommand(String.format("vol sb %1$d", soundboardVolumeSlider.getValue()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
         panel.add(new JLabel("Soundboard Volume (%)"));
         panel.add(soundboardVolumeSlider);
@@ -72,7 +73,7 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
         jukeboxVolumeSlider.addChangeListener(e -> {
             if (jukeboxVolumeSlider.getValue() != audioMaster.getJukeboxVolume())
                 commandInterpreter.evaluateCommand(String.format("vol jb %1$d", jukeboxVolumeSlider.getValue()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
         panel.add(new JLabel("Jukebox Volume (%)"));
         panel.add(jukeboxVolumeSlider);
@@ -107,7 +108,9 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
         JScrollPane allowCommandScrollPane = new JScrollPane(commandsAllowPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         int unitIncrement = 0;
 
-        for (Command command : audioMaster.getCommandInterpreter().getExpandedCommandList()){
+        java.util.List<Command> commandList = audioMaster.getCommandInterpreter().getExpandedCommandList();
+        commandList.sort(Comparator.comparing(Command::getCommandTreeStr));
+        for (Command command : commandList){
             JCheckBox commandAllowBox = new JCheckBox(String.format("%1$s : %2$s", command.getCommandTreeStr(), command.getHelpDescription()));
             commandAllowBox.addChangeListener(e -> {
                 SettingsLoader.modifySettingsValue(command.getPermissionName(), (commandAllowBox.isSelected()) ? "3" : "2");

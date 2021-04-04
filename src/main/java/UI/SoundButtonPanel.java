@@ -22,9 +22,10 @@ public class SoundButtonPanel extends JPanel implements AudioKeyUIWrapper {
         setLayout(new BorderLayout());
 
         playButton = new JButton(this.audioKey.getName());
+        playButton.setMargin(new Insets(4, 8, 4, 8));
         playButton.addActionListener(e -> commandInterpreter.evaluateCommand(
             String.format("sb \"%1$s\"", audioKey.getName()),
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI),
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI),
             Command.INTERNAL_MASK
         ));
         add(playButton, BorderLayout.CENTER);

@@ -2,16 +2,14 @@ package Commands;
 
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.ConsoleCommandFeedbackHandler;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class CommandInterpreter extends ListenerAdapter {
 
@@ -31,6 +29,16 @@ public class CommandInterpreter extends ListenerAdapter {
         addCommand(new ConnectCommand());
         addCommand(new DisconnectCommand());
         addCommand(new VolumeCommand());
+        addCommand(new PermissionsCommand());
+        addCommand(new GenericCommand("status", "Prints out the current status of the bot.", ((audioMaster1, feedbackHandler) -> {
+            String channelStr = (audioMaster.getConnectedChannel() == null) ? "null" : String.format("%1$s : %2$s",
+                audioMaster.getConnectedChannel().getGuild(), audioMaster.getConnectedChannel().getName());
+            Transcriber.printAndPost(feedbackHandler,
+                "**Bot Status:**\n```\n"
+                    + "Raw Volumes: sb=%1$d jb=%2$d\n"
+                    + "Connected Channel: %3$s",
+                audioMaster.getSoundboardPlayer().getVolume(), audioMaster.getJukeboxPlayer().getVolume(), channelStr);
+        })));
     }
 
     public List<Command> getExpandedCommandList(){
@@ -70,7 +78,31 @@ public class CommandInterpreter extends ListenerAdapter {
         //Run command if incoming message starts with the command character
         String messageContent = event.getMessage().getContentRaw();
         if (isADiscordCommand(messageContent))
-            evaluateCommand(removeCommandChar(messageContent), new DiscordCommandFeedbackHandler(event), Command.USER_MASK);
+            evaluateCommand(removeCommandChar(messageContent), new DiscordCommandFeedbackHandler(event), getUserPermissions(event.getAuthor().getAsTag()));
+    }
+
+    public void readHeadlessInput(){
+        Thread inputThread = new Thread(() -> {
+           Scanner sc = new Scanner(System.in);
+           String input;
+           String exitWord = "exit";
+           do {
+               input = sc.nextLine();
+               if (!input.equals(exitWord))
+                   evaluateCommand(input, new ConsoleCommandFeedbackHandler(), Command.INTERNAL_MASK);
+           } while (!input.equals(exitWord));
+           System.exit(0);
+        });
+        inputThread.start();
+    }
+
+    private byte getUserPermissions(String username){
+        byte permissions = Command.USER_MASK;
+        if (SettingsLoader.isAdminUser(username))
+            permissions |= Command.ADMIN_MASK;
+        if (SettingsLoader.isBlockedUser(username))
+            permissions &= Command.BLOCKED_MASK;
+        return permissions;
     }
 
     private boolean isADiscordCommand(String commandRawText){
@@ -101,7 +133,11 @@ public class CommandInterpreter extends ListenerAdapter {
      * @param authorPermission The byte describing the command author's level of permission.
      */
     public void evaluateCommand(String commandText, CommandFeedbackHandler commandFeedbackHandler, byte authorPermission){
-        Transcriber.printTimestamped("%1$s > %2$s", commandFeedbackHandler.getAuthor(), commandText);
+        String author = commandFeedbackHandler.getAuthor();
+        if (author.length() < 1)
+            Transcriber.printTimestamped("> %1$s", commandText);
+        else
+            Transcriber.printTimestamped("%1$s > %2$s", author, commandText);
         String[] parts = splitCommandStr(commandText);
         if (commandMap.containsKey(parts[0])){ //If command is valid
             if (!Boolean.valueOf(SettingsLoader.getSettingsValue(getCommandAllowanceSettingName(parts[0]), "true"))) {

@@ -83,7 +83,7 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
     private void makeRequest(String baseCommand, CommandInterpreter commandInterpreter, String url){
         commandInterpreter.evaluateCommand(baseCommand.concat(url),
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         if (!keepWindowOpenCheckBox.isSelected())
             dispose();
     }

@@ -70,8 +70,10 @@ public class AudioKeyPlaylist {
     }
 
     public void addAudioKeyPlaylistListener(AudioKeyPlaylistListener listener){
-        eventListeners.add(listener);
-        listener.onNewPlaylist();
+        if (listener != null) {
+            eventListeners.add(listener);
+            listener.onNewPlaylist();
+        }
     }
 
     public ArrayList<AudioKey> getAudioKeys() {

@@ -9,11 +9,14 @@ version '1.0-pre9'
 
 mainClassName = "Main"
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.11
 
 repositories {
     mavenCentral()
     jcenter()
+    flatDir {
+        dirs 'libs'
+    }
 }
 
 dependencies {

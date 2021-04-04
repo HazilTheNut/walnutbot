@@ -14,6 +14,7 @@ public class Command {
     public static final byte USER_MASK  = 0x01;     //For non-admin users
     public static final byte ADMIN_MASK = 0x02;     //For admin users
     public static final byte INTERNAL_MASK = 0x04;  //For the bot sending commands to itself
+    public static final byte BLOCKED_MASK = 0x00;   //For blocked users
 
     private String commandTreeStr; // A String describing the command as a subcommand of a another one, such as "super sub"
     private List<Command> subcommands;
@@ -84,6 +85,7 @@ public class Command {
      */
     boolean isPermissionSufficient(byte permission){
         if ((permission & INTERNAL_MASK) != 0) return true;
+        if ((permission & BLOCKED_MASK) != 0) return false;
         byte settingsPerms = Byte.valueOf(SettingsLoader.getSettingsValue(getPermissionName(), "3"));
         return (permission & settingsPerms) != 0;
     }

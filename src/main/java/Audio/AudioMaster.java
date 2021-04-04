@@ -81,6 +81,8 @@ public class AudioMaster{
         jukeboxTrackScheduler = new JukeboxTrackScheduler(this);
         jukeboxPlayer.addListener(jukeboxTrackScheduler);
 
+        updatePlayerVolumes();
+
         jukeboxQueueList = new AudioKeyPlaylist("queue");
 
         jukeboxSongsToRequest = new ArrayList<>();
@@ -221,8 +223,7 @@ public class AudioMaster{
                     Transcriber.printRaw("WARNING: Song url \"%1$s\" is invalid!", currentlyPlayingSong.getUrl());
                     jukeboxSkipToNextSong();
                 }));
-        } else
-            songDurationTracker.reset();
+        } else if (songDurationTracker != null) songDurationTracker.reset();
         setJukeboxTruePause(false);
     }
 
@@ -298,10 +299,10 @@ public class AudioMaster{
         if (playlist != null) {
             Transcriber.printRaw("Current playlist: %1$s", jukeboxDefaultList.toString());
             jukeboxDefaultList.addAudioKeyPlaylistListener(jukeboxDefaultListListener);
-            jukeboxListener.onDefaultListChange(this);
+            if (jukeboxListener != null) jukeboxListener.onDefaultListChange(this);
         } else {
-            jukeboxDefaultListListener.onClear();
-            jukeboxListener.onDefaultListChange(this);
+            if (jukeboxDefaultListListener != null) jukeboxDefaultListListener.onClear();
+            if (jukeboxListener != null) jukeboxListener.onDefaultListChange(this);
             Transcriber.printRaw("Playlist set to an empty one.");
         }
     }
@@ -337,7 +338,7 @@ public class AudioMaster{
         this.soundboardVolume = soundboardVolume;
         SettingsLoader.modifySettingsValue("soundboardVolume", String.valueOf(soundboardVolume));
         SettingsLoader.writeSettingsFile();
-        volumeChangeListener.onSoundboardVolumeChange(soundboardVolume, this);
+        if (volumeChangeListener != null) volumeChangeListener.onSoundboardVolumeChange(soundboardVolume, this);
         updatePlayerVolumes();
     }
 
@@ -345,7 +346,7 @@ public class AudioMaster{
         this.jukeboxVolume = jukeboxVolume;
         SettingsLoader.modifySettingsValue("jukeboxVolume", String.valueOf(jukeboxVolume));
         SettingsLoader.writeSettingsFile();
-        volumeChangeListener.onJukeboxVolumeChange(jukeboxVolume, this);
+        if (volumeChangeListener != null) volumeChangeListener.onJukeboxVolumeChange(jukeboxVolume, this);
         updatePlayerVolumes();
     }
 
@@ -411,7 +412,7 @@ public class AudioMaster{
 
     public void setLoopingCurrentSong(boolean loopingCurrentSong) {
         this.loopingCurrentSong = loopingCurrentSong;
-        jukeboxListener.onJukeboxChangeLoopState(loopingCurrentSong);
+        if (jukeboxListener != null) jukeboxListener.onJukeboxChangeLoopState(loopingCurrentSong);
     }
 
     public void setJukeboxListener(JukeboxListener jukeboxListener) {

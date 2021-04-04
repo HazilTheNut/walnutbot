@@ -1,17 +1,22 @@
 package Utils;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Scanner;
+import java.util.*;
 
 public class SettingsLoader {
 
     private static HashMap<String, String> botconfig; //From the program's POV, is read-only. config.txt will preserve the comments in the file
     private static HashMap<String, String> settings; //Is writable & readable. settings.txt will not preserve comments in the file
 
+    private static HashMap<String, String> adminUsers;
+    private static HashMap<String, String> blockedUsers;
+
     public static void initialize(){
         botconfig = readSettingsFile(getConfigPath());
         settings = readSettingsFile(getSettingsPath());
+
+        adminUsers = readUsersFile(getAdminsPath());
+        blockedUsers = readUsersFile(getBlockedPath());
     }
 
     private static HashMap<String, String> readSettingsFile(String filepath){
@@ -40,12 +45,39 @@ public class SettingsLoader {
         return settings;
     }
 
+    private static HashMap<String, String> readUsersFile(String filepath){
+        File usersFile = new File(filepath);
+        HashMap<String, String> users = new HashMap<>();
+        try {
+            FileInputStream inputStream = new FileInputStream(usersFile);
+            Scanner sc = new Scanner(inputStream);
+
+            while(sc.hasNext()){
+                String in = sc.nextLine();
+                users.put(in, in);
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            Transcriber.printTimestamped("Could not find user registry file at %1$s", filepath);
+        }
+        return users;
+    }
+
     private static String getConfigPath(){
-        return FileIO.getRootFilePath() + "config.ini";
+        return String.format("%sconfig.ini", FileIO.getRootFilePath());
     }
 
     private static String getSettingsPath(){
-        return FileIO.getRootFilePath() + "settings.ini";
+        return String.format("%ssettings.ini", FileIO.getRootFilePath());
+    }
+
+    private static String getAdminsPath(){
+        return String.format("%sadmins.txt", FileIO.getRootFilePath());
+    }
+
+    private static String getBlockedPath(){
+        return String.format("%sblocked.txt", FileIO.getRootFilePath());
     }
 
     /**
@@ -85,7 +117,7 @@ public class SettingsLoader {
     }
 
     /**
-     * Writes the current set of settings to settings.txt
+     * Writes the current set of settings to settings.ini
      */
     public static void writeSettingsFile(){
         File settingsFile = new File(getSettingsPath());
@@ -102,5 +134,70 @@ public class SettingsLoader {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * Writes the value contents of a HashMap of user names (either the "admins" or "blocked" list) to a file at the input path
+     *
+     * @param path Where to write the file to.
+     * @param userMap The HashMap of users to write
+     */
+    private static void writeUsersFile(String path, HashMap<String, String> userMap){
+        File userFile = new File(path);
+        if (userFile.exists()) userFile.delete();
+        try {
+            FileOutputStream outputStream = new FileOutputStream(userFile);
+            PrintWriter writer = new PrintWriter(outputStream);
+            for (String user : userMap.values())
+                writer.println(user);
+            writer.close();
+            outputStream.close();
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public static void writeAdminsFile(){
+        writeUsersFile(getAdminsPath(), adminUsers);
+    }
+
+    public static void writeBlockedFile(){
+        writeUsersFile(getBlockedPath(), blockedUsers);
+    }
+
+    public static void addAdminUser(String user){
+        adminUsers.put(user, user);
+        writeAdminsFile();
+    }
+
+    public static void removeAdminUser(String user){
+        if (adminUsers.remove(user) != null)
+        writeAdminsFile();
+    }
+
+    public static void addBlockedUser(String user){
+        blockedUsers.put(user, user);
+        writeBlockedFile();
+    }
+
+    public static void removeBlockedUser(String user){
+        if (blockedUsers.remove(user) != null)
+            writeBlockedFile();
+    }
+
+    public static boolean isAdminUser(String user){
+        return adminUsers.containsKey(user);
+    }
+
+    public static boolean isBlockedUser(String user){
+        return blockedUsers.containsKey(user);
+    }
+
+    public Set<String> getAdminList(){
+        return adminUsers.keySet();
+    }
+
+    public Set<String> getBlockedList(){
+        return blockedUsers.keySet();
     }
 }

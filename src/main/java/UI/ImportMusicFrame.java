@@ -1,16 +1,8 @@
 package UI;
 
-import Audio.AudioKey;
-import Audio.AudioKeyPlaylist;
-import Audio.AudioKeyPlaylistScraper;
-import Audio.AudioMaster;
 import Commands.Command;
 import Commands.CommandInterpreter;
 import Utils.Transcriber;
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,7 +34,7 @@ public class ImportMusicFrame extends JFrame {
         JButton confirmButton = new JButton("Import");
         confirmButton.addActionListener(e -> {
             commandInterpreter.evaluateCommand(String.format("%1$s %2$s", baseCommand, urlField.getText()),
-                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI),
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI),
                 Command.INTERNAL_MASK);
             dispose();
         });

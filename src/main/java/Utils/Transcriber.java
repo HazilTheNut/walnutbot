@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.entities.MessageChannel;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,8 +15,8 @@ public class Transcriber {
 
     private static ArrayList<TranscriptReceiver> transcriptReceivers;
 
-    public static final String AUTTH_UI = "UI";
-    public static final String AUTTH_CONSOLE = "";
+    public static final String AUTH_UI = "UI";
+    public static final String AUTH_CONSOLE = "";
 
     static {
         transcriptReceivers = new ArrayList<>();
@@ -46,7 +47,11 @@ public class Transcriber {
         System.out.println(message);
     }
 
-    public static void startTranscription(){
+    public static void startTranscription(boolean headlessMode){
+        if (headlessMode){
+            startTranscriptionHeadlessMode();
+            return;
+        }
         String filename = FileIO.getRootFilePath() + "output.txt";
         File outputFile = new File(filename);
         PrintStream fileOut = null;
@@ -67,6 +72,17 @@ public class Transcriber {
             }
         }
         System.out.printf("BEGIN of Walnutbot (time: %1$s)\n---\n", (new SimpleDateFormat("MM/dd/yyyy kk:mm:ss")).format(new Date()));
+    }
+
+    private static void startTranscriptionHeadlessMode(){
+        try {
+            OutputSplitter splitter = new OutputSplitter(System.out.toString(), System.out, transcriptReceivers);
+            transcriptReceivers.add(new HeadlessFileOutWriter(FileIO.getRootFilePath().concat("output.txt")));
+            System.setOut(splitter);
+            System.setOut(splitter);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private static class OutputSplitter extends PrintStream {
@@ -150,6 +166,24 @@ public class Transcriber {
          */
         @Override public int getListPageSize(CommandType commandType) {
             return Integer.MAX_VALUE;
+        }
+    }
+
+    private static class HeadlessFileOutWriter implements TranscriptReceiver {
+
+        private PrintStream fileOut;
+
+        private HeadlessFileOutWriter(String filepath){
+            File outputFile = new File(filepath);
+            try {
+                fileOut = new PrintStream(outputFile);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override public void receiveMessage(String message) {
+            fileOut.println(message);
         }
     }
 }

@@ -27,12 +27,12 @@ public class ConnectionPanel extends JPanel {
             if (selected != null)
                 //botManager.connectToVoiceChannel(selected.getServerName(), selected.getChannelName());
                 commandInterpreter.evaluateCommand(String.format("connect \"%1$s\" \"%2$s\"", selected.getServerName().replace("\"", "\\\""), selected.getChannelName()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
 
         JButton disconnectButton = ButtonMaker.createIconButton("icons/disconnect.png", "Disconnect", 10);
         disconnectButton.addActionListener(e -> commandInterpreter.evaluateCommand("disconnect",
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
 
         add(connectButton);
         add(disconnectButton);

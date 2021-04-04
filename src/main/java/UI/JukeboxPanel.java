@@ -69,7 +69,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
 
         JButton emptyButton = ButtonMaker.createIconButton("icons/empty.png", "Empty Playlist", 8);
         emptyButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl disable",
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         mainPanel.add(emptyButton);
 
         JButton quickLoadButton = ButtonMaker.createIconButton("icons/quick_menu.png", "Quick Load", 8);
@@ -102,7 +102,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         if (result == JFileChooser.APPROVE_OPTION){
             File chosen = fileChooser.getSelectedFile();
             commandInterpreter.evaluateCommand("jb dfl load ".concat(chosen.getPath().replace("\\","\\\\")),
-                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         }
     }
 
@@ -113,7 +113,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         if (result == JFileChooser.APPROVE_OPTION){
             File chosen = fileChooser.getSelectedFile();
             commandInterpreter.evaluateCommand("jb dfl new ".concat(chosen.getPath().replace("\\","\\\\")),
-                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         }
     }
 
@@ -142,17 +142,17 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
 
         JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", BUTTON_MARGIN);
         playButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb play",
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         controlsPanel.add(playButton);
 
         JButton pauseButton = ButtonMaker.createIconButton("icons/stop.png", "Pause", BUTTON_MARGIN);
         pauseButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb pause",
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         controlsPanel.add(pauseButton);
         
         JButton nextButton = ButtonMaker.createIconButton("icons/next.png", "Skip", BUTTON_MARGIN);
         nextButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb skip",
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         controlsPanel.add(nextButton);
 
         currentPlayingSongLabel = new JLabel(noSongText);
@@ -171,7 +171,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         loopingBox.addItemListener(e -> {
             if (audioMaster.isLoopingCurrentSong() != loopingBox.isSelected())
                 commandInterpreter.evaluateCommand(String.format("jb loop %1$b", loopingBox.isSelected()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK);
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
         optionsPanel.add(loopingBox);
 
@@ -180,11 +180,11 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         optionsPanel.add(requestButton);
 
         JButton shuffleButton = ButtonMaker.createIconButton("icons/shuffle.png", "Shuffle", 10);
-        shuffleButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb shuffle", Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+        shuffleButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb shuffle", Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         optionsPanel.add(shuffleButton);
 
         JButton clearButton = ButtonMaker.createIconButton("icons/empty.png", "Clear", 3);
-        clearButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb clearqueue", Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+        clearButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb clearqueue", Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         optionsPanel.add(clearButton);
 
         masterPanel.add(controlsPanel, BorderLayout.CENTER);
@@ -201,10 +201,10 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         } else {
             playlistLabel.setText(audioMaster.getJukeboxDefaultList().getName());
             if (audioMaster.isJukeboxDefaultListIsLocalFile()) {
-                playlistLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat("icons/save.png")));
+                playlistLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat(ButtonMaker.convertIconPath("icons/save.png"))));
                 playlistLabel.setToolTipText("This playlist is a local file; Auto-Save is enabled.");
             } else {
-                playlistLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat("icons/internet.png")));
+                playlistLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat(ButtonMaker.convertIconPath("icons/internet.png"))));
                 playlistLabel.setToolTipText("This playlist was loaded from the Internet; Auto-Save is disabled.");
             }
             playlistLabel.repaint();
@@ -216,7 +216,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         for (File file : FileIO.getFilesInDirectory(FileIO.getRootFilePath().concat("playlists/"))) {
             JMenuItem item = new JMenuItem(file.getName());
             item.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl load ".concat(file.getPath().replace("\\","\\\\")),
-                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
             popupMenu.add(item);
         }
         popupMenu.show(invoker, 0, 0);
@@ -370,18 +370,18 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
             if (isInQueueList){
                 JButton postponeButton = ButtonMaker.createIconButton("icons/queue.png", "Postpone", 3);
                 postponeButton.addActionListener(e -> commandInterpreter.evaluateCommand(String.format("jb postpone %1$d", findMyPosition()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
                 add(postponeButton);
                 JButton removeButton = ButtonMaker.createIconButton("icons/cancel.png", "Remove", 3);
                 removeButton.addActionListener(e -> commandInterpreter.evaluateCommand(String.format("jb deque %1$d", findMyPosition()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
                 add(removeButton);
                 buttonToMeasure = removeButton;
             } else {
                 //Queue Button
                 JButton queueButton = ButtonMaker.createIconButton("icons/queue.png", "Queue", 4);
                 queueButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb ".concat(audioKey.getUrl()),
-                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
                 add(queueButton);
                 //Edit Button
                 JButton editButton = ButtonMaker.createIconButton("icons/menu.png", "Edit", 4);

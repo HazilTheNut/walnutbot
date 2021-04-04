@@ -4,6 +4,7 @@ import Audio.*;
 import Commands.Command;
 import Commands.CommandInterpreter;
 import Utils.FileIO;
+import Utils.SettingsLoader;
 import Utils.Transcriber;
 
 import javax.swing.*;
@@ -16,6 +17,10 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
     private CommandInterpreter commandInterpreter;
 
+    private SoundsMainPanel soundsMainPanel;
+    private LayoutManager listLayout;
+    private LayoutManager gridLayout;
+
     public SoundboardPanel(AudioMaster master, CommandInterpreter commandInterpreter){
 
         this.commandInterpreter = commandInterpreter;
@@ -25,7 +30,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         soundsPanel = createSoundsPanel(master);
         JPanel miscPanel = createMiscPanel(master, commandInterpreter);
 
-        JScrollPane scrollPane = new JScrollPane(soundsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane scrollPane = new JScrollPane(soundsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.validate();
 
         add(miscPanel, BorderLayout.PAGE_START);
@@ -40,6 +45,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
     private JPanel createMiscPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter){
         JPanel panel = new JPanel();
         panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        //panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
 
         JButton addButton = new JButton("Add Sound");
         addButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, new AudioKey("",""), -1, commandInterpreter, ModifyAudioKeyFrame.ModificationType.ADD, ModifyAudioKeyFrame.TargetList.SOUNDBOARD));
@@ -47,7 +53,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
         JButton sortButton = new JButton("Sort A-Z");
         sortButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb sort",
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         panel.add(sortButton);
 
         playerStatusLabel = new JLabel("Status: ");
@@ -56,8 +62,36 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
         JButton stopButton = ButtonMaker.createIconButton("icons/stop.png", "Stop", 8);
         stopButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb stop",
-            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI), Command.INTERNAL_MASK));
+            Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         panel.add(stopButton);
+
+        JButton listLayoutButton = ButtonMaker.createIconButton("icons/menu.png", "List Layout", 8);
+        JButton gridLayoutButton = ButtonMaker.createIconButton("icons/grid.png", "Grid Layout", 8);
+
+        listLayoutButton.addActionListener(e -> {
+            soundsMainPanel.setLayout(listLayout);
+            soundsMainPanel.revalidate();
+            soundsMainPanel.repaint();
+            SettingsLoader.modifySettingsValue("soundboard_preferred_layout", "list");
+            SettingsLoader.writeSettingsFile();
+            gridLayoutButton.setEnabled(true);
+            listLayoutButton.setEnabled(false);
+        });
+        listLayoutButton.setEnabled(!SettingsLoader.getSettingsValue("soundboard_preferred_layout", "list").equals("list"));
+        panel.add(listLayoutButton);
+
+        gridLayoutButton.addActionListener(e -> {
+            soundsMainPanel.setLayout(gridLayout);
+            soundsMainPanel.revalidate();
+            soundsMainPanel.repaint();
+            SettingsLoader.modifySettingsValue("soundboard_preferred_layout", "grid");
+            SettingsLoader.writeSettingsFile();
+            gridLayoutButton.setEnabled(false);
+            listLayoutButton.setEnabled(true);
+
+        });
+        gridLayoutButton.setEnabled(!SettingsLoader.getSettingsValue("soundboard_preferred_layout", "list").equals("grid"));
+        panel.add(gridLayoutButton);
 
         //audioMaster.setSoundboardUIWrapper(this);
 
@@ -65,14 +99,20 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
     }
 
     private SoundsMainPanel createSoundsPanel(AudioMaster audioMaster){
-        SoundsMainPanel panel = new SoundsMainPanel(audioMaster, commandInterpreter);
-        panel.setLayout(new WrapLayout(WrapLayout.LEFT, 6, 2));
+        soundsMainPanel = new SoundsMainPanel(audioMaster, commandInterpreter);
+        listLayout = new WrapLayout(WrapLayout.LEFT, 6, 2);
+        gridLayout = new GridLayout(0, 4);
 
-        panel.loadSoundboard();
+        if (SettingsLoader.getSettingsValue("soundboard_preferred_layout", "list").equals("grid"))
+            soundsMainPanel.setLayout(gridLayout);
+        else
+            soundsMainPanel.setLayout(listLayout);
 
-        panel.validate();
+        soundsMainPanel.loadSoundboard();
 
-        return panel;
+        soundsMainPanel.validate();
+
+        return soundsMainPanel;
     }
 
     private JPanel createTempPlayPanel(CommandInterpreter commandInterpreter){
@@ -86,7 +126,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         playButton.addActionListener(e -> {
             commandInterpreter.evaluateCommand(
                 String.format("sb url %1$s", urlField.getText().replace("\\", "\\\\").replace("\"", "\\\"")),
-                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTTH_UI),
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI),
                 Command.INTERNAL_MASK
             );
             urlField.setText("");

@@ -17,20 +17,23 @@ public class JukeboxTrackScheduler extends AudioEventAdapter {
 
     @Override
     public void onPlayerPause(AudioPlayer player) {
-        audioMaster.getSongDurationTracker().onSongPause();
+        if (audioMaster.getSongDurationTracker() != null)
+            audioMaster.getSongDurationTracker().onSongPause();
         // Player was paused
     }
 
     @Override
     public void onPlayerResume(AudioPlayer player) {
-        audioMaster.getSongDurationTracker().onSongResume();
+        if (audioMaster.getSongDurationTracker() != null)
+            audioMaster.getSongDurationTracker().onSongResume();
         // Player was resumed
     }
 
     @Override
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
         Transcriber.printTimestamped("Track \'%1$s\' starting (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
-        audioMaster.getSongDurationTracker().onSongStart(track);
+        if (audioMaster.getSongDurationTracker() != null)
+            audioMaster.getSongDurationTracker().onSongStart(track);
         // A track started playing
     }
 
@@ -40,7 +43,8 @@ public class JukeboxTrackScheduler extends AudioEventAdapter {
         if (endReason.mayStartNext) {
             audioMaster.jukeboxSkipToNextSong();
         }
-        audioMaster.getSongDurationTracker().onSongEnd();
+        if (audioMaster.getSongDurationTracker() != null)
+            audioMaster.getSongDurationTracker().onSongEnd();
 
         // endReason == FINISHED: A track finished or died by an exception (mayStartNext = true).
         // endReason == LOAD_FAILED: Loading of a track failed (mayStartNext = true).
@@ -55,7 +59,8 @@ public class JukeboxTrackScheduler extends AudioEventAdapter {
         // An already playing track threw an exception (track end event will still be received separately)
         Transcriber.printTimestamped(exception.getMessage());
         exception.printStackTrace();
-        audioMaster.getSongDurationTracker().onSongEnd();
+        if (audioMaster.getSongDurationTracker() != null)
+            audioMaster.getSongDurationTracker().onSongEnd();
     }
 
     @Override
@@ -63,6 +68,7 @@ public class JukeboxTrackScheduler extends AudioEventAdapter {
         Transcriber.printTimestamped("Track \'%1$s\' got stuck (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         // Audio track has been unable to provide us any audio, might want to just start a new track
         audioMaster.jukeboxSkipToNextSong();
-        audioMaster.getSongDurationTracker().onSongEnd();
+        if (audioMaster.getSongDurationTracker() != null)
+            audioMaster.getSongDurationTracker().onSongEnd();
     }
 }

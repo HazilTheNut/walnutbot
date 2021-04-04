@@ -1,6 +1,7 @@
 package UI;
 
 import Utils.FileIO;
+import Utils.SettingsLoader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -10,7 +11,7 @@ public class ButtonMaker {
 
     public static JButton createIconButton(String iconPath, String backupName, int horizontalSpacing){
         JButton jButton;
-        String path = FileIO.getRootFilePath() + iconPath;
+        String path = convertIconPath(FileIO.getRootFilePath() + iconPath);
         File iconFile = new File(path);
         if (iconFile.exists()){
             jButton = new JButton(new ImageIcon(path));
@@ -19,6 +20,12 @@ public class ButtonMaker {
             jButton = new JButton(backupName);
         jButton.setToolTipText(backupName);
         return jButton;
+    }
+
+    public static String convertIconPath(String path){
+        if (Boolean.valueOf(SettingsLoader.getBotConfigValue("use_multitheme_icons")))
+            return path.replace("icons/", "icons/darktheme/");
+        return path;
     }
 
 }
