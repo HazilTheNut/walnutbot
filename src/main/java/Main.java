@@ -32,11 +32,6 @@ public class Main {
         } catch (LoginException e) {
             e.printStackTrace();
         }
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
-        }
         AudioMaster audioMaster = new AudioMaster();
         if (jda == null)
             Transcriber.printTimestamped("WARNING: JDA is null!");
@@ -56,7 +51,13 @@ public class Main {
                 commandInterpreter.readHeadlessInput();
             else
                 System.out.println("ERROR: Discord bot did not properly initialize!");
-        } else
+        } else {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+                e.printStackTrace();
+            }
             new UIFrame(botManager, audioMaster, commandInterpreter, (jda != null));
+        }
     }
 }

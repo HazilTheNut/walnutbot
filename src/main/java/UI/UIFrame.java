@@ -31,7 +31,7 @@ public class UIFrame extends JFrame implements ComponentListener {
             tabbedPane.addTab("Soundboard", new SoundboardPanel(audioMaster, commandInterpreter));
             tabbedPane.addTab("Jukebox", new JukeboxPanel(audioMaster, commandInterpreter, this));
             if (keybindsPanelEnabled)
-                tabbedPane.addTab("Keybinds", new KeybindsPanel());
+                tabbedPane.addTab("Keybinds", new KeybindsPanel(commandInterpreter));
         }
         tabbedPane.addTab("Log", new ConsolePanel(commandInterpreter));
 

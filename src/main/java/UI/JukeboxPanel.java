@@ -50,12 +50,12 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         scrollPane.getVerticalScrollBar().setUnitIncrement(unitIncrement);
 
         panel.add(scrollPane, BorderLayout.CENTER);
-        panel.add(createDefaultListControlsPanel(audioMaster, commandInterpreter, uiFrame), BorderLayout.PAGE_START);
+        panel.add(createDefaultListControlsPanel(commandInterpreter, uiFrame), BorderLayout.PAGE_START);
 
         return panel;
     }
 
-    private JPanel createDefaultListControlsPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame){
+    private JPanel createDefaultListControlsPanel(CommandInterpreter commandInterpreter, UIFrame uiFrame){
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.LINE_AXIS));
         
@@ -76,16 +76,16 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         quickLoadButton.addActionListener(e -> openQuickLoadMenu(quickLoadButton, commandInterpreter));
         mainPanel.add(quickLoadButton);
 
+        JButton remotePlaylistButton = ButtonMaker.createIconButton("icons/internet.png", "Remote Playlist", 8);
+        remotePlaylistButton.addActionListener(e -> new MakeRequestFrame("jb dfl load ", "Remote Playlist", commandInterpreter, uiFrame, false));
+        mainPanel.add(remotePlaylistButton);
+
         mainPanel.add(Box.createHorizontalStrut(5));
 
         playlistLabel = new JLabel();
         mainPanel.add(playlistLabel);
 
         mainPanel.add(Box.createHorizontalGlue());
-
-        JButton remotePlaylistButton = new JButton("Remote Playlist");
-        remotePlaylistButton.addActionListener(e -> new MakeRequestFrame("jb dfl load ", "Remote Playlist", commandInterpreter, uiFrame, false));
-        mainPanel.add(remotePlaylistButton);
 
         addPlaylistButton = new JButton("Import Music");
         addPlaylistButton.addActionListener(e -> new MakeRequestFrame("jb dfl add ", "Import Music", commandInterpreter, uiFrame));

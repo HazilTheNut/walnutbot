@@ -44,29 +44,34 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
 
     private JPanel createMiscPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter){
         JPanel panel = new JPanel();
-        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        //panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
+        //panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
+        final int STRUT_SIZE = 2;
 
         JButton addButton = new JButton("Add Sound");
         addButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, new AudioKey("",""), -1, commandInterpreter, ModifyAudioKeyFrame.ModificationType.ADD, ModifyAudioKeyFrame.TargetList.SOUNDBOARD));
         panel.add(addButton);
+        panel.add(Box.createHorizontalStrut(STRUT_SIZE));
 
         JButton sortButton = new JButton("Sort A-Z");
         sortButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb sort",
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         panel.add(sortButton);
-
-        playerStatusLabel = new JLabel("Status: ");
-
-        panel.add(playerStatusLabel);
+        panel.add(Box.createHorizontalStrut(STRUT_SIZE));
 
         JButton stopButton = ButtonMaker.createIconButton("icons/stop.png", "Stop", 8);
         stopButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb stop",
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         panel.add(stopButton);
+        panel.add(Box.createHorizontalStrut(STRUT_SIZE));
+
+        playerStatusLabel = new JLabel("Status: ");
+        panel.add(playerStatusLabel);
 
         JButton listLayoutButton = ButtonMaker.createIconButton("icons/menu.png", "List Layout", 8);
         JButton gridLayoutButton = ButtonMaker.createIconButton("icons/grid.png", "Grid Layout", 8);
+
+        panel.add(Box.createHorizontalGlue());
 
         listLayoutButton.addActionListener(e -> {
             soundsMainPanel.setLayout(listLayout);
@@ -79,6 +84,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         });
         listLayoutButton.setEnabled(!SettingsLoader.getSettingsValue("soundboard_preferred_layout", "list").equals("list"));
         panel.add(listLayoutButton);
+        panel.add(Box.createHorizontalStrut(STRUT_SIZE));
 
         gridLayoutButton.addActionListener(e -> {
             soundsMainPanel.setLayout(gridLayout);
@@ -94,6 +100,8 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         panel.add(gridLayoutButton);
 
         //audioMaster.setSoundboardUIWrapper(this);
+
+        panel.setBorder(BorderFactory.createEmptyBorder(STRUT_SIZE, STRUT_SIZE, STRUT_SIZE, STRUT_SIZE));
 
         return panel;
     }
