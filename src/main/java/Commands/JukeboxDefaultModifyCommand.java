@@ -3,6 +3,7 @@ package Commands;
 import Audio.AudioKey;
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.FileIO;
 import Utils.Transcriber;
 
 public class JukeboxDefaultModifyCommand extends Command {
@@ -37,7 +38,7 @@ public class JukeboxDefaultModifyCommand extends Command {
                 newData.setName(args[index+1]);
             else if (args[index].equals("-url"))
                 if (sanitizeLocalAccess(args[index+1], feedbackHandler, permissions))
-                    newData.setUrl(args[index+1]);
+                    newData.setUrl(FileIO.expandURIMacros(args[index+1]));
                 else return;
             index += 2;
         }

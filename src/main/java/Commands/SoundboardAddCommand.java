@@ -3,6 +3,7 @@ package Commands;
 import Audio.AudioKey;
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.FileIO;
 import Utils.Transcriber;
 
 public class SoundboardAddCommand extends Command {
@@ -27,7 +28,7 @@ public class SoundboardAddCommand extends Command {
         if (args.length < 2)
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** Not enough arguments. Usage: `%1$s`", getHelpCommandUsage());
         else {
-            audioMaster.addSoundboardSound(new AudioKey(args[0], args[1]));
+            audioMaster.addSoundboardSound(new AudioKey(args[0], FileIO.expandURIMacros(args[1])));
             Transcriber.printAndPost(feedbackHandler, "Sound `%1$s` (%2$s) added to the Soundboard.", args[0], args[1]);
         }
     }

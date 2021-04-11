@@ -3,6 +3,7 @@ package Commands;
 import Audio.AudioKeyPlaylistScraper;
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.FileIO;
 import Utils.Transcriber;
 
 public class JukeboxDefaultAddCommand extends Command {
@@ -33,7 +34,7 @@ public class JukeboxDefaultAddCommand extends Command {
             return;
         }
         AudioKeyPlaylistScraper scraper = new AudioKeyPlaylistScraper(audioMaster);
-        scraper.populateAudioKeyPlaylist(args[0], audioMaster.getJukeboxDefaultList(), audioMaster::saveJukeboxDefault);
+        scraper.populateAudioKeyPlaylist(FileIO.expandURIMacros(args[0]), audioMaster.getJukeboxDefaultList(), audioMaster::saveJukeboxDefault);
         Transcriber.printAndPost(feedbackHandler, "Songs added to Jukebox Default List");
     }
 }

@@ -58,4 +58,12 @@ public class FileIO {
         }
         return new File[0];
     }
+
+    public static String sanitizeURIForCommand(String uri){
+        return String.format("\"%s\"", uri.replace("\\","\\\\").replace("\"", "\\\""));
+    }
+
+    public static String expandURIMacros(String uri){
+        return uri.replace("~~/", getRootFilePath()).replace("~~\\", getRootFilePath());
+    }
 }

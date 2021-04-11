@@ -133,13 +133,13 @@ public class ModifyAudioKeyFrame extends JFrame {
     }
 
     private String buildCommand(JTextField nameField, JTextField urlField, ModificationType modificationType, TargetList targetList, int pos, String originalName){
-        String name = nameField.getText().replace("\\", "\\\\").replace("\"", "\\\"");
-        String url  = urlField.getText().replace("\\", "\\\\").replace("\"", "\\\"");
+        String name = FileIO.sanitizeURIForCommand(nameField.getText());
+        String url  = FileIO.sanitizeURIForCommand(urlField.getText());
         switch (targetList){
             case SOUNDBOARD: {
                 switch (modificationType){
-                    case ADD: return String.format("sb add \"%1$s\" %2$s", name, url);
-                    case MODIFY: return String.format("sb modify \"%1$s\" -name \"%2$s\" -url %3$s", originalName, name, url);
+                    case ADD: return String.format("sb add %1$s %2$s", name, url);
+                    case MODIFY: return String.format("sb modify %1$s -name %2$s -url %3$s", originalName, name, url);
                     case REMOVE: return String.format("sb remove %1$d", pos);
                 }
                 return "ERROR";
@@ -155,7 +155,7 @@ public class ModifyAudioKeyFrame extends JFrame {
             case JUKEBOX_DEFAULT:
                 switch (modificationType){
                     case ADD: return String.format("jb dfl add %1$s", url);
-                    case MODIFY: return String.format("jb dfl modify %1$d -name \"%2$s\" -url %3$s", pos, name, url);
+                    case MODIFY: return String.format("jb dfl modify %1$d -name %2$s -url %3$s", pos, name, url);
                     case REMOVE: return String.format("jb dfl remove %1$d", pos);
                 }
                 return "ERROR";

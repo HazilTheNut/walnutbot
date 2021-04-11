@@ -2,6 +2,7 @@ package Commands;
 
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.FileIO;
 import Utils.Transcriber;
 
 public class RequestCommand extends Command {
@@ -45,7 +46,7 @@ public class RequestCommand extends Command {
         //Input Sanitation
         if (args.length <= 0) return;
         if (sanitizeLocalAccess(args[0], feedbackHandler, permissions))
-            audioMaster.queueJukeboxSong(args[0], () -> postQueueStatus(audioMaster, feedbackHandler), () -> postErrorStatus(feedbackHandler, args[0]));
+            audioMaster.queueJukeboxSong(FileIO.expandURIMacros(args[0]), () -> postQueueStatus(audioMaster, feedbackHandler), () -> postErrorStatus(feedbackHandler, args[0]));
     }
 
     private void postQueueStatus(AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler){

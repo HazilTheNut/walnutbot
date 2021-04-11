@@ -174,10 +174,42 @@ public class InputCollector implements Receiver, NativeKeyListener {
      */
     @Override public void send(MidiMessage message, long timeStamp) {
         StringBuilder messageDataStr = new StringBuilder();
-        for (byte b : message.getMessage())
-            messageDataStr.append(String.format("%x",b));
+        byte[] bytes = message.getMessage();
+        if (bytes.length < 1)
+            return;
+        String status = decodeStatusByte(bytes[0]);
+        if (status != null) {
+            messageDataStr.append(status).append(" : ");
+            for (int i = 1; i < bytes.length; i++) {
+                messageDataStr.append(String.format("%x", bytes[i]));
+            }
+            onInputMessage(messageDataStr.toString());
+        }
         Transcriber.printTimestamped("MIDI message received!\ntoString(): %1$s\nStatus: %2$x\nData: %3$x", message.toString(), message.getStatus(), messageDataStr.toString());
-        onInputMessage(messageDataStr.toString());
+    }
+
+    private String decodeStatusByte(byte status){
+        // Miscellaneous messages
+        switch ((int)status) {
+            case 0xF3: return "Song Select";
+            case 0xFA: return "Start";
+            case 0xFB: return "Continue";
+            case 0xFC: return "Stop";
+        }
+        // General messages
+        byte channel = (byte)(status & (byte)0x0F);
+        String channelString = String.format("Chn%d ", channel);
+        byte event = (byte)(status >> 8);
+        switch ((int)event) {
+            //case 0x8: return channelString.concat("Note Off");
+            case 0x9: return channelString.concat("Note On");
+            case 0xA: return channelString.concat("Polyphonic Aftertouch");
+            case 0xB: return channelString.concat("Control/Mode Change");
+            case 0xC: return channelString.concat("Program Change");
+            case 0xD: return channelString.concat("Channel Aftertouch");
+            case 0xE: return channelString.concat("Pitch Bend Change");
+            default: return null;
+        }
     }
 
     /*

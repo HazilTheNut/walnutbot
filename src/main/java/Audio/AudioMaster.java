@@ -20,6 +20,7 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioMaster{
@@ -123,6 +124,7 @@ public class AudioMaster{
             return;
         }
         jukeboxPlayer.setPaused(true);
+        soundboardPlayer.stopTrack();
         setActiveStream(soundboardPlayer);
         playerManager.loadItem(url, new GenericLoadResultHandler(soundboardPlayer));
     }
@@ -208,7 +210,7 @@ public class AudioMaster{
         } else {
             keyToPlay = jukeboxQueueList.removeAudioKey(0);
         }
-        currentlyPlayingSong = keyToPlay; //This can be null, as can discerned above. This is fine - currentlyPlayingSong being null means no song is being played.
+        currentlyPlayingSong = keyToPlay; //This can be null. This is fine - currentlyPlayingSong being null means no song is being played.
         playCurrentSong();
     }
     
@@ -223,7 +225,11 @@ public class AudioMaster{
                     Transcriber.printRaw("WARNING: Song url \"%1$s\" is invalid!", currentlyPlayingSong.getUrl());
                     jukeboxSkipToNextSong();
                 }));
-        } else if (songDurationTracker != null) songDurationTracker.reset();
+        } else {
+            // If the jukebox player is playing a song, but we want the current song to be null, we need to make sure the jukebox player stops.
+            jukeboxPlayer.stopTrack();
+            if (songDurationTracker != null) songDurationTracker.reset();
+        }
         setJukeboxTruePause(false);
     }
 

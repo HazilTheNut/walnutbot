@@ -2,6 +2,7 @@ package Commands;
 
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.FileIO;
 import Utils.Transcriber;
 
 public class JukeboxDefaultNewCommand extends Command {
@@ -26,7 +27,7 @@ public class JukeboxDefaultNewCommand extends Command {
         if (sanitizeLocalAccess("dummy", feedbackHandler, permissions)){
             if (argsInsufficient(args, 1, feedbackHandler))
                 return;
-            audioMaster.createNewJukeboxDefaultList(args[0]);
+            audioMaster.createNewJukeboxDefaultList(FileIO.expandURIMacros(args[0]));
         } else
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** You do not have permission to run this command.");
     }

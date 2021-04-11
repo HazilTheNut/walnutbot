@@ -59,7 +59,7 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
         JButton confirmButton = new JButton("Request");
         confirmButton.addActionListener(e -> {
-            makeRequest(baseCommand, commandInterpreter, sanitizeInput(urlField.getText()));
+            makeRequest(baseCommand, commandInterpreter, FileIO.sanitizeURIForCommand(urlField.getText()));
             urlField.setText("");
         });
         buttonPanel.add(confirmButton);
@@ -75,10 +75,6 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
         setVisible(true);
         uiFrame.addWindowStateListener(this);
-    }
-
-    private String sanitizeInput(String input){
-        return String.format("\"%1$s\"", input.replace("\\", "\\\\").replace("\"", "\\\""));
     }
 
     private void makeRequest(String baseCommand, CommandInterpreter commandInterpreter, String url){

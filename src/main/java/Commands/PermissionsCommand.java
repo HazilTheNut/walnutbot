@@ -12,7 +12,7 @@ public class PermissionsCommand extends Command {
     }
 
     @Override String getHelpArgs() {
-        return "<admin|blocked> <add|remove> <username>";
+        return "<admin|blocked> <add|remove> <user>";
     }
 
     @Override public String getHelpDescription() {
@@ -23,7 +23,7 @@ public class PermissionsCommand extends Command {
         return getHelpDescription().concat("\n\n"
             + "admin|blocked - Switch for modifying either the admins or the blocked users list\n"
             + "add|remove - Whether to add or remove the user from the\n"
-            + "username - The name of the user to modify their permissions\n");
+            + "user - The name of the user to modify their permissions\n");
     }
 
     @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {

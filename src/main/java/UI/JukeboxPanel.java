@@ -164,7 +164,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         optionsPanel.add(Box.createHorizontalStrut(10));
 
         JLabel songTimer = new JLabel("");
-        audioMaster.setSongDurationTracker(new SongDurationTracker(songTimer));
+        audioMaster.setSongDurationTracker(new SongDurationTracker(songTimer, currentPlayingSongLabel, noSongText));
         optionsPanel.add(songTimer);
 
         loopingBox = new JCheckBox("Loop", audioMaster.isLoopingCurrentSong());
@@ -215,7 +215,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         JPopupMenu popupMenu = new JPopupMenu("./playlists/");
         for (File file : FileIO.getFilesInDirectory(FileIO.getRootFilePath().concat("playlists/"))) {
             JMenuItem item = new JMenuItem(file.getName());
-            item.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl load ".concat(file.getPath().replace("\\","\\\\")),
+            item.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl load ".concat(FileIO.sanitizeURIForCommand(file.getPath())),
                 Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
             popupMenu.add(item);
         }
@@ -380,7 +380,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
             } else {
                 //Queue Button
                 JButton queueButton = ButtonMaker.createIconButton("icons/queue.png", "Queue", 4);
-                queueButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb ".concat(audioKey.getUrl()),
+                queueButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb ".concat(FileIO.sanitizeURIForCommand(audioKey.getUrl())),
                     Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
                 add(queueButton);
                 //Edit Button

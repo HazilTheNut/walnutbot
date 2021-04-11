@@ -4,6 +4,7 @@ import Audio.AudioKeyPlaylist;
 import Audio.AudioKeyPlaylistScraper;
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.FileIO;
 import Utils.Transcriber;
 
 import java.io.File;
@@ -30,7 +31,7 @@ public class JukeboxDefaultLoadCommand extends Command {
     @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
-        File file = new File(args[0]);
+        File file = new File(FileIO.expandURIMacros(args[0]));
         if (file.isFile()){
             audioMaster.loadJukeboxPlaylist(new AudioKeyPlaylist(file), true);
             Transcriber.printAndPost(feedbackHandler, "Playlist at location `%1$s` loaded!", file.getAbsolutePath());
