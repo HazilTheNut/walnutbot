@@ -38,10 +38,13 @@ public class SoundboardModifyCommand extends Command {
         while (index + 1 < args.length){
             if (args[index].equals("-name"))
                 newData.setName(args[index+1]);
-            else if (args[index].equals("-url"))
-                if (sanitizeLocalAccess(args[index+1], feedbackHandler, permissions))
-                    newData.setUrl(FileIO.expandURIMacros(args[index+1]));
-                else return;
+            else if (args[index].equals("-url")) {
+                String expandedURI = FileIO.expandURIMacros(args[0]);
+                if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions))
+                    newData.setUrl(expandedURI);
+                else
+                    return;
+            }
             index += 2;
         }
         if (audioMaster.modifySoundboardSound(args[0], newData))

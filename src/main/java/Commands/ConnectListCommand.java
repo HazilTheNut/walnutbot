@@ -15,7 +15,7 @@ public class ConnectListCommand extends Command {
     }
 
     @Override public String getHelpDescription() {
-        return "Lists all voice channels available to the bot.";
+        return "Lists all voice channels available to the bot";
     }
 
     @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {

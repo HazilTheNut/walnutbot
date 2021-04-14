@@ -16,11 +16,8 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioMaster{
@@ -35,6 +32,7 @@ public class AudioMaster{
     private AudioPlayer soundboardPlayer;
     private GenericTrackScheduler genericTrackScheduler;
     private AudioKeyPlaylist soundboardList;
+    private AtomicBoolean soundboardActive;
 
     //Jukebox
     private AudioPlayer jukeboxPlayer;
@@ -73,6 +71,8 @@ public class AudioMaster{
 
         soundboardList = new AudioKeyPlaylist(new File(FileIO.getRootFilePath() + "soundboard.playlist"), false);
         soundboardList.printPlaylist();
+
+        soundboardActive = new AtomicBoolean(false);
 
         mainVolume = getSettingsVolume("mainVolume");
         soundboardVolume = getSettingsVolume("soundboardVolume");
@@ -126,6 +126,7 @@ public class AudioMaster{
         jukeboxPlayer.setPaused(true);
         soundboardPlayer.stopTrack();
         setActiveStream(soundboardPlayer);
+        soundboardActive.set(true);
         playerManager.loadItem(url, new GenericLoadResultHandler(soundboardPlayer));
     }
     
@@ -183,6 +184,10 @@ public class AudioMaster{
                 }
             }
         }
+    }
+
+    public boolean isProcessingJukeboxRequests(){
+        return jukeboxSongsToRequest.size() > 0 || jukeboxSongIsProcessing.get();
     }
 
     void addTrackToJukeboxQueue(AudioTrack track){
@@ -408,6 +413,13 @@ public class AudioMaster{
         return jukeboxDefaultList;
     }
 
+    public String getJukeboxDefaultListName() {
+        if (jukeboxDefaultList == null) {
+            return "None";
+        } else
+            return jukeboxDefaultList.getName();
+    }
+
     public AudioKey getCurrentlyPlayingSong() {
         return currentlyPlayingSong;
     }
@@ -483,16 +495,22 @@ public class AudioMaster{
         this.volumeChangeListener = volumeChangeListener;
     }
 
+    public boolean isSoundboardActive(){
+        return soundboardActive.get();
+    }
+
     private class SoundboardPlayerListener implements PlayerTrackListener{
         @Override public void onTrackStart() {
 
         }
 
         @Override public void onTrackStop() {
+            soundboardActive.set(false);
             resumeJukebox();
         }
 
         @Override public void onTrackError() {
+            soundboardActive.set(false);
             resumeJukebox();
         }
     }

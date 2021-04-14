@@ -15,7 +15,7 @@ public class JukeboxLoopCommand extends Command {
     }
 
     @Override public String getHelpDescription() {
-        return "Sets whether the Jukebox should loop the currently-playing song.";
+        return "Sets whether the Jukebox should loop the currently-playing song";
     }
 
     @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {

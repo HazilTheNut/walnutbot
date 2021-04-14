@@ -85,7 +85,7 @@ public class Command {
      */
     boolean isPermissionSufficient(byte permission){
         if ((permission & INTERNAL_MASK) != 0) return true;
-        if ((permission & BLOCKED_MASK) != 0) return false;
+        //if ((permission & BLOCKED_MASK) != 0) return false;
         byte settingsPerms = Byte.valueOf(SettingsLoader.getSettingsValue(getPermissionName(), "3"));
         return (permission & settingsPerms) != 0;
     }

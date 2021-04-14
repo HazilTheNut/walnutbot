@@ -8,7 +8,7 @@ public class JukeboxDefaultListCommand extends Command {
 
     public JukeboxDefaultListCommand(){
         addSubCommand(new JukeboxDefaultAddCommand());
-        addSubCommand(new GenericCommand("disable", "Sets the Default List to nothing, disabling it.", (audioMaster, feedbackHandler) -> audioMaster.emptyJukeboxPlaylist()));
+        addSubCommand(new GenericCommand("disable", "Sets the Default List to nothing, disabling it", (audioMaster, feedbackHandler) -> audioMaster.emptyJukeboxPlaylist()));
         addSubCommand(new JukeboxDefaultLoadCommand());
         addSubCommand(new JukeboxDefaultNewCommand());
         addSubCommand(new JukeboxDefaultModifyCommand());

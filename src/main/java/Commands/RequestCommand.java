@@ -35,7 +35,7 @@ public class RequestCommand extends Command {
     }
 
     @Override public String getHelpDescription() {
-        return "Requests a song, putting it on the Jukebox queue";
+        return "Requests a song, putting it on the Jukebox Queue";
     }
 
     @Override public String getSpecificHelpDescription() {
@@ -45,8 +45,9 @@ public class RequestCommand extends Command {
     @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Input Sanitation
         if (args.length <= 0) return;
-        if (sanitizeLocalAccess(args[0], feedbackHandler, permissions))
-            audioMaster.queueJukeboxSong(FileIO.expandURIMacros(args[0]), () -> postQueueStatus(audioMaster, feedbackHandler), () -> postErrorStatus(feedbackHandler, args[0]));
+        String expandedURI = FileIO.expandURIMacros(args[0]);
+        if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions))
+            audioMaster.queueJukeboxSong(expandedURI, () -> postQueueStatus(audioMaster, feedbackHandler), () -> postErrorStatus(feedbackHandler, args[0]));
     }
 
     private void postQueueStatus(AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler){

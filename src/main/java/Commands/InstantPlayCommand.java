@@ -2,6 +2,7 @@ package Commands;
 
 import Audio.AudioMaster;
 import Utils.BotManager;
+import Utils.FileIO;
 import Utils.SettingsLoader;
 import net.dv8tion.jda.api.JDA;
 
@@ -20,7 +21,7 @@ public class InstantPlayCommand extends Command {
     }
 
     @Override public String getHelpDescription() {
-        return "Play audio from url as a soundboard sound";
+        return "Play audio from a url as a Soundboard sound";
     }
 
     @Override public String getSpecificHelpDescription() {
@@ -29,8 +30,9 @@ public class InstantPlayCommand extends Command {
 
     @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (args.length > 0) {
-            if (sanitizeLocalAccess(args[0], feedbackHandler, permissions))
-                audioMaster.playSoundboardSound(args[0]);
+            String expandedURI = FileIO.expandURIMacros(args[0]);
+            if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions))
+                audioMaster.playSoundboardSound(expandedURI);
         }
     }
 }
