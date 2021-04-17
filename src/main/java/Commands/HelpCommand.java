@@ -22,7 +22,7 @@ public class HelpCommand extends Command {
     }
 
     @Override public String getHelpArgs() {
-        return "[command]";
+        return "[command|page]";
     }
 
     @Override public String getHelpDescription() {

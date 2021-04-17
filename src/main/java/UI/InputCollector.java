@@ -11,7 +11,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class InputCollector implements Receiver, NativeKeyListener {
+public class InputCollector implements NativeKeyListener {
 
     private TreeMap<String, String> inputMap;
     private InputReceiveAction tempInputReceiveOverride;
@@ -140,15 +140,36 @@ public class InputCollector implements Receiver, NativeKeyListener {
             boundMidiDevice.close();
         }
         try {
-            midiDevice.open();
-            for (Transmitter transmitter : midiDevice.getTransmitters())
-                transmitter.setReceiver(this);
-            boundMidiDevice = midiDevice;
-            if (inputCollectorListener != null)
-                inputCollectorListener.onMidiDeviceBind(boundMidiDevice.getDeviceInfo().toString());
-            Transcriber.printRaw("Input Collection bound to MIDI device \"%s\"", midiDevice.getDeviceInfo().toString());
+            if (!midiDevice.isOpen()) {
+                // Open the device
+                //midiDevice.open();
+
+                // Bind to device's transmitters
+                /*
+                for (Transmitter transmitter : midiDevice.getTransmitters()) {
+                    transmitter.setReceiver(new MIDIInputReceiver());
+                }
+                midiDevice.getTransmitter().setReceiver(new MIDIInputReceiver());
+                */
+
+                System.setProperty("javax.sound.midi.Transmitter", "javax.sound.midi.Transmitter#".concat(midiDevice.getDeviceInfo().toString()));
+
+                MidiSystem.getTransmitter().setReceiver(new MIDIInputReceiver());
+
+                // Report successful access of MIDI resources
+                boundMidiDevice = midiDevice;
+                if (inputCollectorListener != null)
+                    inputCollectorListener.onMidiDeviceBind(boundMidiDevice.getDeviceInfo().toString());
+                Transcriber.printTimestamped("Input Collection bound to MIDI device \"%s\"",
+                    midiDevice.getDeviceInfo().toString());
+            } else {
+                Transcriber.printTimestamped("MIDI Device \'%s\' is not open!", midiDevice.getDeviceInfo().toString());
+            }
         } catch (MidiUnavailableException e) {
+            Transcriber.printTimestamped("MIDI Binding Error!");
             e.printStackTrace();
+        } finally {
+            midiDevice.close();
         }
     }
 
@@ -164,29 +185,6 @@ public class InputCollector implements Receiver, NativeKeyListener {
         }
     }
 
-    /**
-     * Sends a MIDI message and time-stamp to this receiver. If time-stamping is
-     * not supported by this receiver, the time-stamp value should be -1.
-     *
-     * @param message   the MIDI message to send
-     * @param timeStamp the time-stamp for the message, in microseconds
-     * @throws IllegalStateException if the receiver is closed
-     */
-    @Override public void send(MidiMessage message, long timeStamp) {
-        StringBuilder messageDataStr = new StringBuilder();
-        byte[] bytes = message.getMessage();
-        if (bytes.length < 1)
-            return;
-        String status = decodeStatusByte(bytes[0]);
-        if (status != null) {
-            messageDataStr.append(status).append(" : ");
-            for (int i = 1; i < bytes.length; i++) {
-                messageDataStr.append(String.format("%x", bytes[i]));
-            }
-            onInputMessage(messageDataStr.toString());
-        }
-        Transcriber.printTimestamped("MIDI message received!\ntoString(): %1$s\nStatus: %2$x\nData: %3$x", message.toString(), message.getStatus(), messageDataStr.toString());
-    }
 
     private String decodeStatusByte(byte status){
         // Miscellaneous messages
@@ -198,40 +196,44 @@ public class InputCollector implements Receiver, NativeKeyListener {
         }
         // General messages
         byte channel = (byte)(status & (byte)0x0F);
-        String channelString = String.format("Chn%d ", channel);
-        byte event = (byte)(status >> 8);
-        switch ((int)event) {
-            //case 0x8: return channelString.concat("Note Off");
-            case 0x9: return channelString.concat("Note On");
-            case 0xA: return channelString.concat("Polyphonic Aftertouch");
-            case 0xB: return channelString.concat("Control/Mode Change");
-            case 0xC: return channelString.concat("Program Change");
-            case 0xD: return channelString.concat("Channel Aftertouch");
-            case 0xE: return channelString.concat("Pitch Bend Change");
+        String channelString = String.format("Chn%d ", channel+1);
+        byte event = (byte)(status & (byte)0xF0);
+        switch (event) {
+            //case 0x80: return channelString.concat("Note Off");
+            case (byte)0x90: return channelString.concat("Note On");
+            case (byte)0xA0: return channelString.concat("Pphc AT"); // Polyphonic Aftertouch
+            case (byte)0xB0: return channelString.concat("Control"); // Control / Mode Change
+            case (byte)0xC0: return channelString.concat("Program"); // Program Change
+            case (byte)0xD0: return channelString.concat("Chnl AT"); // Channel Aftertouch
+            case (byte)0xE0: return channelString.concat("PtchBnd"); // Pitch Bend Change
             default: return null;
         }
     }
 
-    /*
-    /**
-     * Indicates that the application has finished using the receiver, and that
-     * limited resources it requires may be released or made available.
-     * <p>
-     * If the creation of this {@code Receiver} resulted in implicitly opening
-     * the underlying device, the device is implicitly closed by this method.
-     * This is true unless the device is kept open by other {@code Receiver} or
-     * {@code Transmitter} instances that opened the device implicitly, and
-     * unless the device has been opened explicitly. If the device this
-     * {@code Receiver} is retrieved from is closed explicitly by calling
-     * {@link MidiDevice#close MidiDevice.close}, the {@code Receiver} is
-     * closed, too. For a detailed description of open/close behaviour see the
-     * class description of {@link MidiDevice MidiDevice}.
-     *
-     * @see MidiSystem#getReceiver
-     */
-    @Override public void close() {
-
+    private String decodeNoteNumberByte(byte noteNumber){
+        int note = noteNumber % 0x0C;
+        int octave = (int)Math.floor((double)noteNumber / 0x0C) - 2;
+        String decoded = "?";
+        switch (note){
+            case 0: decoded = "C"; break;
+            case 1: decoded = "C#"; break;
+            case 2: decoded = "D"; break;
+            case 3: decoded = "D#"; break;
+            case 4: decoded = "E"; break;
+            case 5: decoded = "F"; break;
+            case 6: decoded = "F#"; break;
+            case 7: decoded = "G"; break;
+            case 8: decoded = "G#"; break;
+            case 9: decoded = "A"; break;
+            case 10: decoded = "A#"; break;
+            case 11: decoded = "B"; break;
+        }
+        return String.format("%s %d", decoded, octave);
     }
+
+    /*
+
+     */
 
     private static final int[] EXTENDED_KEYCODES = {
         NativeKeyEvent.VC_F1,
@@ -333,4 +335,55 @@ public class InputCollector implements Receiver, NativeKeyListener {
             return command;
         }
     }
+
+    private class MIDIInputReceiver implements Receiver {
+        /**
+         * Sends a MIDI message and time-stamp to this receiver. If time-stamping is
+         * not supported by this receiver, the time-stamp value should be -1.
+         *
+         * @param message   the MIDI message to send
+         * @param timeStamp the time-stamp for the message, in microseconds
+         * @throws IllegalStateException if the receiver is closed
+         */
+        @Override public void send(MidiMessage message, long timeStamp) {
+            StringBuilder messageDataStr = new StringBuilder();
+            Transcriber.printTimestamped("MIDI message received!\ntoString(): %1$s\nStatus: %2$x", message.toString(), message.getStatus());
+            byte[] bytes = message.getMessage();
+            if (bytes.length < 1)
+                return;
+            String status = decodeStatusByte(bytes[0]);
+            if (status != null) {
+                messageDataStr.append(status);
+                if (status.contains("Note")){
+                    messageDataStr.append(": ").append(decodeNoteNumberByte(bytes[1]));
+                } else {
+                    messageDataStr.append(status).append(": x");
+                    for (int i = 1; i < bytes.length; i++) {
+                        messageDataStr.append(String.format("%x", bytes[i]));
+                    }
+                }
+                onInputMessage(messageDataStr.toString());
+            }
+        }
+
+        /**
+         * Indicates that the application has finished using the receiver, and that
+         * limited resources it requires may be released or made available.
+         * <p>
+         * If the creation of this {@code Receiver} resulted in implicitly opening
+         * the underlying device, the device is implicitly closed by this method.
+         * This is true unless the device is kept open by other {@code Receiver} or
+         * {@code Transmitter} instances that opened the device implicitly, and
+         * unless the device has been opened explicitly. If the device this
+         * {@code Receiver} is retrieved from is closed explicitly by calling
+         * {@link MidiDevice#close MidiDevice.close}, the {@code Receiver} is
+         * closed, too. For a detailed description of open/close behaviour see the
+         * class description of {@link MidiDevice MidiDevice}.
+         *
+         * @see MidiSystem#getReceiver
+         */
+            @Override public void close() {
+
+            }
+        }
 }

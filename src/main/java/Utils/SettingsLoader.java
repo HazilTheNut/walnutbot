@@ -37,7 +37,6 @@ public class SettingsLoader {
                     }
                 }
             }
-
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             Transcriber.printTimestamped("Could not find config/settings file at %1$s - if config.txt is missing, this bot is broken; if settings.txt is missing, will use default settings.", filepath);
@@ -59,7 +58,7 @@ public class SettingsLoader {
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
-            Transcriber.printTimestamped("Could not find user registry file at %1$s", filepath);
+            Transcriber.printTimestamped("Could not find user registry file at %1$s; using defaults", filepath);
         }
         return users;
     }

@@ -8,8 +8,7 @@ import org.jnativehook.GlobalScreen;
 import org.jnativehook.NativeHookException;
 import org.jnativehook.dispatcher.SwingDispatchService;
 
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.MidiSystem;
+import javax.sound.midi.*;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -17,6 +16,7 @@ import java.awt.*;
 import java.io.File;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +28,8 @@ public class KeybindsPanel extends JPanel implements InputCollectorListener{
 
     private JLabel boundMidiDeviceLabel;
     private String boundMidiDeviceString;
+
+    private JButton addInputButton;
 
     public KeybindsPanel(CommandInterpreter commandInterpreter){
 
@@ -144,19 +146,18 @@ public class KeybindsPanel extends JPanel implements InputCollectorListener{
         JPanel upperPanel = new JPanel();
         upperPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 2, 2));
 
-
-        JButton addButton = ButtonMaker.createIconButton("icons/input.png", "Add Input", 8);
-        addButton.addActionListener(e -> {
-            addButton.setEnabled(false);
+        addInputButton = ButtonMaker.createIconButton("icons/input.png", "Add Input", 8);
+        addInputButton.addActionListener(e -> {
+            addInputButton.setEnabled(false);
             inputCollector.setTempInputReceiveOverride(inputMessage -> {
                 if (!inputCollector.containsInputKey(inputMessage)) {
                     inputCollector.addInputMapping(inputMessage, "<command>");
                     reloadKeybindsPanel(inputCollector);
                 }
-                addButton.setEnabled(true);
+                addInputButton.setEnabled(true);
             });
         });
-        upperPanel.add(addButton);
+        upperPanel.add(addInputButton);
 
         savingStateLabel = new JLabel();
         savingStateLabel.setOpaque(true);
@@ -220,6 +221,10 @@ public class KeybindsPanel extends JPanel implements InputCollectorListener{
     @Override public void onInputMessageSend(String inputMessage) {
         mostRecentInputLabel.setText(String.format("Most recent input: %s", inputMessage));
         mostRecentInputLabel.repaint();
+
+        // Fail-safe for Add Input button.
+        if (addInputButton != null)
+            addInputButton.setEnabled(true);
     }
 
     @Override public void onMidiDeviceBind(String deviceString) {

@@ -10,7 +10,7 @@ public class ListQueueCommand extends Command {
     }
 
     @Override String getHelpArgs() {
-        return "<page>";
+        return "[page]";
     }
 
     @Override public String getHelpDescription() {

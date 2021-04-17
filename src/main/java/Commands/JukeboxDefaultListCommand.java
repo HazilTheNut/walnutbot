@@ -20,7 +20,7 @@ public class JukeboxDefaultListCommand extends Command {
     }
 
     @Override String getHelpArgs() {
-        return "<page>";
+        return "[page]";
     }
 
     @Override public String getHelpDescription() {

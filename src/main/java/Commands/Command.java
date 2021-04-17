@@ -100,9 +100,9 @@ public class Command {
      */
     boolean sanitizeLocalAccess(String uri, CommandFeedbackHandler feedbackHandler, byte authorPermission){
         if ((authorPermission & INTERNAL_MASK) != 0) return true;
-        boolean uriAllowed = ((authorPermission & Command.ADMIN_MASK) == Command.ADMIN_MASK) ||
-            Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")) ||
-            !uri.contains("http");
+        boolean uriAllowed = ((authorPermission & Command.ADMIN_MASK) == Command.ADMIN_MASK);
+        uriAllowed |= Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false"));
+        uriAllowed |= uri.indexOf("http") == 0;
         if (!uriAllowed)
             Transcriber.printAndPost(feedbackHandler, "**WARNING:** This bot's admin has blocked access to local files.");
         return uriAllowed;

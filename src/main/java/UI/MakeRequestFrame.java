@@ -6,6 +6,7 @@ import Utils.FileIO;
 import Utils.Transcriber;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
@@ -46,12 +47,23 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
                 ButtonMaker.createIconButton("icons/open.png", "Open File...", 4);
             openFileButton.addActionListener(e -> {
                 JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
+                fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
+                fileChooser.setMultiSelectionEnabled(true);
                 if (previousFilePath != null)
                     fileChooser.setSelectedFile(new File(previousFilePath));
                 int result = fileChooser.showOpenDialog(null);
                 if (result == JFileChooser.APPROVE_OPTION) {
-                    previousFilePath = fileChooser.getSelectedFile().getAbsolutePath();
-                    urlField.setText(previousFilePath);
+                    if (fileChooser.getSelectedFiles().length == 1) {
+                        previousFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+                        urlField.setText(previousFilePath);
+                    } else if (fileChooser.getSelectedFile().length() > 1){
+                        StringBuilder builder = new StringBuilder();
+                        for (File file : fileChooser.getSelectedFiles()) {
+                            builder.append('\"').append(file.getAbsolutePath()).append("\" ");
+                            previousFilePath = file.getAbsolutePath();
+                        }
+                        urlField.setText(builder.toString());
+                    }
                 }
             });
             buttonPanel.add(openFileButton);
@@ -59,7 +71,7 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
         JButton confirmButton = new JButton("Request");
         confirmButton.addActionListener(e -> {
-            makeRequest(baseCommand, commandInterpreter, FileIO.sanitizeURIForCommand(urlField.getText()));
+            processUrlFieldForRequests(baseCommand, commandInterpreter, urlField.getText());
             urlField.setText("");
         });
         buttonPanel.add(confirmButton);
@@ -75,6 +87,25 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
         setVisible(true);
         uiFrame.addWindowStateListener(this);
+    }
+
+    private void processUrlFieldForRequests(String baseCommand, CommandInterpreter commandInterpreter, String url){
+        if (url.indexOf('\"') < 0) { // Only one element
+            makeRequest(baseCommand, commandInterpreter, FileIO.sanitizeURIForCommand(url));
+        } else {
+            int posQuotOne = 0;
+            int posQuotTwo = 0;
+            while (posQuotOne >= 0){
+                posQuotOne = url.indexOf('\"', posQuotOne);
+                if (posQuotOne >= 0) { // If successfully found a new '"' character
+                    posQuotTwo = url.indexOf('\"', posQuotOne + 1);
+                    if (posQuotTwo > 0) { // If successfully found a second '"' character
+                        makeRequest(baseCommand, commandInterpreter, FileIO.sanitizeURIForCommand(url.substring(posQuotOne+1, posQuotTwo)));
+                    }
+                }
+                if (posQuotTwo >= 0 && posQuotOne >= 0) posQuotOne = posQuotTwo + 1;
+            }
+        }
     }
 
     private void makeRequest(String baseCommand, CommandInterpreter commandInterpreter, String url){
