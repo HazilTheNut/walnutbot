@@ -49,7 +49,7 @@ public class AudioKeyPlaylist {
         if (file.exists() && file.isFile()){
             if (FileIO.getFileExtension(url).equals("playlist")) {
                 try {
-                    name = file.getName();
+                    name = file.getAbsolutePath();
                     FileInputStream outputStream = new FileInputStream(file);
                     Scanner sc = new Scanner(outputStream);
                     while (sc.hasNext()) {

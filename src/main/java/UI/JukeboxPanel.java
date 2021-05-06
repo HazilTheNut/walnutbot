@@ -8,6 +8,7 @@ import Utils.Transcriber;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.io.File;
 
@@ -58,7 +59,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
     private JPanel createDefaultListControlsPanel(CommandInterpreter commandInterpreter, UIFrame uiFrame){
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.LINE_AXIS));
-        
+
         JButton openButton = ButtonMaker.createIconButton("icons/open.png", "Open", 8);
         openButton.addActionListener(e -> openJukeboxPlaylist(commandInterpreter));
         mainPanel.add(openButton);
@@ -97,12 +98,18 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
 
     public void openJukeboxPlaylist(CommandInterpreter commandInterpreter){
         JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist (.playlist)", "playlist"));
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        fileChooser.setDialogTitle("Open Walnutbot Playlist");
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION){
             File chosen = fileChooser.getSelectedFile();
-            commandInterpreter.evaluateCommand("jb dfl load ".concat(chosen.getPath().replace("\\","\\\\")),
-                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
+            if (chosen.getName().endsWith(".playlist")) {
+                commandInterpreter
+                    .evaluateCommand("jb dfl load ".concat(chosen.getPath().replace("\\", "\\\\")),
+                        Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
+            } else
+                JOptionPane.showMessageDialog(new JFrame(), "ERROR: This is not a Walnutbot Playlist!");
         }
     }
 
@@ -134,7 +141,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
 
     private JPanel createQueueControlsPanel(AudioMaster audioMaster, JFrame uiFrame, CommandInterpreter commandInterpreter){
         JPanel masterPanel = new JPanel(new BorderLayout());
-        
+
         JPanel controlsPanel = new JPanel();
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.LINE_AXIS));
 
@@ -149,7 +156,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         pauseButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb pause",
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         controlsPanel.add(pauseButton);
-        
+
         JButton nextButton = ButtonMaker.createIconButton("icons/next.png", "Skip", BUTTON_MARGIN);
         nextButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb skip",
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
@@ -341,8 +348,8 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
     private class TrackListing extends JPanel implements AudioKeyUIWrapper {
 
         private AudioKey audioKey;
-        private JTextField nameText;
-        private JTextField urlText;
+        private JTextComponent nameText;
+        private JTextComponent urlText;
 
         private java.util.UUID UUID;
 
