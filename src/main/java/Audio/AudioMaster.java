@@ -34,6 +34,8 @@ public class AudioMaster{
     private AudioKeyPlaylist soundboardList;
     private AtomicBoolean soundboardActive;
 
+    private static final String SOUNDBOARD_LOC = "~~/data/soundboard.playlist";
+
     //Jukebox
     private AudioPlayer jukeboxPlayer;
     private JukeboxTrackScheduler jukeboxTrackScheduler;
@@ -69,7 +71,7 @@ public class AudioMaster{
         genericTrackScheduler.addPlayerTrackListener(new SoundboardPlayerListener()); //This allows the AudioMaster to listen for when the soundboard sounds, in order to switch audio stream back to the jukebox.
         soundboardPlayer.addListener(genericTrackScheduler);
 
-        soundboardList = new AudioKeyPlaylist(new File(FileIO.getRootFilePath() + "soundboard.playlist"), false);
+        soundboardList = new AudioKeyPlaylist(new File(FileIO.expandURIMacros(SOUNDBOARD_LOC)), false);
         soundboardList.printPlaylist();
 
         soundboardActive = new AtomicBoolean(false);
@@ -278,7 +280,7 @@ public class AudioMaster{
     }
 
     public void saveSoundboard(){
-        soundboardList.saveToFile(new File(FileIO.getRootFilePath() + "soundboard.playlist"));
+        soundboardList.saveToFile(new File(FileIO.expandURIMacros(SOUNDBOARD_LOC)));
     }
 
     public void saveJukeboxDefault(){
