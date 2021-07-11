@@ -210,10 +210,10 @@ public class KeybindsPanel extends JPanel implements InputCollectorListener{
     @Override public void onSavingStateChange(boolean isMappingSaved) {
         if (isMappingSaved) {
             savingStateLabel.setText("Saved");
-            savingStateLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat(ButtonMaker.convertIconPath("icons/save.png"))));
+            savingStateLabel.setIcon(new ImageIcon(ButtonMaker.convertIconPath("icons/save.png")));
         } else {
             savingStateLabel.setText("Saving...");
-            savingStateLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat(ButtonMaker.convertIconPath("icons/refresh.png"))));
+            savingStateLabel.setIcon(new ImageIcon(ButtonMaker.convertIconPath("icons/refresh.png")));
         }
         savingStateLabel.repaint();
     }

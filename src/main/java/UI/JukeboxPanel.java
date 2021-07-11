@@ -10,7 +10,10 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 public class JukeboxPanel extends JPanel implements JukeboxListener {
 
@@ -21,10 +24,15 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
     private JCheckBox loopingBox;
     private JButton addPlaylistButton;
     private JLabel currentPlayingSongLabel;
+
+    private LinkedList<AudioKey> recentPlaylistsHistory;
+
     private static final String noSongText = "Song currently not playing";
 
     public JukeboxPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame){
         audioMaster.setJukeboxListener(this);
+
+        recentPlaylistsHistory = new LinkedList<>();
 
         setLayout(new BorderLayout());
 
@@ -60,6 +68,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.LINE_AXIS));
 
+        /*
         JButton openButton = ButtonMaker.createIconButton("icons/open.png", "Open", 8);
         openButton.addActionListener(e -> openJukeboxPlaylist(commandInterpreter));
         mainPanel.add(openButton);
@@ -72,14 +81,17 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         emptyButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl disable",
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         mainPanel.add(emptyButton);
+        */
 
-        JButton quickLoadButton = ButtonMaker.createIconButton("icons/quick_menu.png", "Quick Load", 8);
-        quickLoadButton.addActionListener(e -> openQuickLoadMenu(quickLoadButton, commandInterpreter));
+        JButton quickLoadButton = ButtonMaker.createIconButton("icons/quick_menu.png", "Playlist", 16);
+        quickLoadButton.addActionListener(e -> openQuickLoadMenu(quickLoadButton, commandInterpreter, uiFrame));
         mainPanel.add(quickLoadButton);
 
+        /*
         JButton remotePlaylistButton = ButtonMaker.createIconButton("icons/internet.png", "Remote Playlist", 8);
         remotePlaylistButton.addActionListener(e -> new MakeRequestFrame("jb dfl load ", "Remote Playlist", commandInterpreter, uiFrame, false));
         mainPanel.add(remotePlaylistButton);
+        */
 
         mainPanel.add(Box.createHorizontalStrut(5));
 
@@ -208,24 +220,56 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         } else {
             playlistLabel.setText(audioMaster.getJukeboxDefaultList().getName());
             if (audioMaster.isJukeboxDefaultListIsLocalFile()) {
-                playlistLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat(ButtonMaker.convertIconPath("icons/save.png"))));
+                playlistLabel.setIcon(new ImageIcon(ButtonMaker.convertIconPath("icons/save.png")));
                 playlistLabel.setToolTipText("This playlist is a local file; Auto-Save is enabled.");
             } else {
-                playlistLabel.setIcon(new ImageIcon(FileIO.getRootFilePath().concat(ButtonMaker.convertIconPath("icons/internet.png"))));
+                playlistLabel.setIcon(new ImageIcon(ButtonMaker.convertIconPath("icons/internet.png")));
                 playlistLabel.setToolTipText("This playlist was loaded from the Internet; Auto-Save is disabled.");
             }
             playlistLabel.repaint();
         }
     }
 
-    private void openQuickLoadMenu(Component invoker, CommandInterpreter commandInterpreter){
+    private void openQuickLoadMenu(Component invoker, CommandInterpreter commandInterpreter, UIFrame uiFrame){
         JPopupMenu popupMenu = new JPopupMenu("./playlists/");
+
+        // List of recent playlists
+        popupMenu.add(new JLabel("- History"));
+        Iterator<AudioKey> iterator = recentPlaylistsHistory.iterator();
+        while (iterator.hasNext()){
+            AudioKey song = iterator.next();
+            JMenuItem item = new JMenuItem(song.getName(), new ImageIcon(ButtonMaker.convertIconPath("icons/history.png")));
+            item.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl load ".concat(FileIO.sanitizeURIForCommand(song.getUrl())),
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
+            popupMenu.add(item);
+        }
+
+        // List of playlists in nearby folder
+        popupMenu.add(new JLabel("- Playlists Folder"));
         for (File file : FileIO.getFilesInDirectory(FileIO.getRootFilePath().concat("playlists/"))) {
-            JMenuItem item = new JMenuItem(file.getName());
+            JMenuItem item = new JMenuItem(file.getName(), new ImageIcon(ButtonMaker.convertIconPath("icons/playlistfile.png")));
             item.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl load ".concat(FileIO.sanitizeURIForCommand(file.getPath())),
                 Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
             popupMenu.add(item);
         }
+
+        // The miscellaneous playlist buttons
+        popupMenu.add(new JLabel("- File"));
+        String[] actionNames = {"Open Playlist...", "New Playlist...", "Empty Playlist",  "Remote (URL) Playlist"};
+        String[] actionIcons = {"icons/open.png",   "icons/new.png",   "icons/empty.png", "icons/internet.png"};
+        ActionListener[] actions = {
+            e -> openJukeboxPlaylist(commandInterpreter),
+            e -> createNewJukeboxPlaylist(commandInterpreter),
+            e -> commandInterpreter.evaluateCommand("jb dfl disable", Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK),
+            e -> new MakeRequestFrame("jb dfl load ", "Remote Playlist", commandInterpreter, uiFrame, false)
+        };
+        for (int i = 0; i < actionIcons.length; i++) {
+            JMenuItem item = new JMenuItem(actionNames[i], new ImageIcon(ButtonMaker.convertIconPath(actionIcons[i])));
+            item.addActionListener(actions[i]);
+            popupMenu.add(item);
+        }
+
+        // Show menu
         popupMenu.show(invoker, 0, 0);
     }
 
@@ -233,7 +277,24 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         defaultListTable.pullAudioKeyList(audioMaster.getJukeboxDefaultList());
         boolean listValid = audioMaster.getJukeboxDefaultList() != null;
         addPlaylistButton.setEnabled(listValid);
+        if (listValid)
+            recordRecentPlaylist(audioMaster.getJukeboxDefaultList());
         updateDefaultPlaylistLabel(audioMaster);
+    }
+
+    private void recordRecentPlaylist(AudioKeyPlaylist playlist){
+        AudioKey recordKey = new AudioKey(playlist.getName(), playlist.getUrl());
+
+        // Remove duplicate to promote to front
+        recentPlaylistsHistory.remove(recordKey);
+
+        // Add to playlist history
+        recentPlaylistsHistory.addFirst(recordKey);
+
+        // Remove end of list if it is too long (want only 5 elements)
+        if (recentPlaylistsHistory.size() > 5){
+            recentPlaylistsHistory.removeLast();
+        }
     }
 
     @Override public void onJukeboxChangeLoopState(boolean isLoopingSong) {
@@ -429,6 +490,49 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
 
         @Override public AudioKey getData() {
             return audioKey;
+        }
+    }
+
+    private class PlaylistHistoryCircularQueue<E> {
+
+        private E[] elements;
+        private int queueOldestPos;
+
+        @SuppressWarnings("unchecked")
+        private PlaylistHistoryCircularQueue(int size){
+            elements = (E[]) new Object[size];
+            queueOldestPos = 0;
+        }
+
+        private void record(E event){
+            for (E element : elements)
+                if (event.equals(element))
+                    return;
+            elements[queueOldestPos] = event;
+            queueOldestPos = (queueOldestPos + 1) % elements.length;
+        }
+
+        private Iterator<E> iterator(){
+            return new Iterator<E>() {
+                private int currentPos = (queueOldestPos == 0) ? elements.length - 1 : queueOldestPos - 1;
+                private int consumeCount;
+
+                @Override public boolean hasNext() {
+                    if (consumeCount == elements.length)
+                        return false;
+                    return elements[currentPos] != null;
+                }
+
+                @Override public E next() {
+                    if (hasNext()) {
+                        E element = elements[currentPos];
+                        currentPos = (currentPos == 0) ? elements.length - 1 : currentPos - 1;
+                        consumeCount++;
+                        return element;
+                    } else
+                        return null;
+                }
+            };
         }
     }
 }
