@@ -25,14 +25,15 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
     private JButton addPlaylistButton;
     private JLabel currentPlayingSongLabel;
 
-    private LinkedList<AudioKey> recentPlaylistsHistory;
+    private AudioKeyPlaylist recentPlaylistsHistory;
+    private static final String HISTORY_LOC = "~~/data/jbhistory.playlist";
 
     private static final String noSongText = "Song currently not playing";
 
     public JukeboxPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame){
         audioMaster.setJukeboxListener(this);
 
-        recentPlaylistsHistory = new LinkedList<>();
+        recentPlaylistsHistory = new AudioKeyPlaylist(new File(FileIO.expandURIMacros(HISTORY_LOC)));
 
         setLayout(new BorderLayout());
 
@@ -235,12 +236,13 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
 
         // List of recent playlists
         popupMenu.add(new JLabel("- History"));
-        Iterator<AudioKey> iterator = recentPlaylistsHistory.iterator();
-        while (iterator.hasNext()){
-            AudioKey song = iterator.next();
+        for (int i = recentPlaylistsHistory.getAudioKeys().size()-1; i >= 0; i--) {
+            AudioKey song = recentPlaylistsHistory.getKey(i);
             JMenuItem item = new JMenuItem(song.getName(), new ImageIcon(ButtonMaker.convertIconPath("icons/history.png")));
-            item.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl load ".concat(FileIO.sanitizeURIForCommand(song.getUrl())),
-                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
+            item.addActionListener(e -> commandInterpreter
+                .evaluateCommand("jb dfl load ".concat(FileIO.sanitizeURIForCommand(song.getUrl())),
+                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI),
+                    Command.INTERNAL_MASK));
             popupMenu.add(item);
         }
 
@@ -286,15 +288,18 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
         AudioKey recordKey = new AudioKey(playlist.getName(), playlist.getUrl());
 
         // Remove duplicate to promote to front
-        recentPlaylistsHistory.remove(recordKey);
+        recentPlaylistsHistory.removeAudioKey(recordKey);
 
         // Add to playlist history
-        recentPlaylistsHistory.addFirst(recordKey);
+        recentPlaylistsHistory.addAudioKey(recordKey);
 
         // Remove end of list if it is too long (want only 5 elements)
-        if (recentPlaylistsHistory.size() > 5){
-            recentPlaylistsHistory.removeLast();
+        if (recentPlaylistsHistory.getAudioKeys().size() > 5){
+            recentPlaylistsHistory.removeAudioKey(0);
         }
+
+        // Save to disk
+        recentPlaylistsHistory.saveToFile(new File(FileIO.expandURIMacros(HISTORY_LOC)));
     }
 
     @Override public void onJukeboxChangeLoopState(boolean isLoopingSong) {

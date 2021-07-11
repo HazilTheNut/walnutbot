@@ -6,7 +6,7 @@
 * A convenient admin-side UI to manage the bot, designed specifically to reduce the number of clicks needed to accomplish what you need.
 * A Discord bot with a "set and and forget" mentality built right into its design, letting you play your games without needing to do a lot of upkeep in the background.
 * Support for playing local files or from most popular free online websites, such as Youtube, Soundcloud, or Twitch streams for both the Soundboard and the Jukebox.
-* Capability of polling input globally from your keyboard or MIDI devices to run any command of your choosing.
+* Capability of polling input globally from your keyboard to run any command of your choosing.
 
 For more information, see the wiki below:
 
