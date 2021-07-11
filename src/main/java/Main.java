@@ -1,4 +1,5 @@
 import Audio.AudioMaster;
+import Commands.Command;
 import Commands.CommandInterpreter;
 import UI.UIFrame;
 import Utils.*;
@@ -14,17 +15,27 @@ public class Main {
 
         // Read CLA's
         boolean headlessMode = false;
-        for (String arg : args)
-            if(arg.equals("-headless"))
+        String startupScriptLoc = null;
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+            if (arg.equals("-headless"))
                 headlessMode = true;
+            else if (arg.equals("-run") && i < args.length - 1)
+                startupScriptLoc = args[i+1];
+        }
 
+        // Load settings and start logging
         Transcriber.startTranscription(headlessMode);
         System.out.println(FileIO.getRootFilePath());
         SettingsLoader.initialize();
+
+        // Validate bot token
         String token = SettingsLoader.getBotConfigValue("token");
         if (token == null) {
             System.out.println("WARNING! The token is missing from the config file! (Put \'token=...\' on a line in the file)");
         }
+
+        // Connect to discord bot
         JDABuilder builder = JDABuilder.createDefault(token);
         JDA jda = null;
         try {
@@ -32,6 +43,8 @@ public class Main {
         } catch (LoginException e) {
             e.printStackTrace();
         }
+
+        // Start up bot core
         AudioMaster audioMaster = new AudioMaster();
         if (jda == null)
             Transcriber.printTimestamped("WARNING: JDA is null!");
@@ -42,10 +55,12 @@ public class Main {
             audioMaster.setDiscordBotManager(botManager);
         }
         CommandInterpreter commandInterpreter = null;
+
         if (botManager != null) {
             commandInterpreter = new CommandInterpreter(botManager, audioMaster);
             jda.addEventListener(commandInterpreter);
         }
+
         if (headlessMode) {
             if (commandInterpreter != null)
                 commandInterpreter.readHeadlessInput();
@@ -59,5 +74,9 @@ public class Main {
             }
             new UIFrame(botManager, audioMaster, commandInterpreter, (jda != null));
         }
+
+        // Startup script
+        if (commandInterpreter != null && startupScriptLoc != null)
+            commandInterpreter.evaluateCommand("script ".concat(startupScriptLoc), Transcriber.getGenericCommandFeedBackHandler("Startup"), Command.INTERNAL_MASK);
     }
 }

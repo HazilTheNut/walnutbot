@@ -40,9 +40,11 @@ public class KeybindsPanel extends JPanel implements InputCollectorListener{
         InputCollector inputCollector = new InputCollector(keybindsFile, commandInterpreter);
         inputCollector.setInputCollectorListener(this);
 
+        /*
         if (Boolean.valueOf(SettingsLoader.getBotConfigValue("enable_midi_input"))){
             add(setupMIDI(inputCollector));
         }
+        */
 
         if (Boolean.valueOf(SettingsLoader.getBotConfigValue("enable_global_keybinds"))){
             try {
