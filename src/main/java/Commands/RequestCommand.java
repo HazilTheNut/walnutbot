@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -42,7 +42,7 @@ public class RequestCommand extends Command {
         return "Places a song fetched from the url onto the Jukebox queue.\n\nurl - The website URL / file path to the desired song.";
     }
 
-    @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Input Sanitation
         if (args.length <= 0) return;
         String expandedURI = FileIO.expandURIMacros(args[0]);

@@ -2,7 +2,7 @@ package Utils;
 
 import java.util.List;
 
-public interface BotManager {
+public interface IBotManager {
 
     /**
      * Tells the bot to connect to a particular voice channel of a particular server.

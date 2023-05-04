@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 
 public class DisconnectCommand extends Command {
 
@@ -15,7 +15,7 @@ public class DisconnectCommand extends Command {
         return "Makes the bot disconnect from its connected voice channel";
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         botManager.disconnectFromVoiceChannel();
     }
 }

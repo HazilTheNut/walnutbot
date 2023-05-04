@@ -42,6 +42,7 @@ public class AudioKeyPlaylist {
         audioKeys = new ArrayList<>();
         try {
             url = file.getCanonicalPath();
+            name = url;
         } catch (IOException e) {
             e.printStackTrace();
         }

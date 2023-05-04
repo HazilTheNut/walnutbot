@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.Transcriber;
 
 public class ConnectCommand extends Command {
@@ -26,7 +26,7 @@ public class ConnectCommand extends Command {
             + "\n\nchannel - The name of the channel to connect to. For channel names with spaces in them, wrap the channel name with quotation marks ('\"').";
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (args.length < 2){
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** Too few arguments. Usage: `%s`", getHelpCommandUsage());
         } else {

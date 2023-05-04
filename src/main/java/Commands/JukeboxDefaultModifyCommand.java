@@ -2,7 +2,7 @@ package Commands;
 
 import Audio.AudioKey;
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -28,7 +28,7 @@ public class JukeboxDefaultModifyCommand extends Command {
             + "    -url  : Assigns a nwe url to the Soundboard sound";
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         int index = 1;

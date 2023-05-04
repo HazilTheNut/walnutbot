@@ -1,19 +1,15 @@
 package Utils;
 
 import Commands.CommandFeedbackHandler;
-import net.dv8tion.jda.api.entities.MessageChannel;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
 public class Transcriber {
 
-    private static ArrayList<TranscriptReceiver> transcriptReceivers;
+    private static final ArrayList<TranscriptReceiver> transcriptReceivers;
 
     public static final String AUTH_UI = "UI";
     public static final String AUTH_CONSOLE = "";
@@ -71,7 +67,6 @@ public class Transcriber {
                 e.printStackTrace();
             }
         }
-        System.out.printf("BEGIN of Walnutbot (time: %1$s)\n---\n", (new SimpleDateFormat("MM/dd/yyyy kk:mm:ss")).format(new Date()));
     }
 
     private static void startTranscriptionHeadlessMode(){
@@ -116,7 +111,7 @@ public class Transcriber {
 
     private static class GenericCommandFeedbackHandler implements CommandFeedbackHandler {
 
-        private String author;
+        private final String author;
 
         private GenericCommandFeedbackHandler(String author){
             this.author = author;
@@ -126,7 +121,7 @@ public class Transcriber {
          * Sends a public message in the same channel as where the command is found.
          *
          * @param message           The message to send
-         * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
+         * @param isCopiedToConsole Whether message is copied to this bot's System.out
          */
         @Override public void sendMessage(String message, boolean isCopiedToConsole) {
 
@@ -143,7 +138,7 @@ public class Transcriber {
          * Sends a private message to the command author
          *
          * @param message           The message to send
-         * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
+         * @param isCopiedToConsole Whether the message is copied to this bot's System.out
          */
         @Override public void sendAuthorPM(String message, boolean isCopiedToConsole) {
 

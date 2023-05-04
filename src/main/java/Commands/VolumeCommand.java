@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.Transcriber;
 
 public class VolumeCommand extends Command {
@@ -24,7 +24,7 @@ public class VolumeCommand extends Command {
             + "volume - An integer ranging from 0-100 as a volume percentage.");
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 2, feedbackHandler))
             return;
         int vol;

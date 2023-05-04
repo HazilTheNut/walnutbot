@@ -3,12 +3,7 @@ package Commands;
 import Audio.AudioKey;
 import Audio.AudioMaster;
 import Audio.AudioKeyPlaylist;
-import Utils.BotManager;
-import net.dv8tion.jda.api.JDA;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
+import Utils.IBotManager;
 
 public class SoundboardListCommand extends Command {
 
@@ -24,7 +19,7 @@ public class SoundboardListCommand extends Command {
         return "Lists the available sounds in the Soundboard.";
     }
 
-    @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         StringBuilder builder = new StringBuilder("**Available Sounds:**\n```\n");
         AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
         //Get longest sound name

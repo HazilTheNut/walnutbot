@@ -18,8 +18,9 @@ public class GenericLoadResultHandler implements AudioLoadResultHandler {
     @Override
     public void trackLoaded(AudioTrack track) {
         Transcriber.printTimestamped("Track \'%1$s\' loaded! (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
-        if (!audioPlayer.startTrack(track, false))
-            Transcriber.printTimestamped("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
+        audioPlayer.playTrack(track);
+//        if (!audioPlayer.startTrack(track, false))
+//            Transcriber.printTimestamped("Track \'%1$s\' failed to start (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
     }
 
     @Override

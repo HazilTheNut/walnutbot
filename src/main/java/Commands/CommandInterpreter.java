@@ -4,17 +4,15 @@ import Audio.AudioMaster;
 import Utils.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-
-import javax.annotation.Nonnull;
 import java.util.*;
 
 public class CommandInterpreter extends ListenerAdapter {
 
     private HashMap<String, Command> commandMap;
-    private BotManager botManager;
+    private IBotManager botManager;
     private AudioMaster audioMaster;
 
-    public CommandInterpreter(BotManager botManager, AudioMaster audioMaster){
+    public CommandInterpreter(IBotManager botManager, AudioMaster audioMaster){
         commandMap = new HashMap<>();
         this.botManager = botManager;
         this.audioMaster = audioMaster;
@@ -67,12 +65,12 @@ public class CommandInterpreter extends ListenerAdapter {
         return String.format("allowCommand_%1$s", command);
     }
 
-    @Override public void onMessageReceived(@Nonnull MessageReceivedEvent event) {
+    @Override public void onMessageReceived(MessageReceivedEvent event) {
         //Transcriber.printTimestamped("Raw message: \"%1$s\"", event.getMessage().getContentRaw());
 
         //Input sanitation
         //Transcriber.printTimestamped("My name: \'%1$s\"", botManager.getBotName());
-        if (!Boolean.valueOf(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
+        if (!Boolean.parseBoolean(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
             return;
         //Ensure the bot doesn't get stuck in response loops
         if (event.getAuthor().getAsTag().equals(botManager.getBotName()))

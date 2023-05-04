@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.Transcriber;
 
 public class JukeboxPostponeCommand extends Command {
@@ -22,7 +22,7 @@ public class JukeboxPostponeCommand extends Command {
         return getHelpDescription().concat("\n\npos - The position in the Jukebox Queue, the song at which you intend to postpone");
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         int pos = -1;

@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.Transcriber;
 
 public class JukeboxLoopCommand extends Command {
@@ -18,7 +18,7 @@ public class JukeboxLoopCommand extends Command {
         return "Sets whether the Jukebox should loop the currently-playing song";
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         boolean newLoopingState = Boolean.valueOf(args[0]);

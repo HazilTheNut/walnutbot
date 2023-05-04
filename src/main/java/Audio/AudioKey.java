@@ -10,12 +10,27 @@ public class AudioKey implements Comparable<AudioKey>{
 
     private String name;
     private String url;
-
     @Nullable private AudioTrack loadedTrack;
+    private Object abstractedLoadedTrack;
+
+    public Object getAbstractedLoadedTrack() {
+        return abstractedLoadedTrack;
+    }
+
+    public void setAbstractedLoadedTrack(Object abstractedLoadedTrack) {
+        this.abstractedLoadedTrack = abstractedLoadedTrack;
+    }
 
     public AudioKey(String name, String url) {
         this.name = name;
         this.url = url;
+        this.abstractedLoadedTrack = null;
+    }
+
+    public AudioKey(String name, String url, Object abstractedLoadedTrack) {
+        this.name = name;
+        this.url = url;
+        this.abstractedLoadedTrack = abstractedLoadedTrack;
     }
 
     /**
@@ -30,12 +45,14 @@ public class AudioKey implements Comparable<AudioKey>{
             name = formattedKey.substring(0, separatorIndex);
             url = formattedKey.substring(Math.min(separatorIndex + 1, formattedKey.length()));
         }
+        this.abstractedLoadedTrack = null;
     }
 
     public AudioKey(AudioTrack loadedTrack){
         this.loadedTrack = loadedTrack;
         this.name = loadedTrack.getInfo().title;
         this.url = loadedTrack.getInfo().uri;
+        this.abstractedLoadedTrack = loadedTrack;
     }
 
     public boolean isValid(){

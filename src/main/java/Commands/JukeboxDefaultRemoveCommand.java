@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.Transcriber;
 
 public class JukeboxDefaultRemoveCommand extends Command {
@@ -22,7 +22,7 @@ public class JukeboxDefaultRemoveCommand extends Command {
         return String.format("%1$s\n\npos - The position in the list you wish to remove from.", getHelpDescription());
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         if (audioMaster.getJukeboxDefaultList() == null) {

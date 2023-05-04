@@ -1,9 +1,8 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.SettingsLoader;
-import Utils.Transcriber;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -18,7 +17,7 @@ public class ConnectListCommand extends Command {
         return "Lists all voice channels available to the bot";
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         String message = "```List of available voice channels to connect to.\n"
             + "Format: \"<Server Name> <Channel Name>\"\n"
             + "Server and channel names with spaces are wrapped in quotation marks for ease of copy-and-pasting.\n\n"

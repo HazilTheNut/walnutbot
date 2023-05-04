@@ -12,7 +12,6 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
-import javax.annotation.Nonnull;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
@@ -28,7 +27,7 @@ public class ModifyAudioKeyFrame extends JFrame {
         SOUNDBOARD, JUKEBOX_DEFAULT, JUKEBOX_QUEUE
     }
 
-    ModifyAudioKeyFrame(AudioMaster audioMaster, @Nonnull AudioKey base, int pos, CommandInterpreter commandInterpreter,
+    ModifyAudioKeyFrame(AudioMaster audioMaster, AudioKey base, int pos, CommandInterpreter commandInterpreter,
         ModificationType modificationType, TargetList targetList){
 
         Container c = getContentPane();

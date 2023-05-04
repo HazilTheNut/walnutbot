@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -23,7 +23,7 @@ public class JukeboxDefaultNewCommand extends Command {
         return getHelpDescription().concat("\n\npath - The file path to where the list should be saved");
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (sanitizeLocalAccess("dummy", feedbackHandler, permissions)){
             if (argsInsufficient(args, 1, feedbackHandler))
                 return;

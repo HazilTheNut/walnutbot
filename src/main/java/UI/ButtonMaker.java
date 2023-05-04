@@ -24,7 +24,7 @@ public class ButtonMaker {
 
     public static String convertIconPath(String path){
         String basepath = FileIO.getRootFilePath().concat(path);
-        if (Boolean.valueOf(SettingsLoader.getBotConfigValue("use_multitheme_icons")))
+        if (Boolean.parseBoolean(SettingsLoader.getBotConfigValue("use_multitheme_icons")))
             return basepath.replace("icons/", "icons/darktheme/");
         return basepath;
     }

@@ -13,7 +13,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.Iterator;
-import java.util.LinkedList;
 
 public class JukeboxPanel extends JPanel implements JukeboxListener {
 
@@ -33,7 +32,7 @@ public class JukeboxPanel extends JPanel implements JukeboxListener {
     public JukeboxPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter, UIFrame uiFrame){
         audioMaster.setJukeboxListener(this);
 
-        recentPlaylistsHistory = new AudioKeyPlaylist(new File(FileIO.expandURIMacros(HISTORY_LOC)));
+        recentPlaylistsHistory = new AudioKeyPlaylist(new File(FileIO.expandURIMacros(HISTORY_LOC)), false);
 
         setLayout(new BorderLayout());
 

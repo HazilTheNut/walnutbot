@@ -2,7 +2,7 @@ package UI;
 
 import Audio.AudioMaster;
 import Commands.CommandInterpreter;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.SettingsLoader;
 
 import javax.swing.*;
@@ -12,7 +12,7 @@ import java.awt.event.ComponentListener;
 
 public class UIFrame extends JFrame implements ComponentListener {
 
-    public UIFrame(BotManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful){
+    public UIFrame(IBotManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful){
 
         setTitle("Walnutbot Music & Soundboard Discord Bot");
 

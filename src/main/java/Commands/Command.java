@@ -1,11 +1,10 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 
-import javax.annotation.Nonnull;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -43,7 +42,7 @@ public class Command {
         return getHelpDescription();
     }
 
-    void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
+    void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
         // Override this for command's behavior
     }
 
@@ -70,7 +69,6 @@ public class Command {
         }
     }
 
-    @Nonnull
     List<Command> getSubCommands(){
         if (subcommands == null)
             subcommands = new LinkedList<>();

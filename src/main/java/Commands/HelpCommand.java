@@ -1,7 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.SettingsLoader;
 
 import java.util.Comparator;
@@ -34,7 +34,7 @@ public class HelpCommand extends Command {
             SettingsLoader.getBotConfigValue("command_char"));
     }
 
-    @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Build message
         String message;
         Command cmd = getSubCommandFromArgs(args);

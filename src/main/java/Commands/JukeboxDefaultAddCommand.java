@@ -2,7 +2,7 @@ package Commands;
 
 import Audio.AudioKeyPlaylistScraper;
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -25,7 +25,7 @@ public class JukeboxDefaultAddCommand extends Command {
             + "url - The URL of the song to add to the default list";
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (args.length < 1){
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** Too few arguments. Usage: `%1$s`", getHelpCommandUsage());
         }

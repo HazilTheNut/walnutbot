@@ -1,13 +1,8 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.SettingsLoader;
-import net.dv8tion.jda.api.JDA;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
 
 public class EchoCommand extends Command {
 
@@ -31,7 +26,7 @@ public class EchoCommand extends Command {
             SettingsLoader.getBotConfigValue("command_char"));
     }
 
-    @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Build message
         String message = "".concat(SettingsLoader.getBotConfigValue("command_char")).concat("help");
         //Display message

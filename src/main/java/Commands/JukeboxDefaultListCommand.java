@@ -1,8 +1,7 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.BotManager;
-import Utils.SettingsLoader;
+import Utils.IBotManager;
 
 public class JukeboxDefaultListCommand extends Command {
 
@@ -31,7 +30,7 @@ public class JukeboxDefaultListCommand extends Command {
         return String.format("%1$s\n\npage - The page of the list you would like to view", getHelpDescription());
     }
 
-    @Override public void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         StringBuilder message = new StringBuilder();
             message.append("*Jukebox Default List:*\n```\n");
         if (audioMaster.getJukeboxDefaultList() == null){

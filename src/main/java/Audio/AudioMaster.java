@@ -1,9 +1,11 @@
 package Audio;
 
 import Commands.CommandInterpreter;
+import LavaplayerWrapper.LavaplayerDiscordSendHandler;
 import UI.AudioKeyPlaylistLoader;
 import UI.JukeboxListener;
 import UI.PlayerTrackListener;
+import UI.SongDurationTracker;
 import Utils.*;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -13,7 +15,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.io.File;
@@ -110,7 +112,7 @@ public class AudioMaster{
     private void setActiveStream(AudioPlayer player){
         if (connectedChannel != null) {
             AudioManager audioManager = connectedChannel.getGuild().getAudioManager();
-            audioManager.setSendingHandler(new AudioPlayerSendHandler(player));
+            audioManager.setSendingHandler(new LavaplayerDiscordSendHandler(player));
         }
     }
 
@@ -332,7 +334,7 @@ public class AudioMaster{
      *
      * This method both assigns the jukebox playing state and it's previous state to return to after playing a sound through the soundboard.
      *
-     * @param paused Whether or not the jukebox is truly "paused"
+     * @param paused Whether the jukebox is truly "paused"
      */
     public void setJukeboxTruePause(boolean paused){
         jukeboxPlayer.setPaused(paused);
@@ -447,7 +449,7 @@ public class AudioMaster{
         this.commandInterpreter = commandInterpreter;
     }
 
-    public void setDiscordBotManager(BotManager botManager) {
+    public void setDiscordBotManager(IBotManager botManager) {
         if (botManager instanceof DiscordBotManager)
             jukeboxPlayer.addListener((DiscordBotManager)botManager);
     }

@@ -2,7 +2,7 @@ package Commands;
 
 import Audio.AudioKey;
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.Transcriber;
 
 public class SoundboardRemoveCommand extends Command {
@@ -24,7 +24,7 @@ public class SoundboardRemoveCommand extends Command {
         return "<sound name>";
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (args.length < 1)
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** Not enough arguments. Usage: `%1$s`", getHelpCommandUsage());
         else {

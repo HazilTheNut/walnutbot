@@ -5,17 +5,17 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
-import net.dv8tion.jda.api.entities.VoiceChannel;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
-public class DiscordBotManager implements AudioEventListener, BotManager {
+public class DiscordBotManager implements AudioEventListener, IBotManager {
 
-    private boolean useDefaultStatus;
-    private boolean showCurrentPlayingSong;
+    private final boolean useDefaultStatus;
+    private final boolean showCurrentPlayingSong;
 
     private JDA jda;
     private AudioMaster audioMaster;
@@ -23,8 +23,8 @@ public class DiscordBotManager implements AudioEventListener, BotManager {
     public DiscordBotManager(JDA jda, AudioMaster audioMaster){
         this.jda = jda;
         this.audioMaster = audioMaster;
-        useDefaultStatus         = Boolean.valueOf(SettingsLoader.getBotConfigValue("status_use_default"));
-        showCurrentPlayingSong   = Boolean.valueOf(SettingsLoader.getBotConfigValue("status_show_current_song"));
+        useDefaultStatus         = Boolean.parseBoolean(SettingsLoader.getBotConfigValue("status_use_default"));
+        showCurrentPlayingSong   = Boolean.parseBoolean(SettingsLoader.getBotConfigValue("status_show_current_song"));
     }
 
     @Override
@@ -37,38 +37,36 @@ public class DiscordBotManager implements AudioEventListener, BotManager {
             String message = String.format("%s - %s",
                 audioMaster.getCurrentlyPlayingSong().getLoadedTrack().getInfo().title,
                 audioMaster.getCurrentlyPlayingSong().getLoadedTrack().getInfo().author);
-            jda.getPresence().setActivity(Activity.of(Activity.ActivityType.DEFAULT, message));
+            jda.getPresence().setActivity(Activity.playing(message));
         } else if (useDefault){ // Status based on default configuration
             jda.getPresence().setActivity(Activity
-                .of(Activity.ActivityType.DEFAULT, "sounds / type " + SettingsLoader.getBotConfigValue("command_char") + "help"));
+                .playing("sounds / type " + SettingsLoader.getBotConfigValue("command_char") + "help"));
         } else { // Status based on user-defined configuration
             try {
+                String message = SettingsLoader.getBotConfigValue("status_message");
+                assert message != null;
+                message = message.replaceAll("%help%", SettingsLoader.getBotConfigValue("command_char").concat("help"));
                 Activity.ActivityType type;
                 switch (SettingsLoader.getBotConfigValue("status_type").toUpperCase()){
                     case "WATCHING":
-                        type = Activity.ActivityType.WATCHING;
+                        jda.getPresence().setActivity(Activity.watching(message));
                         break;
                     case "LISTENING":
-                        type = Activity.ActivityType.LISTENING;
+                        jda.getPresence().setActivity(Activity.listening(message));
                         break;
                     case "EMPTY":
                         return;
                     default:
                     case "PLAYING":
-                        type = Activity.ActivityType.DEFAULT;
+                        jda.getPresence().setActivity(Activity.playing(message));
                         break;
                 }
-                String message = SettingsLoader.getBotConfigValue("status_message");
-                message = message.replaceAll("%help%", SettingsLoader.getBotConfigValue("command_char").concat("help"));
-                jda.getPresence().setActivity(Activity.of(type, message));
             } catch (NullPointerException | IllegalArgumentException e){
                 e.printStackTrace();
                 updateStatus(true);
             }
         }
     }
-
-
 
     /**
      * @param event The event
@@ -78,12 +76,13 @@ public class DiscordBotManager implements AudioEventListener, BotManager {
     }
 
     @Override public boolean connectToVoiceChannel(String serverName, String channelName) {
-        for (VoiceChannel voiceChannel : jda.getVoiceChannels()){
-            if (voiceChannel.getGuild().getName().equals(serverName) && voiceChannel.getName().equals(channelName)){
-                voiceChannel.getGuild().getAudioManager().openAudioConnection(voiceChannel);
-                audioMaster.setConnectedChannel(voiceChannel);
-                return true;
-            }
+        for (Guild guild : jda.getGuilds()){
+            List<VoiceChannel> voiceChannels = guild.getVoiceChannelsByName(channelName, true);
+            if (voiceChannels.size() == 0)
+                continue;
+            guild.getAudioManager().openAudioConnection(voiceChannels.get(0));
+            audioMaster.setConnectedChannel(voiceChannels.get(0));
+            return true;
         }
         return false;
     }

@@ -11,7 +11,7 @@ import java.util.List;
 
 public class FileIO {
 
-    public static String getRootFilePath(){
+    public static String getRootFilePath() {
         String path = FileIO.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         String decoded = path;
         try {
@@ -30,7 +30,7 @@ public class FileIO {
      * @param uri The uri to find the extension of.
      * @return The file extension, or the full input string if none was found.
      */
-    public static String getFileExtension(String uri){
+    public static String getFileExtension(String uri) {
         int lastIndex = uri.lastIndexOf('.');
         if (lastIndex > 0 && lastIndex < uri.length() - 1)
             return uri.substring(lastIndex+1);
@@ -44,13 +44,13 @@ public class FileIO {
      * @param uri The uri to find the file name of
      * @return The file name, or other parts of the input string if poorly formatted.
      */
-    public static String getFileName(String uri){
+    public static String getFileName(String uri) {
         int sepIndex = uri.lastIndexOf(File.separatorChar);
         int dotIndex = uri.lastIndexOf('.');
         return uri.substring(Math.max(0, sepIndex), Math.min(uri.length(), dotIndex));
     }
 
-    public static File[] getFilesInDirectory(String uri){
+    public static File[] getFilesInDirectory(String uri) {
         File folder = new File(uri);
         if (folder.isDirectory()){
             FileFilter filter = new SuffixFileFilter(".playlist");
@@ -59,11 +59,15 @@ public class FileIO {
         return new File[0];
     }
 
-    public static String sanitizeURIForCommand(String uri){
+    public static String sanitizeURIForCommand(String uri) {
         return String.format("\"%s\"", uri.replace("\\","\\\\").replace("\"", "\\\""));
     }
 
-    public static String expandURIMacros(String uri){
+    public static String expandURIMacros(String uri) {
         return uri.replace("~~/", getRootFilePath()).replace("~~\\", getRootFilePath());
+    }
+    public static boolean isWebsiteURL(String uri) {
+        // Regex retrieved from https://urlregex.com/
+        return uri.matches("^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]");
     }
 }

@@ -2,7 +2,7 @@ package Commands;
 
 import Audio.AudioKey;
 import Audio.AudioMaster;
-import Utils.BotManager;
+import Utils.IBotManager;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -24,7 +24,7 @@ public class SoundboardAddCommand extends Command {
         return "<sound name> <url>";
     }
 
-    @Override void onRunCommand(BotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (args.length < 2)
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** Not enough arguments. Usage: `%1$s`", getHelpCommandUsage());
         else {

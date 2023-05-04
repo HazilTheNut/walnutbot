@@ -5,9 +5,13 @@ import UI.UIFrame;
 import Utils.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
-import javax.security.auth.login.LoginException;
 import javax.swing.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.EnumSet;
 
 public class Main {
 
@@ -26,7 +30,10 @@ public class Main {
 
         // Load settings and start logging
         Transcriber.startTranscription(headlessMode);
-        System.out.println(FileIO.getRootFilePath());
+        Date now = new Date();
+        System.out.printf("BEGIN of Walnutbot (time: %1$s)\n\tResiding in %2$s\n---\n",
+                (new SimpleDateFormat("MM/dd/yyyy kk:mm:ss")).format(now),
+                FileIO.getRootFilePath());
         SettingsLoader.initialize();
 
         // Validate bot token
@@ -36,19 +43,24 @@ public class Main {
         }
 
         // Connect to discord bot
-        JDABuilder builder = JDABuilder.createDefault(token);
-        JDA jda = null;
-        try {
-            jda = builder.build();
-        } catch (LoginException e) {
-            e.printStackTrace();
-        }
+        EnumSet<GatewayIntent> intents = EnumSet.of(
+                // To accept commands from users
+                GatewayIntent.GUILD_MESSAGES,
+                // To send direct messages if DMing the bot
+                GatewayIntent.DIRECT_MESSAGES,
+                // We need voice states to connect to the voice channel
+                GatewayIntent.GUILD_VOICE_STATES
+        );
+
+        JDA jda = JDABuilder.createDefault(token, intents)
+                .enableCache(CacheFlag.VOICE_STATE)
+                .build();
 
         // Start up bot core
         AudioMaster audioMaster = new AudioMaster();
         if (jda == null)
             Transcriber.printTimestamped("WARNING: JDA is null!");
-        BotManager botManager = null;
+        IBotManager botManager = null;
         if (jda != null){
             botManager = new DiscordBotManager(jda, audioMaster);
             botManager.updateStatus();
