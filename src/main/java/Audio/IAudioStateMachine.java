@@ -20,6 +20,12 @@ public interface IAudioStateMachine {
         SOUNDBOARD_ACTIVE
     }
 
+    enum JukeboxDefaultListLoadState {
+        UNLOADED,       // No default list loaded
+        LOCAL_FILE,     // Loaded from a local file
+        REMOTE          // Loaded from the internet
+    }
+
     // State machine operation
     /**
      * Should be a pass-through to an IPlaybackWrapper loadTracks() useful for retrieving tracks from local/internet
@@ -31,7 +37,7 @@ public interface IAudioStateMachine {
      * @param storeLoadedTrackObjects Whether to store the loaded track object on each generated AudioKey
      * @return true if the operation was successful, and false otherwise
      */
-    boolean loadTracks(String uri, AudioKeyPlaylist output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects);
+    boolean loadTracks(String uri, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects);
 
     /**
      * Interrupts jukebox if it was playing and plays a sound
@@ -70,6 +76,15 @@ public interface IAudioStateMachine {
      */
     void resumeJukebox();
 
+    /**
+     * Clears the jukebox default list and loads one in from the provided URI
+     *
+     * @param uri Where to find the jukebox default list
+     */
+    void loadJukeboxDefaultList(String uri);
+
+    boolean areLoadRequestsProcessing();
+
     // State machine information
 
     /**
@@ -86,31 +101,42 @@ public interface IAudioStateMachine {
      */
     CurrentActiveStreamState getCurrentActiveStream();
 
+    /**
+     * Gets the load state of the jukebox default list (whether it is unloaded, from a local file, or from the internet)
+     *
+     * @return the load state of the jukebox default list
+     */
+    JukeboxDefaultListLoadState getJukeboxDefaultListLoadState();
+
+    /**
+     * Subscribes a listener to this IAudioStateMachine to detect when changes occur
+     *
+     * @param listener Subscribing listener
+     */
+    void addAudioStateMachineListener(IAudioStateMachineListener listener);
+
     // AudioKeyPlaylists
 
     /**
-     * Blocking access to this IAudioStateMachine's AudioKeyPlaylist of soundboard sounds.
+     * Gets the threadsafe wrapper for the soundboard list
      *
-     * @param accessHandle What is to be done when access is acquired. After this is run, all listeners
-     *                     to the AudioKeyPlaylist are notified if any changes are made.
+     * @return the threadsafe wrapper for the soundboard list
      */
-    void accessSoundboardSoundsList(IAudioKeyPlaylistAccessHandle accessHandle);
+    AudioKeyPlaylistTSWrapper getSoundboardList();
 
     /**
-     * Blocking access to this IAudioStateMachine's AudioKeyPlaylist of the jukebox default list.
+     * Gets the threadsafe wrapper for the jukebox default list
      *
-     * @param accessHandle What is to be done when access is acquired. After this is run, all listeners
-     *                     to the AudioKeyPlaylist are notified if any changes are made.
+     * @return the threadsafe wrapper for the jukebox default list
      */
-    void accessJukeboxDefaultList(IAudioKeyPlaylistAccessHandle accessHandle);
+    AudioKeyPlaylistTSWrapper getJukeboxDefaultList();
 
     /**
-     * Blocking access to this IAudioStateMachine's AudioKeyPlaylist of the jukebox queue.
+     * Gets the threadsafe wrapper for the jukebox queue
      *
-     * @param accessHandle What is to be done when access is acquired. After this is run, all listeners
-     *                     to the AudioKeyPlaylist are notified if any changes are made.
+     * @return the threadsafe wrapper for the jukebox queue
      */
-    void accessJukeboxQueue(IAudioKeyPlaylistAccessHandle accessHandle);
+    AudioKeyPlaylistTSWrapper getJukeboxQueue();
 
     /**
      * Gets the currently playing song in the jukebox

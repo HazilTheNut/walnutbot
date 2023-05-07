@@ -1,8 +1,7 @@
 package Commands;
 
-import Audio.AudioKeyPlaylistScraper;
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Audio.*;
+import Main.WalnutbotEnvironment;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -25,16 +24,20 @@ public class JukeboxDefaultAddCommand extends Command {
             + "url - The URL of the song to add to the default list";
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        if (args.length < 1){
-            Transcriber.printAndPost(feedbackHandler, "**ERROR:** Too few arguments. Usage: `%1$s`", getHelpCommandUsage());
-        }
-        if (audioMaster.getJukeboxDefaultList() == null){
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        if (argsInsufficient(args, 1, feedbackHandler))
+            return;
+        if (environment.getAudioStateMachine().getJukeboxDefaultListLoadState() == IAudioStateMachine.JukeboxDefaultListLoadState.UNLOADED){
             Transcriber.printAndPost(feedbackHandler, "**WARNING:** No Default List loaded!");
             return;
         }
-        AudioKeyPlaylistScraper scraper = new AudioKeyPlaylistScraper(audioMaster);
-        scraper.populateAudioKeyPlaylist(FileIO.expandURIMacros(args[0]), audioMaster.getJukeboxDefaultList(), audioMaster::saveJukeboxDefault);
-        Transcriber.printAndPost(feedbackHandler, "Songs added to Jukebox Default List");
+        if (sanitizeLocalAccess(args[0], feedbackHandler, permissions)) {
+            environment.getAudioStateMachine().loadTracks(FileIO.expandURIMacros(args[0]), environment.getAudioStateMachine().getJukeboxDefaultList(), (loadResult, successful) -> {
+                if (!successful)
+                    Transcriber.printAndPost(feedbackHandler, "Failed to load URI: %s", args[0]);
+            }, false);
+            Transcriber.printAndPost(feedbackHandler, "Songs added to Jukebox Default List");
+        }
     }
 }

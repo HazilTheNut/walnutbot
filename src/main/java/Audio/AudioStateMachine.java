@@ -1,32 +1,65 @@
 package Audio;
 
 import UI.SongDurationTracker;
+import Utils.FileIO;
 import Utils.Transcriber;
+
+import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class AudioStateMachine implements IAudioStateMachine {
 
     private IPlaybackWrapper playbackWrapper;
 
-    private AudioKeyPlaylist soundboardList;
-    private AudioKeyPlaylist jukeboxDefaultList;
-    private AudioKeyPlaylist jukeboxQueueList;
+    private AudioKeyPlaylistTSWrapper soundboardList;
+    private AudioKeyPlaylistTSWrapper jukeboxDefaultList;
+    private AudioKeyPlaylistTSWrapper jukeboxQueueList;
+    private final Semaphore stateMachineMutex;
     private AudioKey jukeboxCurrentlyPlayingSong;
 
     private AudioStateMachineStatus myCurrentStatus;
     private CurrentActiveStreamState currentActiveStreamState;
+    private JukeboxDefaultListLoadState jukeboxDefaultListLoadState;
     private boolean loopingJukebox;
 
-    private AudioStateMachine(IPlaybackWrapper playbackWrapper) {
+    private List<SongDurationTracker> songDurationTrackers;
+    private List<IAudioStateMachineListener> audioStateMachineListeners;
+
+    public AudioStateMachine(IPlaybackWrapper playbackWrapper) {
         this.playbackWrapper = playbackWrapper;
+        playbackWrapper.assignAudioStateMachine(this);
 
-        soundboardList = new AudioKeyPlaylist("SOUNDBOARD");
-        jukeboxDefaultList = new AudioKeyPlaylist("JUKEBOX DFL");
-        jukeboxQueueList = new AudioKeyPlaylist("JUKEBOX QUEUE");
-
+        // Init state machine
         myCurrentStatus = AudioStateMachineStatus.INACTIVE;
         currentActiveStreamState = CurrentActiveStreamState.NEITHER;
+        jukeboxDefaultListLoadState = JukeboxDefaultListLoadState.UNLOADED;
+
+        // Init soundboard list
+        soundboardList = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("SOUNDBOARD"));
+
+        // Init jukebox default list
+        AudioKeyPlaylist jukeboxDefaultListRaw = new AudioKeyPlaylist("JUKEBOX DFL");
+        jukeboxDefaultListRaw.addAudioKeyPlaylistListener((playlist, event) -> {
+            // Auto-save
+            if (event.getEventType() == AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.EVENT_QUEUE_END) {
+                if (jukeboxDefaultListLoadState == JukeboxDefaultListLoadState.LOCAL_FILE) {
+                    jukeboxDefaultListRaw.saveToFile(new File(jukeboxDefaultListRaw.getUrl()));
+                }
+            }
+        });
+        jukeboxDefaultList = new AudioKeyPlaylistTSWrapper(jukeboxDefaultListRaw);
+
+        // Init jukebox queue
+        jukeboxQueueList = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("JUKEBOX QUEUE"));
 
         loopingJukebox = false;
+
+        stateMachineMutex = new Semaphore(1, true);
+
+        songDurationTrackers = new LinkedList<>();
+        audioStateMachineListeners = new LinkedList<>();
     }
 
     /**
@@ -40,7 +73,7 @@ public class AudioStateMachine implements IAudioStateMachine {
      * @return true if the operation was successful, and false otherwise
      */
     @Override
-    public boolean loadTracks(String uri, AudioKeyPlaylist output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects) {
+    public boolean loadTracks(String uri, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects) {
         return playbackWrapper.loadTracks(uri, output, trackLoadResultHandler, storeLoadedTrackObjects);
     }
 
@@ -51,14 +84,25 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void playSoundboardSound(AudioKey key) {
+        try {
+            stateMachineMutex.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        playSoundboardSound_internal(key);
+        stateMachineMutex.release();
+    }
+
+    private void playSoundboardSound_internal(AudioKey key) {
         // Play sound
         if (key.getAbstractedLoadedTrack() == null) {
             // We need to load up the track
-            AudioKeyPlaylist temp = new AudioKeyPlaylist("TEMP");
+            AudioKeyPlaylistTSWrapper temp = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("TEMP"));
             if (!playbackWrapper.loadTracks(key.getUrl(), temp, (output, successful) -> {
                 if (successful) {
                     // Recurse through playSoundboardSound with an AudioKey with a track loaded onto it
-                    playSoundboardSound(output.getKey(0));
+                    // Should call playSoundboardSound since loadTracks spins up its own thread
+                    output.accessAudioKeyPlaylist(playlist -> playSoundboardSound(playlist.getKey(0)));
                 } else {
                     Transcriber.printTimestamped("Loading for key %s failed!", key);
                 }
@@ -97,7 +141,7 @@ public class AudioStateMachine implements IAudioStateMachine {
             // Play sound
             if (!playbackWrapper.startPlayback(IPlaybackWrapper.PlaybackStreamType.SOUNDBOARD, key.getAbstractedLoadedTrack())) {
                 Transcriber.printTimestamped("Playback for key %s failed!", key);
-                stopSoundboard();
+                stopSoundboard_internal();
             }
         }
         // Returning playback to jukebox is not handled here (stopSoundboard() will eventually be called)
@@ -108,6 +152,16 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void stopSoundboard() {
+        try {
+            stateMachineMutex.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        stopSoundboard_internal();
+        stateMachineMutex.release();
+    }
+
+    private void stopSoundboard_internal() {
         // Stop playback
         playbackWrapper.endPlayback(IPlaybackWrapper.PlaybackStreamType.SOUNDBOARD);
         switch (myCurrentStatus) {
@@ -158,16 +212,29 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void enqueueJukeboxSong(AudioKey key) {
+        try {
+            stateMachineMutex.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        enqueueJukeboxSong_internal(key);
+        stateMachineMutex.release();
+    }
+
+    private void enqueueJukeboxSong_internal(AudioKey key) {
         // Populate the queue with tracks loaded from key
         if (key.getAbstractedLoadedTrack() == null) {
             // Need to load the track(s)
-            AudioKeyPlaylist temp = new AudioKeyPlaylist("TEMP");
+            AudioKeyPlaylistTSWrapper temp = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("TEMP"));
             if (!playbackWrapper.loadTracks(key.getUrl(), temp, (output, successful) -> {
                 if (successful) {
-                    for (AudioKey outputKey : output.getAudioKeys()) {
-                        if (outputKey.getAbstractedLoadedTrack() != null)
-                            enqueueJukeboxSong(outputKey);
-                    }
+                    output.accessAudioKeyPlaylist(playlist -> {
+                        for (AudioKey outputKey : playlist.getAudioKeys()) {
+                            if (outputKey.getAbstractedLoadedTrack() != null)
+                                // Should call enqueueJukeboxSong since loadTracks spins up its own thread
+                                enqueueJukeboxSong(outputKey);
+                        }
+                    });
                 } else {
                     Transcriber.printTimestamped("Loading for key %s failed!", key);
                 }
@@ -193,7 +260,7 @@ public class AudioStateMachine implements IAudioStateMachine {
                 case SOUNDBOARD_PLAYING_JUKEBOX_READY:
                 case SOUNDBOARD_PLAYING_JUKEBOX_PAUSED:
                     // Jukebox already has a song, queue it up
-                    jukeboxQueueList.addAudioKey(key);
+                    jukeboxQueueList.accessAudioKeyPlaylist(playlist -> playlist.addAudioKey(key));
                     break;
                 case SOUNDBOARD_PLAYING:
                     // Soundboard is playing, get ready to play when it is finished
@@ -216,6 +283,16 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void startNextJukeboxSong(boolean ignoreLooping) {
+        try {
+            stateMachineMutex.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        startNextJukeboxSong_internal(ignoreLooping);
+        stateMachineMutex.release();
+    }
+
+    private void startNextJukeboxSong_internal(boolean ignoreLooping) {
         // End playback
         playbackWrapper.endPlayback(IPlaybackWrapper.PlaybackStreamType.JUKEBOX);
 
@@ -223,12 +300,12 @@ public class AudioStateMachine implements IAudioStateMachine {
         if (!ignoreLooping && loopingJukebox) {
             // Loop current song if looping
             setJukeboxCurrentlyPlayingSong(playbackWrapper.refreshAudioKey(jukeboxCurrentlyPlayingSong));
-        } else if (!jukeboxQueueList.isEmpty()) {
+        } else if (jukeboxQueueList.isNonEmpty()) {
             // If something is in the queue, dequeue it
-            setJukeboxCurrentlyPlayingSong(jukeboxQueueList.removeAudioKey(0));
-        } else if (!jukeboxDefaultList.isEmpty()) {
+            jukeboxQueueList.accessAudioKeyPlaylist(playlist -> setJukeboxCurrentlyPlayingSong(playlist.removeAudioKey(0)));
+        } else if (jukeboxDefaultList.isNonEmpty()) {
             // If default list is nonempty, get a random song
-            setJukeboxCurrentlyPlayingSong(jukeboxDefaultList.getRandomAudioKey());
+            jukeboxDefaultList.accessAudioKeyPlaylist(playlist -> setJukeboxCurrentlyPlayingSong(playlist.getRandomAudioKey()));
         } else {
             // Nothing to play, queue and default list are both empty
             setJukeboxCurrentlyPlayingSong(null);
@@ -290,6 +367,16 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void pauseJukebox() {
+        try {
+            stateMachineMutex.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        pauseJukebox_internal();
+        stateMachineMutex.release();
+    }
+
+    private void pauseJukebox_internal() {
         switch (myCurrentStatus){
             case JUKEBOX_PLAYING:
                 playbackWrapper.pausePlayback(IPlaybackWrapper.PlaybackStreamType.JUKEBOX);
@@ -314,6 +401,16 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void resumeJukebox() {
+        try {
+            stateMachineMutex.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        resumeJukebox_internal();
+        stateMachineMutex.release();
+    }
+
+    private void resumeJukebox_internal() {
         switch (myCurrentStatus){
             case INACTIVE:
             case SOUNDBOARD_PLAYING:
@@ -321,8 +418,8 @@ public class AudioStateMachine implements IAudioStateMachine {
                 startNextJukeboxSong(true);
                 break;
             case JUKEBOX_PAUSED:
-                playbackWrapper.resumePlayback(IPlaybackWrapper.PlaybackStreamType.JUKEBOX);
-                setCurrentState(AudioStateMachineStatus.JUKEBOX_PLAYING);
+                if (playbackWrapper.resumePlayback(IPlaybackWrapper.PlaybackStreamType.JUKEBOX))
+                    setCurrentState(AudioStateMachineStatus.JUKEBOX_PLAYING);
                 break;
             case JUKEBOX_PLAYING:
             case SOUNDBOARD_PLAYING_JUKEBOX_READY:
@@ -334,6 +431,65 @@ public class AudioStateMachine implements IAudioStateMachine {
                 setCurrentState(AudioStateMachineStatus.SOUNDBOARD_PLAYING_JUKEBOX_SUSPENDED);
                 break;
         }
+    }
+
+    /**
+     * Clears the jukebox default list and loads one in from the provided URI
+     *
+     * @param uri Where to find the jukebox default list
+     */
+    @Override
+    public void loadJukeboxDefaultList(String uri) {
+        try {
+            stateMachineMutex.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        loadJukeboxDefaultList_internal(uri);
+        stateMachineMutex.release();
+    }
+
+    @Override
+    public boolean areLoadRequestsProcessing() {
+        return playbackWrapper.isProcessingLoadRequests();
+    }
+
+    private void loadJukeboxDefaultList_internal(String uri) {
+        jukeboxDefaultList.accessAudioKeyPlaylist(playlist -> {
+            playlist.clearPlaylist();
+            loadTracks(uri, jukeboxDefaultList, (loadResult, successful) -> {
+                if (!successful) {
+                    setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.UNLOADED);
+                }
+                if (FileIO.isWebsiteURL(uri))
+                    setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.REMOTE);
+                else if (FileIO.isPlaylistFile(uri))
+                    setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.LOCAL_FILE);
+                else {
+                    setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.UNLOADED);
+                }
+                // loadTracks spins up its own thread so this should be okay
+                loadResult.accessAudioKeyPlaylist(accessedLoadResult -> {
+                    // Update the URL
+                    switch (jukeboxDefaultListLoadState) {
+                        case UNLOADED:
+                            accessedLoadResult.setUrl("(Nothing Loaded)");
+                            break;
+                        case REMOTE:
+                        case LOCAL_FILE:
+                            accessedLoadResult.setUrl(uri);
+                            break;
+                        default:
+                            accessedLoadResult.setUrl("ERROR");
+                            break;
+                    }
+                    // Populate list
+                    for (AudioKey key : accessedLoadResult.getAudioKeys()) {
+                        accessedLoadResult.addAudioKey(key);
+                    }
+                });
+            }, false);
+        });
     }
 
     /**
@@ -374,6 +530,9 @@ public class AudioStateMachine implements IAudioStateMachine {
     private void setCurrentState(AudioStateMachineStatus newStatus) {
         myCurrentStatus = newStatus;
         Transcriber.printTimestamped("AudioStateMachine new state: %s", myCurrentStatus.name());
+        for (IAudioStateMachineListener listener : audioStateMachineListeners){
+            listener.onAudioStateMachineUpdateStatus(myCurrentStatus);
+        }
     }
 
     /**
@@ -385,6 +544,12 @@ public class AudioStateMachine implements IAudioStateMachine {
         changeActiveStream(IPlaybackWrapper.PlaybackStreamType.JUKEBOX);
         setJukeboxCurrentlyPlayingSong(null);
         setCurrentState(AudioStateMachineStatus.INACTIVE);
+    }
+
+    private void setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState loadState){
+        for (IAudioStateMachineListener listener : audioStateMachineListeners){
+            listener.onJukeboxDefaultListLoadStateUpdate(loadState);
+        }
     }
 
     /**
@@ -408,36 +573,53 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     /**
-     * Blocking access to this IAudioStateMachine's AudioKeyPlaylist of soundboard sounds.
+     * Gets the load state of the jukebox default list (whether it is unloaded, from a local file, or from the internet)
      *
-     * @param accessHandle What is to be done when access is acquired. After this is run, all listeners
-     *                     to the AudioKeyPlaylist are notified if any changes are made.
+     * @return the load state of the jukebox default list
      */
     @Override
-    public void accessSoundboardSoundsList(IAudioKeyPlaylistAccessHandle accessHandle) {
-        accessHandle.onGainAccess(soundboardList);
+    public JukeboxDefaultListLoadState getJukeboxDefaultListLoadState() {
+        return jukeboxDefaultListLoadState;
     }
 
     /**
-     * Blocking access to this IAudioStateMachine's AudioKeyPlaylist of the jukebox default list.
+     * Subscribes a listener to this IAudioStateMachine to detect when changes occur
      *
-     * @param accessHandle What is to be done when access is acquired. After this is run, all listeners
-     *                     to the AudioKeyPlaylist are notified if any changes are made.
+     * @param listener Subscribing listener
      */
     @Override
-    public void accessJukeboxDefaultList(IAudioKeyPlaylistAccessHandle accessHandle) {
-        accessHandle.onGainAccess(jukeboxDefaultList);
+    public void addAudioStateMachineListener(IAudioStateMachineListener listener) {
+        audioStateMachineListeners.add(listener);
     }
 
     /**
-     * Blocking access to this IAudioStateMachine's AudioKeyPlaylist of the jukebox queue.
+     * Gets the threadsafe wrapper for the soundboard list
      *
-     * @param accessHandle What is to be done when access is acquired. After this is run, all listeners
-     *                     to the AudioKeyPlaylist are notified if any changes are made.
+     * @return the threadsafe wrapper for the soundboard list
      */
     @Override
-    public void accessJukeboxQueue(IAudioKeyPlaylistAccessHandle accessHandle) {
-        accessHandle.onGainAccess(jukeboxQueueList);
+    public AudioKeyPlaylistTSWrapper getSoundboardList() {
+        return soundboardList;
+    }
+
+    /**
+     * Gets the threadsafe wrapper for the jukebox default list
+     *
+     * @return the threadsafe wrapper for the jukebox default list
+     */
+    @Override
+    public AudioKeyPlaylistTSWrapper getJukeboxDefaultList() {
+        return jukeboxDefaultList;
+    }
+
+    /**
+     * Gets the threadsafe wrapper for the jukebox queue
+     *
+     * @return the threadsafe wrapper for the jukebox queue
+     */
+    @Override
+    public AudioKeyPlaylistTSWrapper getJukeboxQueue() {
+        return jukeboxQueueList;
     }
 
     /**
@@ -539,7 +721,7 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void setLoopingStatus(boolean looping) {
-
+        loopingJukebox = looping;
     }
 
     /**

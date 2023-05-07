@@ -1,8 +1,9 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
+
+import java.util.Objects;
 
 public class EchoCommand extends Command {
 
@@ -26,11 +27,11 @@ public class EchoCommand extends Command {
             SettingsLoader.getBotConfigValue("command_char"));
     }
 
-    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Build message
-        String message = "".concat(SettingsLoader.getBotConfigValue("command_char")).concat("help");
+        String message = "".concat(Objects.requireNonNull(SettingsLoader.getBotConfigValue("command_char"))).concat("help");
         //Display message
         feedbackHandler.sendAuthorPM(message, false);
     }
-
 }

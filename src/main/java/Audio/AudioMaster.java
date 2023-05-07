@@ -1,6 +1,8 @@
 package Audio;
 
 import Commands.CommandInterpreter;
+import CommuncationPlatform.DiscordBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
 import LavaplayerWrapper.LavaplayerDiscordSendHandler;
 import UI.AudioKeyPlaylistLoader;
 import UI.JukeboxListener;
@@ -316,7 +318,7 @@ public class AudioMaster{
             jukeboxDefaultList.addAudioKeyPlaylistListener(jukeboxDefaultListListener);
             if (jukeboxListener != null) jukeboxListener.onDefaultListChange(this);
         } else {
-            if (jukeboxDefaultListListener != null) jukeboxDefaultListListener.onClear();
+            //if (jukeboxDefaultListListener != null) jukeboxDefaultListListener.onClear();
             if (jukeboxListener != null) jukeboxListener.onDefaultListChange(this);
             Transcriber.printRaw("Playlist set to an empty one.");
         }
@@ -449,7 +451,7 @@ public class AudioMaster{
         this.commandInterpreter = commandInterpreter;
     }
 
-    public void setDiscordBotManager(IBotManager botManager) {
+    public void setDiscordBotManager(ICommunicationPlatformManager botManager) {
         if (botManager instanceof DiscordBotManager)
             jukeboxPlayer.addListener((DiscordBotManager)botManager);
     }

@@ -1,7 +1,7 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Audio.IAudioStateMachine;
+import Main.WalnutbotEnvironment;
 import Utils.Transcriber;
 
 public class JukeboxDefaultRemoveCommand extends Command {
@@ -22,15 +22,15 @@ public class JukeboxDefaultRemoveCommand extends Command {
         return String.format("%1$s\n\npos - The position in the list you wish to remove from.", getHelpDescription());
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
-        if (audioMaster.getJukeboxDefaultList() == null) {
+        if (environment.getAudioStateMachine().getJukeboxDefaultListLoadState() == IAudioStateMachine.JukeboxDefaultListLoadState.UNLOADED) {
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** No active Default List.");
         } else try {
-            int pos = Integer.valueOf(args[0]);
-            audioMaster.getJukeboxDefaultList().removeAudioKey(pos);
-            audioMaster.saveJukeboxDefault();
+            int pos = Integer.parseInt(args[0]);
+            environment.getAudioStateMachine().getJukeboxDefaultList().accessAudioKeyPlaylist(playlist -> playlist.removeAudioKey(pos));
         } catch (NumberFormatException e){
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** `pos` is not an integer value.");
         }

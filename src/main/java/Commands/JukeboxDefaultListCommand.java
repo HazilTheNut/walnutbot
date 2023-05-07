@@ -1,13 +1,13 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Audio.IAudioStateMachine;
+import Main.WalnutbotEnvironment;
 
 public class JukeboxDefaultListCommand extends Command {
 
     public JukeboxDefaultListCommand(){
         addSubCommand(new JukeboxDefaultAddCommand());
-        addSubCommand(new GenericCommand("disable", "Sets the Default List to nothing, disabling it", (audioMaster, feedbackHandler) -> audioMaster.emptyJukeboxPlaylist()));
+        addSubCommand(new GenericCommand("disable", "Sets the Default List to nothing, disabling it", (environment, feedbackHandler) -> environment.getAudioStateMachine().loadJukeboxDefaultList("invalid uri")));
         addSubCommand(new JukeboxDefaultLoadCommand());
         addSubCommand(new JukeboxDefaultNewCommand());
         addSubCommand(new JukeboxDefaultModifyCommand());
@@ -30,20 +30,23 @@ public class JukeboxDefaultListCommand extends Command {
         return String.format("%1$s\n\npage - The page of the list you would like to view", getHelpDescription());
     }
 
-    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        StringBuilder message = new StringBuilder();
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        environment.getAudioStateMachine().getJukeboxDefaultList().accessAudioKeyPlaylist(playlist -> {
+            StringBuilder message = new StringBuilder();
             message.append("*Jukebox Default List:*\n```\n");
-        if (audioMaster.getJukeboxDefaultList() == null){
-            message.append("No active Default List.");
-        } else {
-            if (args.length < 1)
-                message.append(PlaylistLister.listItems(audioMaster.getJukeboxDefaultList(), null, getHelpCommandUsage(), feedbackHandler.getListPageSize(
-                    CommandFeedbackHandler.CommandType.DEFAULT)));
-            else
-                message.append(PlaylistLister.listItems(audioMaster.getJukeboxDefaultList(), args[0], getHelpCommandUsage(), feedbackHandler.getListPageSize(
-                    CommandFeedbackHandler.CommandType.DEFAULT)));
-        }
-        message.append("\n```");
-        feedbackHandler.sendMessage(message.toString(), false);
+            if (environment.getAudioStateMachine().getJukeboxDefaultListLoadState() == IAudioStateMachine.JukeboxDefaultListLoadState.UNLOADED){
+                message.append("No active Default List.");
+            } else {
+                if (args.length < 1)
+                    message.append(PlaylistLister.listItems(playlist, null, getHelpCommandUsage(), feedbackHandler.getListPageSize(
+                            CommandFeedbackHandler.CommandType.DEFAULT)));
+                else
+                    message.append(PlaylistLister.listItems(playlist, args[0], getHelpCommandUsage(), feedbackHandler.getListPageSize(
+                            CommandFeedbackHandler.CommandType.DEFAULT)));
+            }
+            message.append("\n```");
+            feedbackHandler.sendMessage(message.toString(), false);
+        });
     }
 }

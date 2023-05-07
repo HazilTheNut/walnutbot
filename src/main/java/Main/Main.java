@@ -1,14 +1,21 @@
-import Audio.AudioMaster;
-import Commands.Command;
+package Main;
+
+import Audio.AudioStateMachine;
+import Audio.IAudioStateMachine;
+import Audio.IPlaybackWrapper;
 import Commands.CommandInterpreter;
-import UI.UIFrame;
+import CommuncationPlatform.DiscordBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
+import CommuncationPlatform.IDiscordPlaybackSystemBridge;
+import LavaplayerWrapper.LavaplayerWrapper;
+import LavaplayerWrapper.ILavaplayerBotBridge;
+import LavaplayerWrapper.LavaplayerDiscordBridge;
 import Utils.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
-import javax.swing.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.EnumSet;
@@ -55,8 +62,29 @@ public class Main {
         JDA jda = JDABuilder.createDefault(token, intents)
                 .enableCache(CacheFlag.VOICE_STATE)
                 .build();
+        // Start up environment
+        WalnutbotEnvironment environment = new WalnutbotEnvironment();
 
         // Start up bot core
+        ICommunicationPlatformManager botManager;
+        IPlaybackWrapper playbackWrapper;
+        IAudioStateMachine audioStateMachine;
+
+        // Start up Lavaplayer wrapper
+        ILavaplayerBotBridge lavaplayerBotBridge = new LavaplayerDiscordBridge();
+        playbackWrapper = new LavaplayerWrapper(lavaplayerBotBridge);
+
+        environment.setAudioStateMachine(new AudioStateMachine(playbackWrapper));
+
+        // Start up connectivity with Discord communication platform
+        environment.setCommunicationPlatformManager(new DiscordBotManager(jda, environment.getAudioStateMachine(), (IDiscordPlaybackSystemBridge)lavaplayerBotBridge));
+
+        // Start up command interpreter
+        environment.setCommandInterpreter(new CommandInterpreter(environment));
+
+        // Start up UI
+
+        /*
         AudioMaster audioMaster = new AudioMaster();
         if (jda == null)
             Transcriber.printTimestamped("WARNING: JDA is null!");
@@ -90,5 +118,7 @@ public class Main {
         // Startup script
         if (commandInterpreter != null && startupScriptLoc != null)
             commandInterpreter.evaluateCommand("script ".concat(startupScriptLoc), Transcriber.getGenericCommandFeedBackHandler("Startup"), Command.INTERNAL_MASK);
+
+         */
     }
 }

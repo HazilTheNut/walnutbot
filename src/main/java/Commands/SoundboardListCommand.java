@@ -3,7 +3,8 @@ package Commands;
 import Audio.AudioKey;
 import Audio.AudioMaster;
 import Audio.AudioKeyPlaylist;
-import Utils.IBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
 
 public class SoundboardListCommand extends Command {
 
@@ -19,10 +20,17 @@ public class SoundboardListCommand extends Command {
         return "Lists the available sounds in the Soundboard.";
     }
 
-    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override public void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        StringBuilder builder = new StringBuilder();
+        environment.getAudioStateMachine().getSoundboardList().accessAudioKeyPlaylist(playlist -> {
+            builder.append(listSoundboardSounds(playlist));
+        });
+        feedbackHandler.sendMessage(builder.toString(), false);
+    }
+
+    private String listSoundboardSounds(AudioKeyPlaylist soundboard) {
         StringBuilder builder = new StringBuilder("**Available Sounds:**\n```\n");
-        AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
-        //Get longest sound name
+        //Get the longest sound name
         int longestNameLength = 0;
         for (AudioKey audioKey : soundboard.getAudioKeys())
             if (!audioKey.getName().contains(" "))
@@ -46,7 +54,7 @@ public class SoundboardListCommand extends Command {
         }
         */
         builder.append("```");
-        feedbackHandler.sendMessage(builder.toString(), false);
+        return builder.toString();
     }
 
     private String createCommandNameSpacing(int length){

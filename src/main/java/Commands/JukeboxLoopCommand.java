@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 import Utils.Transcriber;
 
 public class JukeboxLoopCommand extends Command {
@@ -18,11 +17,12 @@ public class JukeboxLoopCommand extends Command {
         return "Sets whether the Jukebox should loop the currently-playing song";
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
-        boolean newLoopingState = Boolean.valueOf(args[0]);
-        audioMaster.setLoopingCurrentSong(newLoopingState);
+        boolean newLoopingState = Boolean.parseBoolean(args[0]);
+        environment.getAudioStateMachine().setLoopingStatus(newLoopingState);
         if (newLoopingState)
             Transcriber.printAndPost(feedbackHandler, "The Jukebox will now loop the current song.");
         else

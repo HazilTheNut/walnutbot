@@ -1,8 +1,6 @@
-package Utils;
+package Main;
 
-import java.util.Arrays;
-
-public class BotInfo {
+public class WalnutbotInfo {
 
     public static final String VERSION_NUMBER = "1.0_pre11";
 

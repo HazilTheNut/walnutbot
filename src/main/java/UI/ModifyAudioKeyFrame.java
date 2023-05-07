@@ -4,7 +4,7 @@ import Audio.AudioKey;
 import Audio.AudioMaster;
 import Commands.Command;
 import Commands.CommandInterpreter;
-import Utils.BotInfo;
+import Main.WalnutbotInfo;
 import Utils.FileIO;
 import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -70,7 +70,7 @@ public class ModifyAudioKeyFrame extends JFrame {
         openButton.addActionListener(e -> {
             JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
             fileChooser.setFileSelectionMode(JFileChooser.OPEN_DIALOG);
-            fileChooser.setFileFilter(new FileNameExtensionFilter(BotInfo.getFileChooserTitle(), BotInfo.ACCEPTED_AUDIO_FORMATS));
+            fileChooser.setFileFilter(new FileNameExtensionFilter(WalnutbotInfo.getFileChooserTitle(), WalnutbotInfo.ACCEPTED_AUDIO_FORMATS));
             int result = fileChooser.showOpenDialog(null);
             if (result == JFileChooser.APPROVE_OPTION) {
                 String filepath = fileChooser.getSelectedFile().getAbsolutePath();

@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 
 public class ListQueueCommand extends Command {
 
@@ -21,22 +20,25 @@ public class ListQueueCommand extends Command {
         return String.format("%1$s\n\npage - The page of the list you would like to view", getHelpDescription());
     }
 
-    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        StringBuilder message = new StringBuilder();
-            message.append("*Jukebox Queue:*\n```\n");
-        if (audioMaster.getCurrentlyPlayingSong() != null)
-            message.append("Now Playing: ").append(audioMaster.getCurrentlyPlayingSong().getTrackName()).append("\n===\n");
-        if (audioMaster.getJukeboxQueueList().getAudioKeys().size() == 0)
-            message.append("No songs are currently queued; playing random songs from default playlist.");
-        else {
-            if (args.length < 1)
-                message.append(PlaylistLister.listItems(audioMaster.getJukeboxQueueList(), null, getHelpCommandUsage(), feedbackHandler.getListPageSize(
-                    CommandFeedbackHandler.CommandType.QUEUE)));
-            else
-                message.append(PlaylistLister.listItems(audioMaster.getJukeboxQueueList(), args[0], getHelpCommandUsage(), feedbackHandler.getListPageSize(
-                    CommandFeedbackHandler.CommandType.QUEUE)));
-        }
-        message.append("\n```");
-        feedbackHandler.sendMessage(message.toString(), false);
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        environment.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> {
+            StringBuilder message = new StringBuilder();
+            message.append("*JJukebox Queue:*\n```\n");
+            if (environment.getAudioStateMachine().getJukeboxCurrentlyPlayingSong() != null)
+                message.append("Now Playing: ").append(environment.getAudioStateMachine().getJukeboxCurrentlyPlayingSong().getName()).append("\n===\n");
+            if (playlist.isEmpty()) {
+                message.append("No songs are currently queued; playing random songs from default playlist.");
+            } else {
+                if (args.length < 1)
+                    message.append(PlaylistLister.listItems(playlist, null, getHelpCommandUsage(), feedbackHandler.getListPageSize(
+                            CommandFeedbackHandler.CommandType.QUEUE)));
+                else
+                    message.append(PlaylistLister.listItems(playlist, args[0], getHelpCommandUsage(), feedbackHandler.getListPageSize(
+                            CommandFeedbackHandler.CommandType.QUEUE)));
+            }
+            message.append("\n```");
+            feedbackHandler.sendMessage(message.toString(), false);
+        });
     }
 }

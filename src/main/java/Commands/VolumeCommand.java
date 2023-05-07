@@ -1,7 +1,8 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.IBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
 import Utils.Transcriber;
 
 public class VolumeCommand extends Command {
@@ -24,7 +25,7 @@ public class VolumeCommand extends Command {
             + "volume - An integer ranging from 0-100 as a volume percentage.");
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 2, feedbackHandler))
             return;
         int vol;
@@ -49,9 +50,34 @@ public class VolumeCommand extends Command {
         }
     }
 
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        if (argsInsufficient(args, 2, feedbackHandler))
+            return;
+        int vol;
+        switch (args[0]){
+            case "main":
+                vol = getVolumeAmount(args[1], environment.getAudioStateMachine().getMainVolume());
+                environment.getAudioStateMachine().setMainVolume(vol);
+                Transcriber.printAndPost(feedbackHandler, "Main Volume changed to `%1$d`", vol);
+                break;
+            case "sb":
+                vol = getVolumeAmount(args[1], environment.getAudioStateMachine().getSoundboardVolume());
+                environment.getAudioStateMachine().setSoundboardVolume(vol);
+                Transcriber.printAndPost(feedbackHandler, "Soundboard Volume changed to `%1$d`", vol);
+                break;
+            case "jb":
+                vol = getVolumeAmount(args[1], environment.getAudioStateMachine().getJukeboxVolume());
+                environment.getAudioStateMachine().setJukeboxVolume(vol);
+                Transcriber.printAndPost(feedbackHandler, "Jukebox Volume changed to `%1$d`", vol);
+                break;
+            default:
+                Transcriber.printAndPost(feedbackHandler, "**ERROR:** `%1$s` is not a channel. Channels: `main`, `sb`, `jb`");
+        }    }
+
     private int getVolumeAmount(String volumeStr, int prevValue){
         try {
-            return Math.max(0, Math.min(Integer.valueOf(volumeStr), 100));
+            return Math.max(0, Math.min(Integer.parseInt(volumeStr), 100));
         } catch (NumberFormatException e){
             return prevValue;
         }

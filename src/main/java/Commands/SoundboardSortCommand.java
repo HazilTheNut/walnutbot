@@ -1,7 +1,9 @@
 package Commands;
 
+import Audio.AudioKeyPlaylist;
 import Audio.AudioMaster;
-import Utils.IBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
 
 public class SoundboardSortCommand extends Command {
 
@@ -13,7 +15,12 @@ public class SoundboardSortCommand extends Command {
         return "Sorts the Soundboard list with an A-Z ordering";
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         audioMaster.sortSoundboardList();
+    }
+
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        environment.getAudioStateMachine().getSoundboardList().accessAudioKeyPlaylist(AudioKeyPlaylist::sort);
     }
 }

@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 
@@ -26,7 +25,7 @@ public class PermissionsCommand extends Command {
             + "user - The name of the user to modify their permissions\n");
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 3, feedbackHandler))
             return;
         String list = args[0];

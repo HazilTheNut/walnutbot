@@ -3,7 +3,8 @@ package Commands;
 import Audio.AudioKeyPlaylist;
 import Audio.AudioKeyPlaylistScraper;
 import Audio.AudioMaster;
-import Utils.IBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -28,7 +29,7 @@ public class JukeboxDefaultLoadCommand extends Command {
             + "uri - The URI of the playlist");
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         File file = new File(FileIO.expandURIMacros(args[0]));
@@ -41,5 +42,13 @@ public class JukeboxDefaultLoadCommand extends Command {
             AudioKeyPlaylistScraper scraper = new AudioKeyPlaylistScraper(audioMaster);
             scraper.populateAudioKeyPlaylist(args[0], playlist, () -> {});
         }
+    }
+
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        if (argsInsufficient(args, 1, feedbackHandler))
+            return;
+        if (sanitizeLocalAccess(args[0], feedbackHandler, permissions))
+            environment.getAudioStateMachine().loadJukeboxDefaultList(args[0]);
     }
 }

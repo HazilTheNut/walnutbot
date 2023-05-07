@@ -7,9 +7,13 @@ public interface IPlaybackWrapper {
         // Only use BOTH for stuff like the main volume. Fails for many operations such as starting or stopping tracks
         BOTH
     }
+
+    void assignAudioStateMachine (IAudioStateMachine stateMachine);
+
     /**
      * Given a URI (can be local file or web address), populates an AudioKeyPlaylist with the tracks found at that location.
      * The URI can point to an audio file (.mp3, .mp4, .wav, etc.), a Walnutbot .playlist file, or a web address such as <a href="https://www.bandcamp.com">...</a>
+     * This is a nonblocking operation and spins up its own thread.
      *
      * @param uri The URI to load the track from
      * @param output AudioKeyPlaylist to populate with load results
@@ -17,7 +21,7 @@ public interface IPlaybackWrapper {
      * @param storeLoadedTrackObjects Whether to store the loaded track object on each generated AudioKey
      * @return true if the operation was successful, and false otherwise
      */
-    boolean loadTracks(String uri, AudioKeyPlaylist output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects);
+    boolean loadTracks(String uri, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects);
 
     /**
      * Sets which stream of audio, either the Soundboard or the Jukebox, should be playing through the bot.
@@ -83,4 +87,6 @@ public interface IPlaybackWrapper {
      * @return The volume level of the specified playback stream
      */
     int getVolume(PlaybackStreamType playbackStreamType);
+
+    boolean isProcessingLoadRequests();
 }

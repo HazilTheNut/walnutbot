@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
 
 import java.util.List;
@@ -17,13 +16,14 @@ public class ConnectListCommand extends Command {
         return "Lists all voice channels available to the bot";
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         String message = "```List of available voice channels to connect to.\n"
-            + "Format: \"<Server Name> <Channel Name>\"\n"
-            + "Server and channel names with spaces are wrapped in quotation marks for ease of copy-and-pasting.\n\n"
-            + listItems(botManager.getListOfVoiceChannels(), args[0], getHelpCommandUsage(),
-            feedbackHandler.getListPageSize(CommandFeedbackHandler.CommandType.CONNECT))
-            + "```";
+                + "Format: \"<Server Name> <Channel Name>\"\n"
+                + "Server and channel names with spaces are wrapped in quotation marks for ease of copy-and-pasting.\n\n"
+                + listItems(environment.getCommunicationPlatformManager().getListOfVoiceChannels(), args[0], getHelpCommandUsage(),
+                feedbackHandler.getListPageSize(CommandFeedbackHandler.CommandType.CONNECT))
+                + "```";
         feedbackHandler.sendAuthorPM(message, false);
     }
 

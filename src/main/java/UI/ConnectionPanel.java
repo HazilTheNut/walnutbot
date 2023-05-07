@@ -2,7 +2,7 @@ package UI;
 
 import Commands.Command;
 import Commands.CommandInterpreter;
-import Utils.IBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
 import Utils.Transcriber;
 
 import javax.swing.*;
@@ -10,7 +10,7 @@ import java.util.List;
 
 public class ConnectionPanel extends JPanel {
     
-    public ConnectionPanel(IBotManager botManager, CommandInterpreter commandInterpreter){
+    public ConnectionPanel(ICommunicationPlatformManager botManager, CommandInterpreter commandInterpreter){
 
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
@@ -40,7 +40,7 @@ public class ConnectionPanel extends JPanel {
         setBorder(BorderFactory.createTitledBorder("Connection"));
     }
 
-    private void generateVoiceChannelOptions(JComboBox<VoiceChannelOption> selectionBox, IBotManager botManager){
+    private void generateVoiceChannelOptions(JComboBox<VoiceChannelOption> selectionBox, ICommunicationPlatformManager botManager){
         selectionBox.removeAllItems();
         List<String> channelList = botManager.getListOfVoiceChannels();
         for (String channelInfo : channelList){

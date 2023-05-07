@@ -1,6 +1,7 @@
 package Commands;
 
-import Audio.AudioMaster;
+import Main.WalnutbotEnvironment;
+import Main.WalnutbotInfo;
 import Utils.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -8,17 +9,14 @@ import java.util.*;
 
 public class CommandInterpreter extends ListenerAdapter {
 
-    private HashMap<String, Command> commandMap;
-    private IBotManager botManager;
-    private AudioMaster audioMaster;
+    private final HashMap<String, Command> commandMap;
+    private final WalnutbotEnvironment environment;
 
-    public CommandInterpreter(IBotManager botManager, AudioMaster audioMaster){
+    public CommandInterpreter(WalnutbotEnvironment environment){
         commandMap = new HashMap<>();
-        this.botManager = botManager;
-        this.audioMaster = audioMaster;
-        audioMaster.setCommandInterpreter(this);
+        this.environment = environment;
         //Add commands to map
-        addCommand(new HelpCommand(this));
+        addCommand(new HelpCommand());
         addCommand(new RequestCommand());
         addCommand(new SoundboardCommand());
         addCommand(new ConnectCommand());
@@ -26,9 +24,12 @@ public class CommandInterpreter extends ListenerAdapter {
         addCommand(new VolumeCommand());
         addCommand(new PermissionsCommand());
         addCommand(new ScriptCommand(this));
-        addCommand(new GenericCommand("status", "Prints out the current status of the bot", ((audioMaster1, feedbackHandler) -> {
-            String channelStr = (audioMaster.getConnectedChannel() == null) ? "null" : String.format("%1$s : %2$s",
-                audioMaster.getConnectedChannel().getGuild(), audioMaster.getConnectedChannel().getName());
+        addCommand(new GenericCommand("status", "Prints out the current status of the bot", ((environment1, feedbackHandler) -> {
+            String channelStr = environment1.getCommunicationPlatformManager().connectedVoiceChannelToString();
+            StringBuilder jukeboxDefaultListName = new StringBuilder();
+            environment1.getAudioStateMachine().getJukeboxDefaultList().accessAudioKeyPlaylist(playlist -> jukeboxDefaultListName.append(playlist.getName()));
+            StringBuilder jukeboxQueueLength = new StringBuilder();
+            environment1.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> jukeboxQueueLength.append(playlist.getAudioKeys().size()));
             Transcriber.printAndPost(feedbackHandler,
                 "**Bot Status:**\n```\n"
                     + "Version: %6$s\n"
@@ -36,9 +37,9 @@ public class CommandInterpreter extends ListenerAdapter {
                     + "Connected Channel: %3$s\n"
                     + "Jukebox Default List: %4$s\n"
                     + "Jukebox Queue Length: %5$s\n```",
-                audioMaster.getSoundboardPlayer().getVolume(), audioMaster.getJukeboxPlayer().getVolume(), channelStr,
-                audioMaster.getJukeboxDefaultListName(), audioMaster.getJukeboxQueueList().getAudioKeys().size(),
-                BotInfo.VERSION_NUMBER);
+                    environment1.getAudioStateMachine().getSoundboardVolume(), environment1.getAudioStateMachine().getJukeboxVolume(), channelStr,
+                jukeboxDefaultListName, jukeboxQueueLength,
+                WalnutbotInfo.VERSION_NUMBER);
         })));
     }
 
@@ -73,7 +74,7 @@ public class CommandInterpreter extends ListenerAdapter {
         if (!Boolean.parseBoolean(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
             return;
         //Ensure the bot doesn't get stuck in response loops
-        if (event.getAuthor().getAsTag().equals(botManager.getBotName()))
+        if (event.getAuthor().getAsTag().equals(environment.getCommunicationPlatformManager().getBotName()))
             return;
 
         //Run command if incoming message starts with the command character
@@ -140,7 +141,7 @@ public class CommandInterpreter extends ListenerAdapter {
             Transcriber.printTimestamped("%1$s > %2$s", author, commandText);
         String[] parts = splitCommandStr(commandText);
         if (commandMap.containsKey(parts[0])){ //If command is valid
-            if (!Boolean.valueOf(SettingsLoader.getSettingsValue(getCommandAllowanceSettingName(parts[0]), "true"))) {
+            if (!Boolean.parseBoolean(SettingsLoader.getSettingsValue(getCommandAllowanceSettingName(parts[0]), "true"))) {
                 Transcriber.printAndPost(commandFeedbackHandler, "**WARNING:** This bot's admin has blocked usage of this command.");
                 return;
             }
@@ -164,7 +165,7 @@ public class CommandInterpreter extends ListenerAdapter {
             searchAndRunCommand(subarray, depth + 1, foundSubCommand, feedbackHandler, authorPermission);
         } else {
             if (baseCommand.isPermissionSufficient(authorPermission))
-                baseCommand.onRunCommand(botManager, audioMaster, feedbackHandler, authorPermission, args);
+                baseCommand.onRunCommand(environment, feedbackHandler, authorPermission, args);
             else
                 Transcriber.printAndPost(feedbackHandler, "**WARNING:** You do not have permission to run this command!");
         }

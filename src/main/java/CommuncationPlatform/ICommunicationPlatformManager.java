@@ -1,8 +1,8 @@
-package Utils;
+package CommuncationPlatform;
 
 import java.util.List;
 
-public interface IBotManager {
+public interface ICommunicationPlatformManager {
 
     /**
      * Tells the bot to connect to a particular voice channel of a particular server.
@@ -16,6 +16,8 @@ public interface IBotManager {
     void disconnectFromVoiceChannel();
 
     List<String> getListOfVoiceChannels();
+
+    String connectedVoiceChannelToString();
 
     void updateStatus();
 

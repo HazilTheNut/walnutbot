@@ -10,10 +10,14 @@ import java.util.*;
 public class AudioKeyPlaylist {
 
     private String name;
+
+
+
     private String url;
     private ArrayList<AudioKey> audioKeys;
     private CircularFifoQueue<AudioKey> previousRandomDrawings; //For pesudo-random selection of songs
-    private ArrayList<AudioKeyPlaylistListener> eventListeners;
+    private final ArrayList<AudioKeyPlaylistListener> eventListeners;
+    private final Queue<AudioKeyPlaylistEvent> eventQueue;
     private boolean isURLValid;
 
     public AudioKeyPlaylist(String name){
@@ -23,6 +27,7 @@ public class AudioKeyPlaylist {
     public AudioKeyPlaylist(String name, String uri){
         audioKeys = new ArrayList<>();
         eventListeners = new ArrayList<>();
+        eventQueue = new LinkedList<>();
         this.name = name;
         isURLValid = true;
         url = uri;
@@ -48,7 +53,7 @@ public class AudioKeyPlaylist {
         }
         isURLValid = false;
         if (file.exists() && file.isFile()){
-            if (FileIO.getFileExtension(url).equals("playlist")) {
+            if (FileIO.isPlaylistFile(url)) {
                 try {
                     name = file.getAbsolutePath();
                     FileInputStream outputStream = new FileInputStream(file);
@@ -73,7 +78,7 @@ public class AudioKeyPlaylist {
     public void addAudioKeyPlaylistListener(AudioKeyPlaylistListener listener){
         if (listener != null) {
             eventListeners.add(listener);
-            listener.onNewPlaylist();
+            listener.onEvent(this, new AudioKeyPlaylistEvent(null, 0, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.ON_SUBSCRIBE));
         }
     }
 
@@ -88,7 +93,7 @@ public class AudioKeyPlaylist {
     public void clearPlaylist(){
         audioKeys.clear();
         if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
-        for (AudioKeyPlaylistListener listener : eventListeners) listener.onClear();
+        eventQueue.add(new AudioKeyPlaylistEvent(null, 0, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.CLEAR));
     }
 
     public boolean isEmpty(){
@@ -116,22 +121,38 @@ public class AudioKeyPlaylist {
         return selected;
     }
 
-    void shuffle(){
+    public void shuffle(){
         AudioKey[] shuffledArray = new AudioKey[audioKeys.size()];
         Random random = new Random();
         for (int i = 0; i < shuffledArray.length; i++)
             shuffledArray[i] = audioKeys.remove(random.nextInt(audioKeys.size()));
         audioKeys.addAll(Arrays.asList(shuffledArray));
-        for (AudioKeyPlaylistListener listener : eventListeners) listener.onShuffle();
+        eventQueue.add(new AudioKeyPlaylistEvent(null, 0, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.SHUFFLE));
     }
 
-    void sort(){
+    public void sort(){
         audioKeys.sort(Comparator.comparing(AudioKey::getName));
-        for (AudioKeyPlaylistListener listener : eventListeners) listener.onSort();
+        eventQueue.add(new AudioKeyPlaylistEvent(null, 0, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.SORT));
     }
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public boolean isURLValid() {
+        return isURLValid;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public void printPlaylist(){
@@ -143,16 +164,14 @@ public class AudioKeyPlaylist {
     public void addAudioKey(AudioKey audioKey){
         audioKeys.add(audioKey);
         if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
-        AudioKeyPlaylistEvent event = new AudioKeyPlaylistEvent(audioKey, audioKeys.size()-1);
-        for (AudioKeyPlaylistListener listener : eventListeners) listener.onAddition(event);
+        eventQueue.add(new AudioKeyPlaylistEvent(audioKey, audioKeys.size()-1, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.ADD));
     }
 
     public AudioKey removeAudioKey(AudioKey key){
         int pos = audioKeys.indexOf(key);
         if (audioKeys.remove(key)){
             if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
-            AudioKeyPlaylistEvent event = new AudioKeyPlaylistEvent(key, pos);
-            for (AudioKeyPlaylistListener listener : eventListeners) listener.onRemoval(event);
+            eventQueue.add(new AudioKeyPlaylistEvent(key, pos, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.REMOVE));
             return key;
         }
         return null;
@@ -161,10 +180,9 @@ public class AudioKeyPlaylist {
     public AudioKey removeAudioKey(int pos){
         if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
         if (pos >= 0 && pos < audioKeys.size()) {
-            AudioKey audioKey = audioKeys.remove(pos);
-            AudioKeyPlaylistEvent event = new AudioKeyPlaylistEvent(audioKey, pos);
-            for (AudioKeyPlaylistListener listener : eventListeners) listener.onRemoval(event);
-            return audioKey;
+            AudioKey key = audioKeys.remove(pos);
+            eventQueue.add(new AudioKeyPlaylistEvent(key, pos, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.REMOVE));
+            return key;
         }
         return null;
     }
@@ -173,8 +191,7 @@ public class AudioKeyPlaylist {
         for (int i = 0; i < audioKeys.size(); i++)
             if (audioKeys.get(i).getName().equals(name)) {
                 if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
-                AudioKeyPlaylistEvent event = new AudioKeyPlaylistEvent(audioKeys.get(i), i);
-                for (AudioKeyPlaylistListener listener : eventListeners) listener.onRemoval(event);
+                eventQueue.add(new AudioKeyPlaylistEvent(audioKeys.get(i), i, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.REMOVE));
                 return audioKeys.remove(i);
             }
         return null;
@@ -202,8 +219,7 @@ public class AudioKeyPlaylist {
             audioKeys.get(pos).setName(newData.getName());
         if (newData.getUrl() != null)
             audioKeys.get(pos).setUrl(newData.getUrl());
-        AudioKeyPlaylistEvent event = new AudioKeyPlaylistEvent(audioKeys.get(pos), pos);
-        for (AudioKeyPlaylistListener listener : eventListeners) listener.onModification(event);
+        eventQueue.add(new AudioKeyPlaylistEvent(audioKeys.get(pos), pos, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.MODIFY));
     }
 
     public void saveToFile(File file){
@@ -220,13 +236,23 @@ public class AudioKeyPlaylist {
         }
     }
 
-    public boolean isURLValid() {
-        return isURLValid;
+    public void flushEventQueue(){
+        int eventsDequeued = 0;
+        // Flush out all events in the queue
+        while (eventQueue.peek() != null) {
+            AudioKeyPlaylistEvent event = eventQueue.poll();
+            eventsDequeued++;
+            for (AudioKeyPlaylistListener listener : eventListeners)
+                listener.onEvent(this, event);
+        }
+        // If any events were processed, send the EVENT_QUEUE_END event
+        if (eventsDequeued > 0) {
+            AudioKeyPlaylistEvent queueEndEvent = new AudioKeyPlaylistEvent(null, 0, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.EVENT_QUEUE_END);
+            for (AudioKeyPlaylistListener listener : eventListeners)
+                listener.onEvent(this, queueEndEvent);
+        }
     }
 
-    public String getUrl() {
-        return url;
-    }
 
     @Override public String toString() {
         return String.format("\"%1$s\" @ %2$s", name, url);

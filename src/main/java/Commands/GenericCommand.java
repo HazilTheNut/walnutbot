@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 
 public class GenericCommand extends Command {
 
@@ -23,11 +22,12 @@ public class GenericCommand extends Command {
         return desc;
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        commandAction.doAction(audioMaster, feedbackHandler);
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        commandAction.doAction(environment, feedbackHandler);
     }
 
     interface CommandAction {
-        void doAction(AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler);
+        void doAction(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler);
     }
 }

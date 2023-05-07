@@ -1,9 +1,9 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 import Utils.FileIO;
-import Utils.Transcriber;
+
+import java.io.File;
 
 public class JukeboxDefaultNewCommand extends Command {
 
@@ -23,12 +23,13 @@ public class JukeboxDefaultNewCommand extends Command {
         return getHelpDescription().concat("\n\npath - The file path to where the list should be saved");
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        if (sanitizeLocalAccess("dummy", feedbackHandler, permissions)){
-            if (argsInsufficient(args, 1, feedbackHandler))
-                return;
-            audioMaster.createNewJukeboxDefaultList(FileIO.expandURIMacros(args[0]));
-        } else
-            Transcriber.printAndPost(feedbackHandler, "**ERROR:** You do not have permission to run this command.");
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        if (argsInsufficient(args, 1, feedbackHandler))
+            return;
+        if (sanitizeLocalAccess("dummy", feedbackHandler, permissions)) {
+            File file = new File(FileIO.appendPlaylistFileExtension(FileIO.expandURIMacros(args[0])));
+            environment.getAudioStateMachine().loadJukeboxDefaultList(file.getAbsolutePath());
+        }
     }
 }

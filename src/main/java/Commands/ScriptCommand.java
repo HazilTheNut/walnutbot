@@ -1,7 +1,7 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Audio.IAudioStateMachine;
+import Main.WalnutbotEnvironment;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -35,7 +35,7 @@ public class ScriptCommand extends Command {
             + "\n\nfile - The path to the text file");
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         String expandedURI = FileIO.expandURIMacros(args[0]);
@@ -50,7 +50,7 @@ public class ScriptCommand extends Command {
                             String command = sc.nextLine();
                             if (command.length() > 0) {
                                 if (command.charAt(0) == '@')
-                                    delay(command, audioMaster);
+                                    delay(command, environment.getAudioStateMachine());
                                 else if (command.charAt(0) != '#')
                                     commandInterpreter
                                         .evaluateCommand(command, scriptFeedbackHandler, permissions);
@@ -66,20 +66,20 @@ public class ScriptCommand extends Command {
         }
     }
 
-    private void delay(String delayString, AudioMaster audioMaster) {
+    private void delay(String delayString, IAudioStateMachine audioStateMachine) {
         if (delayString.equals("@sb")){
                 try {
                     do {
                         Thread.sleep(100);
-                    } while (audioMaster.isSoundboardActive());
+                    } while (isSoundboardPlaying(audioStateMachine));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
             }
-        } else if (delayString.equals("@jb")){
+        } else if (delayString.equals("@jb") || delayString.equals("@load")){
             try {
                 do {
                     Thread.sleep(100);
-                } while (audioMaster.isProcessingJukeboxRequests());
+                } while (audioStateMachine.areLoadRequestsProcessing());
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -106,6 +106,18 @@ public class ScriptCommand extends Command {
             } catch (InterruptedException e){
                 e.printStackTrace();
             }
+        }
+    }
+
+    private boolean isSoundboardPlaying(IAudioStateMachine audioStateMachine) {
+        switch (audioStateMachine.getCurrentStatus()) {
+            case SOUNDBOARD_PLAYING:
+            case SOUNDBOARD_PLAYING_JUKEBOX_SUSPENDED:
+            case SOUNDBOARD_PLAYING_JUKEBOX_PAUSED:
+            case SOUNDBOARD_PLAYING_JUKEBOX_READY:
+                return true;
+            default:
+                return false;
         }
     }
 

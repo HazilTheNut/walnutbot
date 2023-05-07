@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
 
 import java.util.Comparator;
@@ -10,12 +9,6 @@ import java.util.List;
 import java.util.ListIterator;
 
 public class HelpCommand extends Command {
-
-    CommandInterpreter commandInterpreter;
-
-    public HelpCommand(CommandInterpreter commandInterpreter) {
-        this.commandInterpreter = commandInterpreter;
-    }
 
     @Override public String getCommandKeyword() {
         return "help";
@@ -34,18 +27,19 @@ public class HelpCommand extends Command {
             SettingsLoader.getBotConfigValue("command_char"));
     }
 
-    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         //Build message
         String message;
-        Command cmd = getSubCommandFromArgs(args);
+        Command cmd = getSubCommandFromArgs(environment.getCommandInterpreter(), args);
         if (cmd != null) { //Getting help on a specific command
             message = String.format("```   %3$s%1$s\n---------------------------\n%2$s```",
-                cmd.getHelpCommandUsage(),
-                cmd.getSpecificHelpDescription(),
-                SettingsLoader.getBotConfigValue("command_char"));
+                    cmd.getHelpCommandUsage(),
+                    cmd.getSpecificHelpDescription(),
+                    SettingsLoader.getBotConfigValue("command_char"));
         } else { //The general help info (or if asking specific help on a command that doesn't exist
             StringBuilder builder = new StringBuilder("**Available Commands:**\n```\n");
-            List<Command> commandList = getAvailableCommands(permissions);
+            List<Command> commandList = getAvailableCommands(environment.getCommandInterpreter(), permissions);
             commandList.sort(Comparator.comparing(Command::getCommandTreeStr));
             builder.append(generateGeneralHelpList(args, commandList, feedbackHandler.getListPageSize(CommandFeedbackHandler.CommandType.HELP)));
             builder.append("```");
@@ -61,7 +55,7 @@ public class HelpCommand extends Command {
         return builder.toString();
     }
 
-    private Command getSubCommandFromArgs(String[] args){
+    private Command getSubCommandFromArgs(CommandInterpreter commandInterpreter, String[] args){
         if (args.length <= 0)
             return null;
         StringBuilder fullCommand = new StringBuilder();
@@ -72,7 +66,7 @@ public class HelpCommand extends Command {
         return null;
     }
 
-    private List<Command> getAvailableCommands(byte permission){
+    private List<Command> getAvailableCommands(CommandInterpreter commandInterpreter, byte permission){
         LinkedList<Command> availableCommands = new LinkedList<>();
         for (Command command : commandInterpreter.getExpandedCommandList()){
             if (command.isPermissionSufficient(permission)) availableCommands.add(command);
@@ -91,7 +85,7 @@ public class HelpCommand extends Command {
         int page = 1;
         if (args.length >= 1) {
             try {
-                page = Math.max(1, Integer.valueOf(args[0]));
+                page = Math.max(1, Integer.parseInt(args[0]));
             } catch (NumberFormatException ignored) { }
         }
         StringBuilder list = new StringBuilder();

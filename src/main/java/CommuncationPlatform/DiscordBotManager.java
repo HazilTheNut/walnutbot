@@ -1,6 +1,8 @@
-package Utils;
+package CommuncationPlatform;
 
-import Audio.AudioMaster;
+import Audio.IAudioStateMachine;
+import Audio.IAudioStateMachineListener;
+import Utils.SettingsLoader;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener;
 import net.dv8tion.jda.api.JDA;
@@ -12,17 +14,20 @@ import net.dv8tion.jda.api.managers.AudioManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DiscordBotManager implements AudioEventListener, IBotManager {
+public class DiscordBotManager implements AudioEventListener, ICommunicationPlatformManager, IAudioStateMachineListener {
 
     private final boolean useDefaultStatus;
     private final boolean showCurrentPlayingSong;
 
-    private JDA jda;
-    private AudioMaster audioMaster;
+    private final JDA jda;
+    private final IAudioStateMachine audioStateMachine;
+    private final IDiscordPlaybackSystemBridge playbackSystemBridge;
 
-    public DiscordBotManager(JDA jda, AudioMaster audioMaster){
+    public DiscordBotManager(JDA jda, IAudioStateMachine audioStateMachine, IDiscordPlaybackSystemBridge playbackSystemBridge){
         this.jda = jda;
-        this.audioMaster = audioMaster;
+        this.audioStateMachine = audioStateMachine;
+        audioStateMachine.addAudioStateMachineListener(this);
+        this.playbackSystemBridge = playbackSystemBridge;
         useDefaultStatus         = Boolean.parseBoolean(SettingsLoader.getBotConfigValue("status_use_default"));
         showCurrentPlayingSong   = Boolean.parseBoolean(SettingsLoader.getBotConfigValue("status_show_current_song"));
     }
@@ -33,10 +38,8 @@ public class DiscordBotManager implements AudioEventListener, IBotManager {
     }
 
     private void updateStatus(boolean useDefault){
-        if (showCurrentPlayingSong && audioMaster.getCurrentlyPlayingSong() != null){ // Status based on currently-playing song (currentlyPlayingSong is null when no song is playing)
-            String message = String.format("%s - %s",
-                audioMaster.getCurrentlyPlayingSong().getLoadedTrack().getInfo().title,
-                audioMaster.getCurrentlyPlayingSong().getLoadedTrack().getInfo().author);
+        if (showCurrentPlayingSong && audioStateMachine.getJukeboxCurrentlyPlayingSong() != null){ // Status based on currently-playing song (currentlyPlayingSong is null when no song is playing)
+            String message = audioStateMachine.getJukeboxCurrentlyPlayingSong().getName();
             jda.getPresence().setActivity(Activity.playing(message));
         } else if (useDefault){ // Status based on default configuration
             jda.getPresence().setActivity(Activity
@@ -80,8 +83,7 @@ public class DiscordBotManager implements AudioEventListener, IBotManager {
             List<VoiceChannel> voiceChannels = guild.getVoiceChannelsByName(channelName, true);
             if (voiceChannels.size() == 0)
                 continue;
-            guild.getAudioManager().openAudioConnection(voiceChannels.get(0));
-            audioMaster.setConnectedChannel(voiceChannels.get(0));
+            playbackSystemBridge.setConnectedVoiceChannel(voiceChannels.get(0));
             return true;
         }
         return false;
@@ -90,8 +92,8 @@ public class DiscordBotManager implements AudioEventListener, IBotManager {
     @Override public void disconnectFromVoiceChannel() {
         for (AudioManager audioManager : jda.getAudioManagers()){
             audioManager.closeAudioConnection();
-            audioMaster.setConnectedChannel(null);
-            audioMaster.stopAllAudio();
+            audioStateMachine.stopSoundboard();
+            audioStateMachine.pauseJukebox();
         }
     }
 
@@ -103,11 +105,29 @@ public class DiscordBotManager implements AudioEventListener, IBotManager {
         return list;
     }
 
+    @Override
+    public String connectedVoiceChannelToString() {
+        if (playbackSystemBridge.getConnectedVoiceChannel() != null) {
+            return formatVoiceChannel(playbackSystemBridge.getConnectedVoiceChannel());
+        }
+        return "disconnected";
+    }
+
     private String formatVoiceChannel(VoiceChannel voiceChannel){
         return String.format("%1$s : %2$s", voiceChannel.getGuild().getName(), voiceChannel.getName());
     }
 
     @Override public String getBotName() {
         return jda.getSelfUser().getAsTag();
+    }
+
+    @Override
+    public void onAudioStateMachineUpdateStatus(IAudioStateMachine.AudioStateMachineStatus status) {
+        updateStatus();
+    }
+
+    @Override
+    public void onJukeboxDefaultListLoadStateUpdate(IAudioStateMachine.JukeboxDefaultListLoadState loadState) {
+
     }
 }

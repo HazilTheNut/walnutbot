@@ -2,7 +2,8 @@ package Commands;
 
 import Audio.AudioKey;
 import Audio.AudioMaster;
-import Utils.IBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
 
 public class SoundboardCommand extends Command {
@@ -13,7 +14,7 @@ public class SoundboardCommand extends Command {
         addSubCommand(new SoundboardModifyCommand());
         addSubCommand(new SoundboardRemoveCommand());
         addSubCommand(new SoundboardSortCommand());
-        addSubCommand(new GenericCommand("stop", "Forcibly stops the Soundboard player", ((audioMaster, feedbackHandler) -> audioMaster.resumeJukebox())));
+        addSubCommand(new GenericCommand("stop", "Forcibly stops the Soundboard player", ((environment, feedbackHandler) -> environment.getAudioStateMachine().stopSoundboard())));
         addSubCommand(new InstantPlayCommand());
     }
 
@@ -33,14 +34,17 @@ public class SoundboardCommand extends Command {
         return "Plays a sound from the soundboard.\nDo \"" + SettingsLoader.getBotConfigValue("command_char") + "sb list\" for a list of the available sounds.\n\nsound name - The name of the sound from the soundboard.";
     }
 
-    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        //Input sanitation
-        if (args[0] == null) return;
-        for (AudioKey audioKey : audioMaster.getSoundboardList().getAudioKeys()){
-            if (audioKey.getName().equals(args[0])){
-                audioMaster.playSoundboardSound(audioKey.getUrl());
-                return;
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        if (argsInsufficient(args, 1, feedbackHandler))
+            return;
+        environment.getAudioStateMachine().getSoundboardList().accessAudioKeyPlaylist(playlist -> {
+            for (AudioKey audioKey : playlist.getAudioKeys()){
+                if (audioKey.getName().equals(args[0])){
+                    environment.getAudioStateMachine().playSoundboardSound(audioKey);
+                    return;
+                }
             }
-        }
+        });
     }
 }

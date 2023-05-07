@@ -1,7 +1,7 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Audio.AudioKey;
+import Main.WalnutbotEnvironment;
 import Utils.Transcriber;
 
 public class JukeboxPostponeCommand extends Command {
@@ -22,17 +22,23 @@ public class JukeboxPostponeCommand extends Command {
         return getHelpDescription().concat("\n\npos - The position in the Jukebox Queue, the song at which you intend to postpone");
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         int pos = -1;
         try {
-            pos = Integer.valueOf(args[0]);
+            pos = Integer.parseInt(args[0]);
         } catch (NumberFormatException e){
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** `%1$s` is not an integer value.", args[0]);
         }
-        if (pos >= 0 && pos < audioMaster.getJukeboxQueueList().getAudioKeys().size()){
-            audioMaster.queueJukeboxSong(audioMaster.getJukeboxQueueList().removeAudioKey(pos), () -> Transcriber.printAndPost(feedbackHandler, "Song postponed!"), () -> {});
+        // Acquire song
+        AudioKey[] key = new AudioKey[1];
+        int finalPos = pos;
+        environment.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> key[0] = playlist.removeAudioKey(finalPos));
+        // Requeue it
+        if (key[0] != null) {
+            environment.getAudioStateMachine().enqueueJukeboxSong(key[0]);
         }
     }
 }

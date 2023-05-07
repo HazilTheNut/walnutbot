@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 import Utils.Transcriber;
 
 public class ConnectCommand extends Command {
@@ -26,13 +25,14 @@ public class ConnectCommand extends Command {
             + "\n\nchannel - The name of the channel to connect to. For channel names with spaces in them, wrap the channel name with quotation marks ('\"').";
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (args.length < 2){
             Transcriber.printAndPost(feedbackHandler, "**ERROR:** Too few arguments. Usage: `%s`", getHelpCommandUsage());
         } else {
             String server   = args[0];
             String channel  = args[1];
-            if (botManager.connectToVoiceChannel(server, channel))
+            if (environment.getCommunicationPlatformManager().connectToVoiceChannel(server, channel))
                 Transcriber.printAndPost(feedbackHandler, "Connected to channel `%1$s` on server `%2$s`", channel, server);
             else
                 Transcriber.printAndPost(feedbackHandler, "**ERROR:** Channel `%1$s` does not exist on server `%2$s`", channel, server);

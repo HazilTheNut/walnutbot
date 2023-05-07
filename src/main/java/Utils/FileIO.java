@@ -11,6 +11,8 @@ import java.util.List;
 
 public class FileIO {
 
+    private static final String[] playlistFileExtensions = { ".playlist", ".wbp" };
+
     public static String getRootFilePath() {
         String path = FileIO.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         String decoded = path;
@@ -33,7 +35,7 @@ public class FileIO {
     public static String getFileExtension(String uri) {
         int lastIndex = uri.lastIndexOf('.');
         if (lastIndex > 0 && lastIndex < uri.length() - 1)
-            return uri.substring(lastIndex+1);
+            return uri.substring(lastIndex);
         else
             return uri;
     }
@@ -53,7 +55,7 @@ public class FileIO {
     public static File[] getFilesInDirectory(String uri) {
         File folder = new File(uri);
         if (folder.isDirectory()){
-            FileFilter filter = new SuffixFileFilter(".playlist");
+            FileFilter filter = new SuffixFileFilter(playlistFileExtensions);
             return folder.listFiles(filter);
         }
         return new File[0];
@@ -69,5 +71,20 @@ public class FileIO {
     public static boolean isWebsiteURL(String uri) {
         // Regex retrieved from https://urlregex.com/
         return uri.matches("^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]");
+    }
+
+    public static boolean isPlaylistFile(String uri) {
+        if (isWebsiteURL(uri))
+            return false;
+        for (String ext : playlistFileExtensions)
+            if (getFileExtension(uri).equals(ext))
+                return true;
+        return false;
+    }
+
+    public static String appendPlaylistFileExtension(String uri) {
+        if (getFileExtension(uri).equals(".wbp"))
+            return uri;
+        return uri.concat(".wbp");
     }
 }

@@ -2,6 +2,6 @@ package Audio;
 
 public interface ITrackLoadResultHandler {
 
-    void onTracksLoaded(AudioKeyPlaylist loadResult, boolean successful);
+    void onTracksLoaded(AudioKeyPlaylistTSWrapper loadResult, boolean successful);
 
 }

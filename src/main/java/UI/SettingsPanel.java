@@ -4,7 +4,7 @@ import Audio.AudioMaster;
 import Audio.VolumeChangeListener;
 import Commands.Command;
 import Commands.CommandInterpreter;
-import Utils.IBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 
@@ -22,7 +22,7 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
 
     private JLabel volumeInfoLabel;
 
-    public SettingsPanel(IBotManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful) {
+    public SettingsPanel(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful) {
 
         BoxLayout layout = new BoxLayout(this, BoxLayout.PAGE_AXIS);
         setLayout(layout);

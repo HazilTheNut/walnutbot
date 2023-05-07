@@ -1,7 +1,7 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Audio.AudioKey;
+import Main.WalnutbotEnvironment;
 import Utils.FileIO;
 
 public class InstantPlayCommand extends Command {
@@ -22,11 +22,12 @@ public class InstantPlayCommand extends Command {
         return "Plays a sound loaded from the input url.\nSupports Youtube, Soundcloud, Bandcamp, http urls.\n\nurl - The website URL / file path to the desired song.";
     }
 
-    @Override public void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (args.length > 0) {
             String expandedURI = FileIO.expandURIMacros(args[0]);
             if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions))
-                audioMaster.playSoundboardSound(expandedURI);
+                environment.getAudioStateMachine().playSoundboardSound(new AudioKey("instant play request", expandedURI));
         }
     }
 }

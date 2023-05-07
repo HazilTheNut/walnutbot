@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 import Utils.Transcriber;
 
 public class JukeboxDequeCommand extends Command {
@@ -22,18 +21,22 @@ public class JukeboxDequeCommand extends Command {
         return getHelpDescription().concat("\n\npos - The position in the Jukebox Queue, the song at which you intend to remove");
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         int pos = -1;
         try {
-            pos = Integer.valueOf(args[0]);
+            pos = Integer.parseInt(args[0]);
         } catch (NumberFormatException e){
             Transcriber
-                .printAndPost(feedbackHandler, "**WARNING:** `%1$s` is not an integer value!", args[0]);
+                    .printAndPost(feedbackHandler, "**WARNING:** `%1$s` is not an integer value!", args[0]);
         }
-        if (pos >= 0 && pos < audioMaster.getJukeboxQueueList().getAudioKeys().size()){
-            Transcriber.printAndPost(feedbackHandler, "Song `%1$s` removed from the queue.", audioMaster.getJukeboxQueueList().removeAudioKey(pos));
-        }
+        int finalPos = pos;
+        environment.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> {
+            if (finalPos >= 0 && finalPos < playlist.getAudioKeys().size()){
+                Transcriber.printAndPost(feedbackHandler, "Song `%1$s` removed from the queue.", playlist.removeAudioKey(finalPos));
+            }
+        });
     }
 }

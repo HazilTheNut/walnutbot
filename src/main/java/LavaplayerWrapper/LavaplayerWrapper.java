@@ -12,6 +12,9 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class LavaplayerWrapper implements IPlaybackWrapper {
 
@@ -19,7 +22,9 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
     private final ILavaplayerBotBridge lavaplayerBotBridge;
     private final AudioPlayer soundboardPlayer;
     private final AudioPlayer jukeboxPlayer;
-    private IAudioStateMachine audioStateMachine;
+    private boolean isConnectedToVoiceChannel;
+
+    private AtomicInteger loadRequestsProcessing;
 
     private static final int MAX_VOLUME = 150;
 
@@ -27,8 +32,9 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
     private int jukeboxVolumePercent;
     private int soundboardVolumePercent;
 
-    public LavaplayerWrapper(ILavaplayerBotBridge lavaplayerBotBridge, IAudioStateMachine audioStateMachine){
+    public LavaplayerWrapper(ILavaplayerBotBridge lavaplayerBotBridge){
         this.lavaplayerBotBridge = lavaplayerBotBridge;
+        lavaplayerBotBridge.assignLavaplayerWrapper(this);
 
         audioPlayerManager = new DefaultAudioPlayerManager();
         AudioSourceManagers.registerLocalSource(audioPlayerManager);
@@ -37,13 +43,21 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
         soundboardPlayer = audioPlayerManager.createPlayer();
         jukeboxPlayer = audioPlayerManager.createPlayer();
 
-        jukeboxPlayer.addListener(new LavaplayerJukeboxTrackScheduler(audioStateMachine));
-        soundboardPlayer.addListener(new LavaplayerSoundboardTrackScheduler(audioStateMachine));
+        isConnectedToVoiceChannel = false;
+
+        loadRequestsProcessing = new AtomicInteger(0);
+    }
+
+    @Override
+    public void assignAudioStateMachine(IAudioStateMachine stateMachine) {
+        jukeboxPlayer.addListener(new LavaplayerJukeboxTrackScheduler(stateMachine));
+        soundboardPlayer.addListener(new LavaplayerSoundboardTrackScheduler(stateMachine));
     }
 
     /**
      * Given a URI (can be local file or web address), populates an AudioKeyPlaylist with the tracks found at that location.
      * The URI can point to an audio file (.mp3, .mp4, .wav, etc.), a Walnutbot .playlist file, or a web address such as <a href="https://www.bandcamp.com">...</a>
+     * This is a nonblocking operation and spins up its own thread.
      *
      * @param uri                     The URI to load the track from
      * @param output                  AudioKeyPlaylist to populate with load results
@@ -52,43 +66,64 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
      * @return true if the operation was successful, and false otherwise
      */
     @Override
-    public boolean loadTracks(String uri, AudioKeyPlaylist output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects) {
+    public boolean loadTracks(String uri, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects) {
         // Check to see if it is a .playlist file
-        if (!FileIO.isWebsiteURL(uri) && FileIO.getFileExtension(uri).equals("playlist")) {
+        loadRequestsProcessing.incrementAndGet();
+        if (FileIO.isPlaylistFile(uri)) {
             AudioKeyPlaylist fromFile = new AudioKeyPlaylist(new File(uri));
-            for (AudioKey key : fromFile.getAudioKeys()){
-                output.addAudioKey(key);
+            if (fromFile.isURLValid()){
+                // Put this on its own thread to retain this method being nonblocking
+                Thread playlistFileImportThread = new Thread(() -> {
+                    if (storeLoadedTrackObjects) {
+                        // AudioKeys from playlist file do not have tracks loaded on them.
+                        loadTracksPlaylistFile(fromFile, output, trackLoadResultHandler);
+                    } else {
+                        // Don't need to load the tracks, just add them in
+                        output.accessAudioKeyPlaylist(playlist -> {
+                            for (AudioKey key : fromFile.getAudioKeys()) {
+                                playlist.addAudioKey(key);
+                            }
+                        });
+                    }
+                    trackLoadResultHandler.onTracksLoaded(output, true);
+                    loadRequestsProcessing.decrementAndGet();
+                });
+                playlistFileImportThread.start();
             }
-            trackLoadResultHandler.onTracksLoaded(output, true);
-            return true;
+            return fromFile.isURLValid();
         }
-        final boolean[] successful = {true};
         // Otherwise use lavaplayer to load tracks
-        audioPlayerManager.loadItem(uri, new AudioLoadResultHandler() {
-            @Override
-            public void trackLoaded(AudioTrack track) {
-                AudioKey key = new AudioKey(String.format("%s - %s", track.getInfo().author, track.getInfo().title), track.getIdentifier());
-                if (storeLoadedTrackObjects)
-                    key.setAbstractedLoadedTrack(track);
-                output.addAudioKey(key);
-            }
-            @Override
-            public void playlistLoaded(AudioPlaylist playlist) {
-                for (AudioTrack track : playlist.getTracks()) {
-                    trackLoaded(track);
+        audioPlayerManager.loadItem(uri, new LavaplayerTrackLoadResultHandler(output, trackLoadResultHandler, loadRequestsProcessing, storeLoadedTrackObjects));
+        return true;
+    }
+
+    private void loadTracksPlaylistFile(AudioKeyPlaylist fromFile, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler) {
+        loadTracksPlaylistFile(fromFile, output, trackLoadResultHandler, new TrackLoadCounter(), new LinkedList<>());
+    }
+
+    /**
+     * Helper function for loading AudioKeys with loaded tracks from playlist files and recursively evaluating Walnutbot playlists.
+     *
+     * @param fromFile AudioKeyPlaylist loaded from a playlist file
+     * @param output AudioKeyPlaylistTSWrapper to add AudioKeys with loaded tracks to
+     * @param trackLoadResultHandler  Handles what occurs after the AudioKeyPlaylist is populated
+     * @param counter Counter used to keep the track loading ordered
+     * @param openedPlaylistFileURIs List of previously-opened file URIs to prevent recursive loops
+     */
+    private void loadTracksPlaylistFile(AudioKeyPlaylist fromFile, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, TrackLoadCounter counter, List<String> openedPlaylistFileURIs) {
+        for (AudioKey keyFromFile : fromFile.getAudioKeys()) {
+            String filepath = keyFromFile.getUrl();
+            if (FileIO.isPlaylistFile(filepath)){
+                AudioKeyPlaylist nestedPlaylistFromFile = new AudioKeyPlaylist(filepath);
+                if (nestedPlaylistFromFile.isURLValid() && !openedPlaylistFileURIs.contains(filepath)) {
+                    openedPlaylistFileURIs.add(filepath);
+                    loadTracksPlaylistFile(nestedPlaylistFromFile, output, trackLoadResultHandler,counter, openedPlaylistFileURIs);
                 }
+            } else {
+                counter.increment();
+                audioPlayerManager.loadItemOrdered(counter.getCount(), keyFromFile.getUrl(), new LavaplayerTrackLoadResultHandler(output, trackLoadResultHandler, loadRequestsProcessing,true));
             }
-            @Override
-            public void noMatches() {
-                successful[0] = false;
-            }
-            @Override
-            public void loadFailed(FriendlyException exception) {
-                successful[0] = false;
-            }
-        });
-        trackLoadResultHandler.onTracksLoaded(output, successful[0]);
-        return successful[0];
+        }
     }
 
     /**
@@ -139,6 +174,8 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
         if (!(loadedTrackObject instanceof AudioTrack))
             return false;
         AudioTrack track = (AudioTrack) loadedTrackObject;
+        if (isDisconnectedFromVoiceChannel())
+            return false;
         switch (playbackStreamType) {
             case JUKEBOX:
                 jukeboxPlayer.playTrack(track);
@@ -146,6 +183,8 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
             case SOUNDBOARD:
                 soundboardPlayer.playTrack(track);
                 break;
+            default:
+                return false;
         }
         return true;
     }
@@ -158,6 +197,8 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
      */
     @Override
     public boolean endPlayback(PlaybackStreamType playbackStreamType) {
+        if (isDisconnectedFromVoiceChannel())
+            return false;
         switch (playbackStreamType) {
             case JUKEBOX:
                 jukeboxPlayer.stopTrack();
@@ -179,6 +220,8 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
      */
     @Override
     public boolean pausePlayback(PlaybackStreamType playbackStreamType) {
+        if (isDisconnectedFromVoiceChannel())
+            return false;
         switch (playbackStreamType) {
             case JUKEBOX:
                 jukeboxPlayer.setPaused(true);
@@ -200,6 +243,8 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
      */
     @Override
     public boolean resumePlayback(PlaybackStreamType playbackStreamType) {
+        if (isDisconnectedFromVoiceChannel())
+            return false;
         switch (playbackStreamType) {
             case JUKEBOX:
                 jukeboxPlayer.setPaused(false);
@@ -267,6 +312,103 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
                 return mainVolumePercent;
             default:
                 return 0;
+        }
+    }
+
+    @Override
+    public boolean isProcessingLoadRequests() {
+        return loadRequestsProcessing.get() <= 0;
+    }
+
+    private boolean isDisconnectedFromVoiceChannel() {
+        return !isConnectedToVoiceChannel;
+    }
+
+    protected void setConnectedToVoiceChannel(boolean connectedToVoiceChannel) {
+        isConnectedToVoiceChannel = connectedToVoiceChannel;
+    }
+
+    private static class LavaplayerTrackLoadResultHandler implements AudioLoadResultHandler {
+
+        private final AudioKeyPlaylistTSWrapper audioKeyPlaylistTSWrapper;
+        private final ITrackLoadResultHandler trackLoadResultHandler;
+        private final AtomicInteger loadRequestsProcessing;
+        boolean storeLoadedTrackObjects;
+
+        public LavaplayerTrackLoadResultHandler(AudioKeyPlaylistTSWrapper audioKeyPlaylistTSWrapper, ITrackLoadResultHandler trackLoadResultHandler, AtomicInteger loadRequestsProcessing, boolean storeLoadedTrackObjects) {
+            this.audioKeyPlaylistTSWrapper = audioKeyPlaylistTSWrapper;
+            this.trackLoadResultHandler = trackLoadResultHandler;
+            this.loadRequestsProcessing = loadRequestsProcessing;
+            this.storeLoadedTrackObjects = storeLoadedTrackObjects;
+        }
+
+        /**
+         * Called when the requested item is a track and it was successfully loaded.
+         *
+         * @param track The loaded track
+         */
+        @Override
+        public void trackLoaded(AudioTrack track) {
+            audioKeyPlaylistTSWrapper.accessAudioKeyPlaylist(playlist -> insertTrack(playlist, track));
+            trackLoadResultHandler.onTracksLoaded(audioKeyPlaylistTSWrapper, true);
+            loadRequestsProcessing.decrementAndGet();
+        }
+
+        /**
+         * Called when the requested item is a playlist and it was successfully loaded.
+         *
+         * @param playlist The loaded playlist
+         */
+        @Override
+        public void playlistLoaded(AudioPlaylist playlist) {
+            audioKeyPlaylistTSWrapper.accessAudioKeyPlaylist(playlist1 -> {
+                for (AudioTrack track : playlist.getTracks()){
+                    insertTrack(playlist1, track);
+                }
+            });
+            trackLoadResultHandler.onTracksLoaded(audioKeyPlaylistTSWrapper, true);
+            loadRequestsProcessing.decrementAndGet();
+        }
+
+        private void insertTrack(AudioKeyPlaylist playlist, AudioTrack track) {
+            AudioKey key;
+            if (storeLoadedTrackObjects)
+                key = new AudioKey(String.format("%s - %s", track.getInfo().author, track.getInfo().title), track.getIdentifier(), track);
+            else
+                key = new AudioKey(String.format("%s - %s", track.getInfo().author, track.getInfo().title), track.getIdentifier());
+            playlist.addAudioKey(key);
+        }
+
+        /**
+         * Called when there were no items found by the specified identifier.
+         */
+        @Override
+        public void noMatches() {
+            trackLoadResultHandler.onTracksLoaded(audioKeyPlaylistTSWrapper, false);
+            loadRequestsProcessing.decrementAndGet();
+        }
+
+        /**
+         * Called when loading an item failed with an exception.
+         *
+         * @param exception The exception that was thrown
+         */
+        @Override
+        public void loadFailed(FriendlyException exception) {
+            trackLoadResultHandler.onTracksLoaded(audioKeyPlaylistTSWrapper, false);
+            loadRequestsProcessing.decrementAndGet();
+        }
+    }
+
+    private static class TrackLoadCounter {
+        private int count = 0;
+
+        void increment() {
+            count++;
+        }
+
+        int getCount() {
+            return count;
         }
     }
 }

@@ -2,7 +2,7 @@ package UI;
 
 import Commands.Command;
 import Commands.CommandInterpreter;
-import Utils.BotInfo;
+import Main.WalnutbotInfo;
 import Utils.FileIO;
 import Utils.Transcriber;
 
@@ -48,7 +48,7 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
                 ButtonMaker.createIconButton("icons/open.png", "Open File...", 4);
             openFileButton.addActionListener(e -> {
                 JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
-                fileChooser.setFileFilter(new FileNameExtensionFilter(BotInfo.getFileChooserTitle(), BotInfo.ACCEPTED_AUDIO_FORMATS));
+                fileChooser.setFileFilter(new FileNameExtensionFilter(WalnutbotInfo.getFileChooserTitle(), WalnutbotInfo.ACCEPTED_AUDIO_FORMATS));
                 fileChooser.setMultiSelectionEnabled(true);
                 if (previousFilePath != null)
                     fileChooser.setSelectedFile(new File(previousFilePath));

@@ -1,7 +1,6 @@
 package Commands;
 
-import Audio.AudioMaster;
-import Utils.IBotManager;
+import Main.WalnutbotEnvironment;
 
 public class DisconnectCommand extends Command {
 
@@ -15,7 +14,8 @@ public class DisconnectCommand extends Command {
         return "Makes the bot disconnect from its connected voice channel";
     }
 
-    @Override void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        botManager.disconnectFromVoiceChannel();
+    @Override
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
+        environment.getCommunicationPlatformManager().disconnectFromVoiceChannel();
     }
 }

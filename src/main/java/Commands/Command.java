@@ -1,7 +1,9 @@
 package Commands;
 
 import Audio.AudioMaster;
-import Utils.IBotManager;
+import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
+import Utils.FileIO;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 
@@ -42,7 +44,11 @@ public class Command {
         return getHelpDescription();
     }
 
-    void onRunCommand(IBotManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
+    void onRunCommand(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
+        // Override this for command's behavior
+    }
+
+    void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
         // Override this for command's behavior
     }
 
@@ -84,7 +90,7 @@ public class Command {
     boolean isPermissionSufficient(byte permission){
         if ((permission & INTERNAL_MASK) != 0) return true;
         //if ((permission & BLOCKED_MASK) != 0) return false;
-        byte settingsPerms = Byte.valueOf(SettingsLoader.getSettingsValue(getPermissionName(), "3"));
+        byte settingsPerms = Byte.parseByte(SettingsLoader.getSettingsValue(getPermissionName(), "3"));
         return (permission & settingsPerms) != 0;
     }
 
@@ -99,8 +105,8 @@ public class Command {
     boolean sanitizeLocalAccess(String uri, CommandFeedbackHandler feedbackHandler, byte authorPermission){
         if ((authorPermission & INTERNAL_MASK) != 0) return true;
         boolean uriAllowed = ((authorPermission & Command.ADMIN_MASK) == Command.ADMIN_MASK);
-        uriAllowed |= Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false"));
-        uriAllowed |= uri.indexOf("http") == 0;
+        uriAllowed |= Boolean.parseBoolean(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false"));
+        uriAllowed |= !FileIO.isWebsiteURL(uri);
         if (!uriAllowed)
             Transcriber.printAndPost(feedbackHandler, "**WARNING:** This bot's admin has blocked access to local files.");
         return uriAllowed;
