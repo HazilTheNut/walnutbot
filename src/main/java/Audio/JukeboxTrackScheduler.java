@@ -33,7 +33,7 @@ public class JukeboxTrackScheduler extends AudioEventAdapter {
     public void onTrackStart(AudioPlayer player, AudioTrack track) {
         Transcriber.printTimestamped("Track \'%1$s\' starting (Path: %2$s)", track.getInfo().title, track.getInfo().uri);
         if (audioMaster.getSongDurationTracker() != null)
-            audioMaster.getSongDurationTracker().onSongStart(track);
+            audioMaster.getSongDurationTracker().onSongStart(track.getDuration(), track.getInfo().title);
         // A track started playing
     }
 

@@ -3,6 +3,7 @@ package UI;
 import Audio.AudioMaster;
 import Commands.CommandInterpreter;
 import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
 
 import javax.swing.*;
@@ -12,28 +13,28 @@ import java.awt.event.ComponentListener;
 
 public class UIFrame extends JFrame implements ComponentListener {
 
-    public UIFrame(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful){
+    public UIFrame(WalnutbotEnvironment environment, boolean botInitSuccessful){
 
         setTitle("Walnutbot Music & Soundboard Discord Bot");
 
-        int width = Integer.valueOf(SettingsLoader.getSettingsValue("windowWidth", "645"));
-        int height = Integer.valueOf(SettingsLoader.getSettingsValue("windowHeight", "545"));
+        int width = Integer.parseInt(SettingsLoader.getSettingsValue("windowWidth", "645"));
+        int height = Integer.parseInt(SettingsLoader.getSettingsValue("windowHeight", "545"));
 
         setSize(new Dimension(width, height));
 
         addComponentListener(this);
 
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Settings", new SettingsPanel(botManager, audioMaster, commandInterpreter, botInitSuccessful));
-        boolean keybindsPanelEnabled = Boolean.valueOf(SettingsLoader.getBotConfigValue("enable_global_keybinds")) ||
-                                     Boolean.valueOf(SettingsLoader.getBotConfigValue("enable_midi_input"));
+        tabbedPane.addTab("Settings", new SettingsPanel(environment, botInitSuccessful));
+        boolean keybindsPanelEnabled = Boolean.parseBoolean(SettingsLoader.getBotConfigValue("enable_global_keybinds")) ||
+                                     Boolean.parseBoolean(SettingsLoader.getBotConfigValue("enable_midi_input"));
         if (botInitSuccessful) {
-            tabbedPane.addTab("Soundboard", new SoundboardPanel(audioMaster, commandInterpreter));
-            tabbedPane.addTab("Jukebox", new JukeboxPanel(audioMaster, commandInterpreter, this));
+            tabbedPane.addTab("Soundboard", new SoundboardPanel(environment));
+            tabbedPane.addTab("Jukebox", new JukeboxPanel(environment, this));
             if (keybindsPanelEnabled)
-                tabbedPane.addTab("Keybinds", new KeybindsPanel(commandInterpreter));
+                tabbedPane.addTab("Keybinds", new KeybindsPanel(environment.getCommandInterpreter()));
         }
-        tabbedPane.addTab("Log", new ConsolePanel(commandInterpreter));
+        tabbedPane.addTab("Log", new ConsolePanel(environment.getCommandInterpreter()));
 
         getContentPane().add(tabbedPane);
 

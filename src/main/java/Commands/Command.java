@@ -44,10 +44,6 @@ public class Command {
         return getHelpDescription();
     }
 
-    void onRunCommand(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
-        // Override this for command's behavior
-    }
-
     void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args){
         // Override this for command's behavior
     }

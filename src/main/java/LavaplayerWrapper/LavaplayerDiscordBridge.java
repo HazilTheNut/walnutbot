@@ -19,7 +19,9 @@ public class LavaplayerDiscordBridge implements ILavaplayerBotBridge, IDiscordPl
     public boolean setActiveStream(AudioPlayer player) {
         if (connectedVoiceChannel == null)
             return false;
-        connectedVoiceChannel.getGuild().getAudioManager().setSendingHandler(new LavaplayerDiscordSendHandler(player));
+        if (activeStream != player)
+            connectedVoiceChannel.getGuild().getAudioManager().setSendingHandler(new LavaplayerDiscordSendHandler(player));
+        activeStream = player;
         lavaplayerWrapper.setConnectedToVoiceChannel(true);
         return true;
     }
@@ -27,9 +29,8 @@ public class LavaplayerDiscordBridge implements ILavaplayerBotBridge, IDiscordPl
     public void setConnectedVoiceChannel(VoiceChannel connectedVoiceChannel) {
         this.connectedVoiceChannel = connectedVoiceChannel;
         // Reestablish audio streaming with new voice channel
-        if (activeStream != null) {
+        if (activeStream != null)
             setActiveStream(activeStream);
-        }
     }
 
     @Override

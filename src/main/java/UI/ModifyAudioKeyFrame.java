@@ -1,9 +1,12 @@
 package UI;
 
 import Audio.AudioKey;
+import Audio.AudioKeyPlaylist;
+import Audio.AudioKeyPlaylistTSWrapper;
 import Audio.AudioMaster;
 import Commands.Command;
 import Commands.CommandInterpreter;
+import Main.WalnutbotEnvironment;
 import Main.WalnutbotInfo;
 import Utils.FileIO;
 import Utils.Transcriber;
@@ -27,8 +30,8 @@ public class ModifyAudioKeyFrame extends JFrame {
         SOUNDBOARD, JUKEBOX_DEFAULT, JUKEBOX_QUEUE
     }
 
-    ModifyAudioKeyFrame(AudioMaster audioMaster, AudioKey base, int pos, CommandInterpreter commandInterpreter,
-        ModificationType modificationType, TargetList targetList){
+    ModifyAudioKeyFrame(WalnutbotEnvironment environment, AudioKey base, int pos,
+                        ModificationType modificationType, TargetList targetList){
 
         Container c = getContentPane();
 
@@ -58,7 +61,13 @@ public class ModifyAudioKeyFrame extends JFrame {
 
         //Add Fetch Info Button
         JButton fetchInfoButton = ButtonMaker.createIconButton("icons/extract.png", "Fetch Song Name from URL", 5);
-        fetchInfoButton.addActionListener(e -> audioMaster.getPlayerManager().loadItem(urlField.getText(), new InfoFetchLoadResultHandler(nameField)));
+        fetchInfoButton.addActionListener(e -> {
+            AudioKeyPlaylistTSWrapper output = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("TEMP"));
+            environment.getAudioStateMachine().loadTracks(urlField.getText(), output, (playlist, successful) -> {
+                if (successful)
+                    output.accessAudioKeyPlaylist(playlist1 -> nameField.setText(playlist1.getKey(0).getName()));
+            }, false);
+        });
         namePanel.add(fetchInfoButton);
         namePanel.add(Box.createHorizontalStrut(FIELD_MARGIN));
 
@@ -89,7 +98,7 @@ public class ModifyAudioKeyFrame extends JFrame {
             addSoundButton.addActionListener(e -> {
                 AudioKey key = new AudioKey(nameField.getText(), urlField.getText());
                 if (key.isValid()) {
-                    commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.ADD, targetList, -1, base.getName()),
+                    environment.getCommandInterpreter().evaluateCommand(buildCommand(nameField, urlField, ModificationType.ADD, targetList, -1, base.getName()),
                         Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
                 }
                 dispose();
@@ -101,7 +110,7 @@ public class ModifyAudioKeyFrame extends JFrame {
         if (modificationType == ModificationType.MODIFY) {
                 JButton removeButton = new JButton("Remove");
                 removeButton.addActionListener(e -> {
-                    commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.REMOVE, targetList, pos, base.getName()),
+                    environment.getCommandInterpreter().evaluateCommand(buildCommand(nameField, urlField, ModificationType.REMOVE, targetList, pos, base.getName()),
                         Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
                     dispose();
                 });
@@ -110,7 +119,7 @@ public class ModifyAudioKeyFrame extends JFrame {
             //Apply (Changes) Button
             JButton applyButton = new JButton("Apply");
             applyButton.addActionListener(e -> {
-                commandInterpreter.evaluateCommand(buildCommand(nameField, urlField, ModificationType.MODIFY, targetList, pos, base.getName()),
+                environment.getCommandInterpreter().evaluateCommand(buildCommand(nameField, urlField, ModificationType.MODIFY, targetList, pos, base.getName()),
                     Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
                 dispose();
             });
@@ -164,52 +173,5 @@ public class ModifyAudioKeyFrame extends JFrame {
             default:
                 return "ERROR ";
         }
-    }
-
-    private class InfoFetchLoadResultHandler implements AudioLoadResultHandler {
-
-        JTextField nameRecipient;
-
-        private InfoFetchLoadResultHandler(JTextField nameRecipient) {
-            this.nameRecipient = nameRecipient;
-        }
-
-        /**
-         * Called when the requested item is a track and it was successfully loaded.
-         *
-         * @param track The loaded track
-         */
-        @Override public void trackLoaded(AudioTrack track) {
-            nameRecipient.setText(track.getInfo().title);
-        }
-
-        /**
-         * Called when the requested item is a playlist and it was successfully loaded.
-         *
-         * @param playlist The loaded playlist
-         */
-        @Override public void playlistLoaded(AudioPlaylist playlist) {
-
-        }
-
-        /**
-         * Called when there were no items found by the specified identifier.
-         */
-        @Override public void noMatches() {
-
-        }
-
-        /**
-         * Called when loading an item failed with an exception.
-         *
-         * @param exception The exception that was thrown
-         */
-        @Override public void loadFailed(FriendlyException exception) {
-
-        }
-    }
-
-    public interface SaveAfterChangesAction {
-        void save();
     }
 }

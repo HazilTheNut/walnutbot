@@ -47,7 +47,8 @@ public class LavaplayerJukeboxTrackScheduler extends AudioEventAdapter {
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         Transcriber.printTimestamped("Jukebox track '%s' (%s) ended", LavaplayerUtils.printAuthorAndTitle(track), track.getIdentifier());
         audioStateMachine.songDurationTrackersNotifySongEnd();
-        audioStateMachine.startNextJukeboxSong(false);
+        if (endReason.mayStartNext)
+            audioStateMachine.startNextJukeboxSong(false);
         // Adapter dummy method
     }
 

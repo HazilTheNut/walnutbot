@@ -4,6 +4,7 @@ import Audio.AudioKey;
 import Audio.AudioMaster;
 import Commands.Command;
 import Commands.CommandInterpreter;
+import Main.WalnutbotEnvironment;
 import Utils.Transcriber;
 
 import javax.swing.*;
@@ -15,15 +16,14 @@ public class SoundButtonPanel extends JPanel implements AudioKeyUIWrapper {
     private JButton playButton;
     private UUID uuid;
 
-    SoundButtonPanel(AudioKey audioKey, AudioMaster audioMaster,
-        CommandInterpreter commandInterpreter){
+    SoundButtonPanel(AudioKey audioKey, WalnutbotEnvironment environment){
         uuid = UUID.randomUUID();
         this.audioKey = audioKey;
         setLayout(new BorderLayout());
 
         playButton = new JButton(this.audioKey.getName());
         playButton.setMargin(new Insets(4, 8, 4, 8));
-        playButton.addActionListener(e -> commandInterpreter.evaluateCommand(
+        playButton.addActionListener(e -> environment.getCommandInterpreter().evaluateCommand(
             String.format("sb \"%1$s\"", audioKey.getName()),
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI),
             Command.INTERNAL_MASK
@@ -33,8 +33,8 @@ public class SoundButtonPanel extends JPanel implements AudioKeyUIWrapper {
         JButton menuButton = ButtonMaker.createIconButton("icons/menu.png", "Config", 2);
         menuButton.addActionListener(e -> {
             int listPos = findMyPosition();
-            new ModifyAudioKeyFrame(audioMaster, audioMaster.getSoundboardList().getKey(listPos), listPos,
-                commandInterpreter, ModifyAudioKeyFrame.ModificationType.MODIFY, ModifyAudioKeyFrame.TargetList.SOUNDBOARD);
+            environment.getAudioStateMachine().getSoundboardList().accessAudioKeyPlaylist(playlist -> new ModifyAudioKeyFrame(environment, playlist.getKey(listPos), listPos,
+                    ModifyAudioKeyFrame.ModificationType.MODIFY, ModifyAudioKeyFrame.TargetList.SOUNDBOARD));
         });
         add(menuButton, BorderLayout.LINE_END);
     }

@@ -197,7 +197,7 @@ public interface IAudioStateMachine {
      *
      * @param volumeChangeListener VolumeChangeListener to listen to this IAudioStateMachine
      */
-    void addVolumeChangeListener(VolumeChangeListener volumeChangeListener);
+    void addVolumeChangeListener(IVolumeChangeListener volumeChangeListener);
 
     // Looping current playing song
 

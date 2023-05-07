@@ -60,28 +60,26 @@ public class SongDurationTracker {
         timeLabel.repaint();
     }
 
-    private void updateTrackTitleLabel(AudioTrack track){
-        if (track == null) {
+    private void updateTrackTitleLabel(String trackName){
+        if (trackName == null) {
             trackTitleLabel.setText(noSongPlayingString);
             trackTitleLabel.repaint();
         } else {
-            trackTitleLabel.setText(String.format("%1$s - %2$s", track.getInfo().title, track.getInfo().author));
+            trackTitleLabel.setText(trackName);
             trackTitleLabel.repaint();
         }
     }
 
     /**
      * Run this whenever a song starts.
-     *
-     * @param startingTrack The AudioTrack of the song being played. This method simply grabs the song's length and stores it as a field.
      */
-    public void onSongStart(AudioTrack startingTrack){
-        songLength = startingTrack.getDuration() / 1000;
+    public void onSongStart(long durationMillis, String trackName){
+        songLength = durationMillis / 1000;
         startTimestampMs = System.currentTimeMillis();
         additionalRuntimeMs = 0;
         songsLoaded++;
         songsPlaying++;
-        updateTrackTitleLabel(startingTrack);
+        updateTrackTitleLabel(trackName);
     }
 
     /**

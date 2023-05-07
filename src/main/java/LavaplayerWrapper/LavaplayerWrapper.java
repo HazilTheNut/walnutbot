@@ -178,10 +178,10 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
             return false;
         switch (playbackStreamType) {
             case JUKEBOX:
-                jukeboxPlayer.playTrack(track);
+                jukeboxPlayer.startTrack(track, false);
                 break;
             case SOUNDBOARD:
-                soundboardPlayer.playTrack(track);
+                soundboardPlayer.startTrack(track, false);
                 break;
             default:
                 return false;

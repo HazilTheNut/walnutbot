@@ -80,11 +80,14 @@ public class DiscordBotManager implements AudioEventListener, ICommunicationPlat
 
     @Override public boolean connectToVoiceChannel(String serverName, String channelName) {
         for (Guild guild : jda.getGuilds()){
-            List<VoiceChannel> voiceChannels = guild.getVoiceChannelsByName(channelName, true);
-            if (voiceChannels.size() == 0)
-                continue;
-            playbackSystemBridge.setConnectedVoiceChannel(voiceChannels.get(0));
-            return true;
+            if (guild.getName().equals(serverName)){
+                List<VoiceChannel> voiceChannels = guild.getVoiceChannelsByName(channelName, true);
+                if (voiceChannels.size() == 0)
+                    continue;
+                guild.getAudioManager().openAudioConnection(voiceChannels.get(0));
+                playbackSystemBridge.setConnectedVoiceChannel(voiceChannels.get(0));
+                return true;
+            }
         }
         return false;
     }
@@ -127,7 +130,12 @@ public class DiscordBotManager implements AudioEventListener, ICommunicationPlat
     }
 
     @Override
-    public void onJukeboxDefaultListLoadStateUpdate(IAudioStateMachine.JukeboxDefaultListLoadState loadState) {
+    public void onJukeboxDefaultListLoadStateUpdate(IAudioStateMachine.JukeboxDefaultListLoadState loadState, IAudioStateMachine origin) {
+
+    }
+
+    @Override
+    public void onJukeboxLoopingStatusUpdate(boolean loopingStatus) {
 
     }
 }

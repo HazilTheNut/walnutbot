@@ -3,6 +3,7 @@ package UI;
 import Commands.Command;
 import Commands.CommandInterpreter;
 import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
 import Utils.Transcriber;
 
 import javax.swing.*;
@@ -10,13 +11,13 @@ import java.util.List;
 
 public class ConnectionPanel extends JPanel {
     
-    public ConnectionPanel(ICommunicationPlatformManager botManager, CommandInterpreter commandInterpreter){
+    public ConnectionPanel(WalnutbotEnvironment environment){
 
         setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
 
         JComboBox<VoiceChannelOption> channelSelect = new JComboBox<>();
         JButton listButton = new JButton("List Channels...");
-        listButton.addActionListener(e -> generateVoiceChannelOptions(channelSelect, botManager));
+        listButton.addActionListener(e -> generateVoiceChannelOptions(channelSelect, environment.getCommunicationPlatformManager()));
 
         add(listButton);
         add(channelSelect);
@@ -26,12 +27,12 @@ public class ConnectionPanel extends JPanel {
             VoiceChannelOption selected = (VoiceChannelOption)channelSelect.getSelectedItem();
             if (selected != null)
                 //botManager.connectToVoiceChannel(selected.getServerName(), selected.getChannelName());
-                commandInterpreter.evaluateCommand(String.format("connect \"%1$s\" \"%2$s\"", selected.getServerName().replace("\"", "\\\""), selected.getChannelName()),
+                environment.getCommandInterpreter().evaluateCommand(String.format("connect \"%1$s\" \"%2$s\"", selected.getServerName().replace("\"", "\\\""), selected.getChannelName()),
                     Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
 
         JButton disconnectButton = ButtonMaker.createIconButton("icons/disconnect.png", "Disconnect", 10);
-        disconnectButton.addActionListener(e -> commandInterpreter.evaluateCommand("disconnect",
+        disconnectButton.addActionListener(e -> environment.getCommandInterpreter().evaluateCommand("disconnect",
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
 
         add(connectButton);
@@ -49,9 +50,9 @@ public class ConnectionPanel extends JPanel {
         }
     }
 
-    private class VoiceChannelOption{
-        private String serverName;
-        private String channelName;
+    private static class VoiceChannelOption{
+        private final String serverName;
+        private final String channelName;
 
         public VoiceChannelOption(String serverName, String channelName) {
             this.serverName = serverName;

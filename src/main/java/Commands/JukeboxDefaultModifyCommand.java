@@ -1,8 +1,6 @@
 package Commands;
 
 import Audio.AudioKey;
-import Audio.AudioMaster;
-import CommuncationPlatform.ICommunicationPlatformManager;
 import Main.WalnutbotEnvironment;
 import Utils.FileIO;
 import Utils.Transcriber;
@@ -27,34 +25,6 @@ public class JukeboxDefaultModifyCommand extends Command {
             + "args.. - Additional arguments taken in the form of \"-<flag> <value>\", as described below:\n"
             + "    -name : Renames the Soundboard sound to the new name\n"
             + "    -url  : Assigns a nwe url to the Soundboard sound";
-    }
-
-    @Override void onRunCommand(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        if (argsInsufficient(args, 1, feedbackHandler))
-            return;
-        int index = 1;
-        AudioKey newData = new AudioKey(null, null);
-        while (index + 1 < args.length){
-            if (args[index].equals("-name"))
-                newData.setName(args[index+1]);
-            else if (args[index].equals("-url")) {
-                String expandedURI = FileIO.expandURIMacros(args[index + 1]);
-                if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions))
-                    newData.setUrl(expandedURI);
-                else
-                    return;
-            }
-            index += 2;
-        }
-        try {
-            int pos = Integer.valueOf(args[0]);
-            String originalName = audioMaster.getJukeboxDefaultList().getKey(pos).getName();
-            audioMaster.getJukeboxDefaultList().modifyAudioKey(pos, newData);
-            Transcriber.printAndPost(feedbackHandler, "Song `%1$s` successfully modified to \"%1$s\".", originalName, audioMaster.getJukeboxDefaultList().getKey(pos).toString());
-            audioMaster.saveJukeboxDefault();
-        } catch (NumberFormatException e){
-            Transcriber.printAndPost(feedbackHandler, "**ERROR:** `pos` is not an integer value");
-        }
     }
 
     @Override

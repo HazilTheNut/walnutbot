@@ -1,10 +1,9 @@
 package UI;
 
-import Audio.AudioMaster;
-import Audio.VolumeChangeListener;
+import Audio.IAudioStateMachine;
+import Audio.IVolumeChangeListener;
 import Commands.Command;
-import Commands.CommandInterpreter;
-import CommuncationPlatform.ICommunicationPlatformManager;
+import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
 
@@ -13,7 +12,7 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.util.Comparator;
 
-public class SettingsPanel extends JPanel implements VolumeChangeListener {
+public class SettingsPanel extends JPanel implements IVolumeChangeListener {
 
     private static final int VOLUME_SLIDER_SCALE_MAX = 100;
     private JSlider mainVolumeSlider;
@@ -22,15 +21,15 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
 
     private JLabel volumeInfoLabel;
 
-    public SettingsPanel(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandInterpreter commandInterpreter, boolean botInitSuccessful) {
+    public SettingsPanel(WalnutbotEnvironment environment, boolean botInitSuccessful) {
 
         BoxLayout layout = new BoxLayout(this, BoxLayout.PAGE_AXIS);
         setLayout(layout);
         if (botInitSuccessful) {
-            audioMaster.setVolumeChangeListener(this);
-            add(new ConnectionPanel(botManager, commandInterpreter), BorderLayout.PAGE_START);
-            add(createMainPanel(audioMaster, commandInterpreter), BorderLayout.CENTER);
-            add(createPermissionsPanel(audioMaster), BorderLayout.PAGE_END);
+            environment.getAudioStateMachine().addVolumeChangeListener(this);
+            add(new ConnectionPanel(environment), BorderLayout.PAGE_START);
+            add(createMainPanel(environment), BorderLayout.CENTER);
+            add(createPermissionsPanel(environment), BorderLayout.PAGE_END);
         } else
             add(new JLabel(
                     "WARNING! Looks like the bot failed to load! (Check output.txt for more info)"),
@@ -43,7 +42,7 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
         validate();
     }
 
-    private JPanel createMainPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter) {
+    private JPanel createMainPanel(WalnutbotEnvironment environment) {
 
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
@@ -51,28 +50,28 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
 
         volumeInfoLabel = new JLabel("");
 
-        mainVolumeSlider = generateVolumeSlider(audioMaster.getMainVolume());
+        mainVolumeSlider = generateVolumeSlider(environment.getAudioStateMachine().getMainVolume());
         mainVolumeSlider.addChangeListener(e -> {
-            if (mainVolumeSlider.getValue() != audioMaster.getMainVolume())
-                commandInterpreter.evaluateCommand(String.format("vol main %1$d", mainVolumeSlider.getValue()),
+            if (mainVolumeSlider.getValue() != environment.getAudioStateMachine().getMainVolume())
+                environment.getCommandInterpreter().evaluateCommand(String.format("vol main %1$d", mainVolumeSlider.getValue()),
                     Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
         panel.add(new JLabel("Main Volume (%)"));
         panel.add(mainVolumeSlider);
 
-        soundboardVolumeSlider = generateVolumeSlider(audioMaster.getSoundboardVolume());
+        soundboardVolumeSlider = generateVolumeSlider(environment.getAudioStateMachine().getSoundboardVolume());
         soundboardVolumeSlider.addChangeListener(e -> {
-            if (soundboardVolumeSlider.getValue() != audioMaster.getSoundboardVolume())
-                commandInterpreter.evaluateCommand(String.format("vol sb %1$d", soundboardVolumeSlider.getValue()),
+            if (soundboardVolumeSlider.getValue() != environment.getAudioStateMachine().getSoundboardVolume())
+                environment.getCommandInterpreter().evaluateCommand(String.format("vol sb %1$d", soundboardVolumeSlider.getValue()),
                     Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
         panel.add(new JLabel("Soundboard Volume (%)"));
         panel.add(soundboardVolumeSlider);
 
-        jukeboxVolumeSlider = generateVolumeSlider(audioMaster.getJukeboxVolume());
+        jukeboxVolumeSlider = generateVolumeSlider(environment.getAudioStateMachine().getJukeboxVolume());
         jukeboxVolumeSlider.addChangeListener(e -> {
-            if (jukeboxVolumeSlider.getValue() != audioMaster.getJukeboxVolume())
-                commandInterpreter.evaluateCommand(String.format("vol jb %1$d", jukeboxVolumeSlider.getValue()),
+            if (jukeboxVolumeSlider.getValue() != environment.getAudioStateMachine().getJukeboxVolume())
+                environment.getCommandInterpreter().evaluateCommand(String.format("vol jb %1$d", jukeboxVolumeSlider.getValue()),
                     Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
         });
         panel.add(new JLabel("Jukebox Volume (%)"));
@@ -80,13 +79,13 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
 
         panel.add(volumeInfoLabel);
 
-        assignAudioMasterVolumes(audioMaster);
-        updateVolumeInfoLabel(audioMaster);
+        assignAudioMasterVolumes(environment.getAudioStateMachine());
+        updateVolumeInfoLabel(environment.getAudioStateMachine());
 
         return panel;
     }
 
-    private JPanel createPermissionsPanel(AudioMaster audioMaster){
+    private JPanel createPermissionsPanel(WalnutbotEnvironment environment){
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
         panel.setBorder(BorderFactory.createTitledBorder("Permissions"));
@@ -96,7 +95,7 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
             SettingsLoader.modifySettingsValue("discordAllowLocalAccess", String.valueOf(allowLocalAccessBox.isSelected()));
             SettingsLoader.writeSettingsFile();
         });
-        allowLocalAccessBox.setSelected(Boolean.valueOf(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")));
+        allowLocalAccessBox.setSelected(Boolean.parseBoolean(SettingsLoader.getSettingsValue("discordAllowLocalAccess", "false")));
         allowLocalAccessBox.setAlignmentX(Component.LEFT_ALIGNMENT);
         panel.add(allowLocalAccessBox);
 
@@ -108,7 +107,7 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
         JScrollPane allowCommandScrollPane = new JScrollPane(commandsAllowPanel, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         int unitIncrement = 0;
 
-        java.util.List<Command> commandList = audioMaster.getCommandInterpreter().getExpandedCommandList();
+        java.util.List<Command> commandList = environment.getCommandInterpreter().getExpandedCommandList();
         commandList.sort(Comparator.comparing(Command::getCommandTreeStr));
         for (Command command : commandList){
             JCheckBox commandAllowBox = new JCheckBox(String.format("%1$s : %2$s", command.getCommandTreeStr(), command.getHelpDescription()));
@@ -138,47 +137,47 @@ public class SettingsPanel extends JPanel implements VolumeChangeListener {
         return slider;
     }
 
-    private void updateVolumeInfoLabel(AudioMaster audioMaster){
-        volumeInfoLabel.setText(String.format("RAW VOLUMES - Soundboard: %1$d Jukebox: %2$d", audioMaster.getSoundboardPlayer().getVolume(), audioMaster.getJukeboxPlayer().getVolume()));
+    private void updateVolumeInfoLabel(IAudioStateMachine audioStateMachine){
+        volumeInfoLabel.setText(String.format("RAW VOLUMES - Soundboard: %1$d Jukebox: %2$d", audioStateMachine.getSoundboardVolume(), audioStateMachine.getJukeboxVolume()));
         volumeInfoLabel.repaint();
     }
 
-    private void assignAudioMasterVolumes(AudioMaster audioMaster){
-        audioMaster.setMainVolume(mainVolumeSlider.getValue());
-        audioMaster.setSoundboardVolume(soundboardVolumeSlider.getValue());
-        audioMaster.setJukeboxVolume(jukeboxVolumeSlider.getValue());
+    private void assignAudioMasterVolumes(IAudioStateMachine audioStateMachine){
+        audioStateMachine.setMainVolume(mainVolumeSlider.getValue());
+        audioStateMachine.setSoundboardVolume(soundboardVolumeSlider.getValue());
+        audioStateMachine.setJukeboxVolume(jukeboxVolumeSlider.getValue());
     }
 
     /**
      * Called when the Main Volume changes.
      *
      * @param vol A value ranging from 0 to 100 describing the Main Volume
-     * @param audioMaster The AudioMaster which called this method
+     * @param audioStateMachine The IAudioStateMachine which called this method
      */
-    @Override public void onMainVolumeChange(int vol, AudioMaster audioMaster) {
+    @Override public void onMainVolumeChange(int vol, IAudioStateMachine audioStateMachine) {
         mainVolumeSlider.setValue(vol);
-        updateVolumeInfoLabel(audioMaster);
+        updateVolumeInfoLabel(audioStateMachine);
     }
 
     /**
      * Called when the Soundboard Volume changes.
      *
      * @param vol A value ranging from 0 to 100 describing the Soundboard Volume
-     * @param audioMaster The AudioMaster which called this method
+     * @param audioStateMachine The IAudioStateMachine which called this method
      */
-    @Override public void onSoundboardVolumeChange(int vol, AudioMaster audioMaster) {
+    @Override public void onSoundboardVolumeChange(int vol, IAudioStateMachine audioStateMachine) {
         soundboardVolumeSlider.setValue(vol);
-        updateVolumeInfoLabel(audioMaster);
+        updateVolumeInfoLabel(audioStateMachine);
     }
 
     /**
      * Called when the Jukebox Volume changes.
      *
      * @param vol A value ranging from 0 to 100 describing the Jukebox Volume
-     * @param audioMaster The AudioMaster which called this method
+     * @param audioStateMachine The IAudioStateMachine which called this method
      */
-    @Override public void onJukeboxVolumeChange(int vol, AudioMaster audioMaster) {
+    @Override public void onJukeboxVolumeChange(int vol, IAudioStateMachine audioStateMachine) {
         jukeboxVolumeSlider.setValue(vol);
-        updateVolumeInfoLabel(audioMaster);
+        updateVolumeInfoLabel(audioStateMachine);
     }
 }

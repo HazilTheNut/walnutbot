@@ -7,7 +7,7 @@ plugins {
 group 'com.walnutbot'
 version '1.0-pre13'
 
-mainClassName = "Main"
+mainClassName = "Main/Main"
 
 sourceCompatibility = 1.8
 

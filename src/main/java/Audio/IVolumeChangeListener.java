@@ -1,6 +1,6 @@
 package Audio;
 
-public interface VolumeChangeListener {
+public interface IVolumeChangeListener {
 
     /**
      * Called when the Main Volume changes.
@@ -8,7 +8,7 @@ public interface VolumeChangeListener {
      * @param vol A value ranging from 0 to 100 describing the Main Volume
      * @param audioMaster The AudioMaster which called this method
      */
-    void onMainVolumeChange(int vol, AudioMaster audioMaster);
+    void onMainVolumeChange(int vol, IAudioStateMachine audioStateMachine);
 
     /**
      * Called when the Soundboard Volume changes.
@@ -16,7 +16,7 @@ public interface VolumeChangeListener {
      * @param vol A value ranging from 0 to 100 describing the Soundboard Volume
      * @param audioMaster The AudioMaster which called this method
      */
-    void onSoundboardVolumeChange(int vol, AudioMaster audioMaster);
+    void onSoundboardVolumeChange(int vol, IAudioStateMachine audioStateMachine);
 
     /**
      * Called when the Jukebox Volume changes.
@@ -24,6 +24,6 @@ public interface VolumeChangeListener {
      * @param vol A value ranging from 0 to 100 describing the Jukebox Volume
      * @param audioMaster The AudioMaster which called this method
      */
-    void onJukeboxVolumeChange(int vol, AudioMaster audioMaster);
+    void onJukeboxVolumeChange(int vol, IAudioStateMachine audioStateMachine);
 
 }

@@ -3,6 +3,7 @@ package UI;
 import Audio.*;
 import Commands.Command;
 import Commands.CommandInterpreter;
+import Main.WalnutbotEnvironment;
 import Utils.FileIO;
 import Utils.SettingsLoader;
 import Utils.Transcriber;
@@ -10,57 +11,53 @@ import Utils.Transcriber;
 import javax.swing.*;
 import java.awt.*;
 
-public class SoundboardPanel extends JPanel implements PlayerTrackListener{
+public class SoundboardPanel extends JPanel implements IAudioStateMachineListener{
 
     private JLabel playerStatusLabel;
     private SoundsMainPanel soundsPanel;
-
-    private CommandInterpreter commandInterpreter;
 
     private SoundsMainPanel soundsMainPanel;
     private LayoutManager listLayout;
     private LayoutManager gridLayout;
 
-    public SoundboardPanel(AudioMaster master, CommandInterpreter commandInterpreter){
-
-        this.commandInterpreter = commandInterpreter;
+    public SoundboardPanel(WalnutbotEnvironment environment){
 
         setLayout(new BorderLayout());
 
-        soundsPanel = createSoundsPanel(master);
-        JPanel miscPanel = createMiscPanel(master, commandInterpreter);
+        soundsPanel = createSoundsPanel(environment);
+        JPanel miscPanel = createMiscPanel(environment);
 
         JScrollPane scrollPane = new JScrollPane(soundsPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollPane.validate();
 
         add(miscPanel, BorderLayout.PAGE_START);
         add(scrollPane, BorderLayout.CENTER);
-        add(createTempPlayPanel(commandInterpreter), BorderLayout.PAGE_END);
+        add(createTempPlayPanel(environment), BorderLayout.PAGE_END);
 
         validate();
 
-        master.getGenericTrackScheduler().addPlayerTrackListener(this);
+        environment.getAudioStateMachine().addAudioStateMachineListener(this);
     }
 
-    private JPanel createMiscPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter){
+    private JPanel createMiscPanel(WalnutbotEnvironment environment){
         JPanel panel = new JPanel();
         //panel.setLayout(new FlowLayout(FlowLayout.LEFT));
         panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
         final int STRUT_SIZE = 2;
 
         JButton addButton = new JButton("Add Sound");
-        addButton.addActionListener(e -> new ModifyAudioKeyFrame(audioMaster, new AudioKey("",""), -1, commandInterpreter, ModifyAudioKeyFrame.ModificationType.ADD, ModifyAudioKeyFrame.TargetList.SOUNDBOARD));
+        addButton.addActionListener(e -> new ModifyAudioKeyFrame(environment, new AudioKey("",""), -1, ModifyAudioKeyFrame.ModificationType.ADD, ModifyAudioKeyFrame.TargetList.SOUNDBOARD));
         panel.add(addButton);
         panel.add(Box.createHorizontalStrut(STRUT_SIZE));
 
         JButton sortButton = new JButton("Sort A-Z");
-        sortButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb sort",
+        sortButton.addActionListener(e -> environment.getCommandInterpreter().evaluateCommand("sb sort",
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         panel.add(sortButton);
         panel.add(Box.createHorizontalStrut(STRUT_SIZE));
 
         JButton stopButton = ButtonMaker.createIconButton("icons/stop.png", "Stop", 8);
-        stopButton.addActionListener(e -> commandInterpreter.evaluateCommand("sb stop",
+        stopButton.addActionListener(e -> environment.getCommandInterpreter().evaluateCommand("sb stop",
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
         panel.add(stopButton);
         panel.add(Box.createHorizontalStrut(STRUT_SIZE));
@@ -106,8 +103,8 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         return panel;
     }
 
-    private SoundsMainPanel createSoundsPanel(AudioMaster audioMaster){
-        soundsMainPanel = new SoundsMainPanel(audioMaster, commandInterpreter);
+    private SoundsMainPanel createSoundsPanel(WalnutbotEnvironment environment){
+        soundsMainPanel = new SoundsMainPanel(environment);
         listLayout = new WrapLayout(WrapLayout.LEFT, 6, 2);
         gridLayout = new GridLayout(0, 4);
 
@@ -123,7 +120,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         return soundsMainPanel;
     }
 
-    private JPanel createTempPlayPanel(CommandInterpreter commandInterpreter){
+    private JPanel createTempPlayPanel(WalnutbotEnvironment environment){
 
         JPanel panel = new JPanel();
 
@@ -132,7 +129,7 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         JTextField urlField = new JTextField("Enter URL Here for Instant Play");
         JButton playButton = ButtonMaker.createIconButton("icons/start.png", "Play", 12);
         playButton.addActionListener(e -> {
-            commandInterpreter.evaluateCommand(
+            environment.getCommandInterpreter().evaluateCommand(
                 String.format("sb url %1$s", FileIO.sanitizeURIForCommand(urlField.getText())),
                 Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI),
                 Command.INTERNAL_MASK
@@ -158,95 +155,79 @@ public class SoundboardPanel extends JPanel implements PlayerTrackListener{
         return panel;
     }
 
-    @Override public void onTrackStart() {
-        playerStatusLabel.setText("Status: Playing");
+    @Override
+    public void onAudioStateMachineUpdateStatus(IAudioStateMachine.AudioStateMachineStatus status) {
+        switch (status) {
+            case SOUNDBOARD_PLAYING:
+            case SOUNDBOARD_PLAYING_JUKEBOX_READY:
+            case SOUNDBOARD_PLAYING_JUKEBOX_PAUSED:
+            case SOUNDBOARD_PLAYING_JUKEBOX_SUSPENDED:
+                playerStatusLabel.setText("Status: Playing");
+                break;
+            case INACTIVE:
+            case JUKEBOX_PAUSED:
+            case JUKEBOX_PLAYING:
+                playerStatusLabel.setText("Status: Stopped");
+                break;
+        }
         playerStatusLabel.repaint();
     }
 
-    @Override public void onTrackStop() {
-        playerStatusLabel.setText("Status: Stopped");
-        playerStatusLabel.repaint();
+    @Override
+    public void onJukeboxDefaultListLoadStateUpdate(IAudioStateMachine.JukeboxDefaultListLoadState loadState, IAudioStateMachine origin) {
+
     }
 
-    @Override public void onTrackError() {
-        playerStatusLabel.setText("Status: ERROR!");
-        playerStatusLabel.repaint();
+    @Override
+    public void onJukeboxLoopingStatusUpdate(boolean loopingStatus) {
+
     }
 
-    private class SoundsMainPanel extends JPanel implements AudioKeyPlaylistListener {
+    private static class SoundsMainPanel extends JPanel implements AudioKeyPlaylistListener {
+        private final WalnutbotEnvironment environment;
 
-        AudioMaster audioMaster;
-        CommandInterpreter commandInterpreter;
-
-        public SoundsMainPanel(AudioMaster audioMaster, CommandInterpreter commandInterpreter){
-            this.audioMaster = audioMaster;
-            this.commandInterpreter = commandInterpreter;
-            audioMaster.getSoundboardList().addAudioKeyPlaylistListener(this);
+        public SoundsMainPanel(WalnutbotEnvironment environment){
+            this.environment = environment;
+            environment.getAudioStateMachine().getSoundboardList().accessAudioKeyPlaylist(playlist -> playlist.addAudioKeyPlaylistListener(this));
         }
 
         private void loadSoundboard(){
-            removeAll();
-            AudioKeyPlaylist soundboard = audioMaster.getSoundboardList();
-            for (int i = 0; i < soundboard.getAudioKeys().size(); i++) {
-                AudioKey key = soundboard.getKey(i);
-                add(new SoundButtonPanel(key, audioMaster, commandInterpreter));
+
+            environment.getAudioStateMachine().getSoundboardList().accessAudioKeyPlaylist(playlist -> {
+                removeAll();
+                for (int i = 0; i < playlist.getAudioKeys().size(); i++) {
+                    AudioKey key = playlist.getKey(i);
+                    add(new SoundButtonPanel(key, environment));
+                }
+            });
+
+        }
+
+        @Override
+        public void onEvent(AudioKeyPlaylist playlist, AudioKeyPlaylistEvent event) {
+            switch (event.getEventType()) {
+                case ADD:
+                    add(new SoundButtonPanel(event.getKey(), environment));
+                    break;
+                case REMOVE:
+                case SORT:
+                case SHUFFLE:
+                case ON_SUBSCRIBE:
+                    loadSoundboard();
+                    break;
+                case MODIFY:
+                    if (getComponent(event.getPos()) instanceof AudioKeyUIWrapper) {
+                        ((AudioKeyUIWrapper)getComponent(event.getPos())).setData(event.getKey());
+                    }
+                    break;
+                case CLEAR:
+                    removeAll();
+                    break;
+                case EVENT_QUEUE_END:
+                    revalidate();
+                    repaint();
+                    break;
             }
-        }
-
-        @Override public void onAddition(AudioKeyPlaylistEvent event) {
-            add(new SoundButtonPanel(event.getKey(), audioMaster, commandInterpreter));
-            revalidate();
-            repaint();
-        }
-
-        @Override public void onRemoval(AudioKeyPlaylistEvent event) {
-            loadSoundboard();
-            revalidate();
-            repaint();
-        }
-
-        /**
-         * Called when an element of the AudioKeyPlaylist has been modified.
-         * This method is called after the element has been modified.
-         *
-         * @param event The AudioKeyPlaylistEvent describing the details of the event.
-         */
-        @Override public void onModification(AudioKeyPlaylistEvent event) {
-            if (getComponent(event.getPos()) instanceof AudioKeyUIWrapper) {
-                ((AudioKeyUIWrapper)getComponent(event.getPos())).setData(event.getKey());
-                revalidate();
-                repaint();
-            }
-        }
-
-        /**
-         * Called when the AudioKeyPlaylist has been cleared.
-         */
-        @Override public void onClear() {
-            removeAll();
-            revalidate();
-            repaint();
-        }
-
-        /**
-         * Called when the AudioKeyPlaylist has been shuffled.
-         */
-        @Override public void onShuffle() {
-            loadSoundboard();
-            revalidate();
-            repaint();
-        }
-
-        @Override public void onSort() {
-            loadSoundboard();
-            revalidate();
-            repaint();
-        }
-
-        @Override public void onNewPlaylist() {
-            loadSoundboard();
-            revalidate();
-            repaint();
         }
     }
 }

@@ -62,7 +62,7 @@ public class AudioMaster{
     private int jukeboxVolume;
     public static final int VOLUME_DEFAULT = 50;
     private static final int VOLUME_MAX = 150;
-    private VolumeChangeListener volumeChangeListener;
+    private IVolumeChangeListener IVolumeChangeListener;
 
     public AudioMaster(){
 
@@ -347,7 +347,7 @@ public class AudioMaster{
         this.mainVolume = mainVolume;
         SettingsLoader.modifySettingsValue("mainVolume", String.valueOf(mainVolume));
         SettingsLoader.writeSettingsFile();
-        volumeChangeListener.onMainVolumeChange(mainVolume, this);
+        IVolumeChangeListener.onMainVolumeChange(mainVolume, null);
         updatePlayerVolumes();
     }
 
@@ -355,7 +355,7 @@ public class AudioMaster{
         this.soundboardVolume = soundboardVolume;
         SettingsLoader.modifySettingsValue("soundboardVolume", String.valueOf(soundboardVolume));
         SettingsLoader.writeSettingsFile();
-        if (volumeChangeListener != null) volumeChangeListener.onSoundboardVolumeChange(soundboardVolume, this);
+        if (IVolumeChangeListener != null) IVolumeChangeListener.onSoundboardVolumeChange(soundboardVolume, null);
         updatePlayerVolumes();
     }
 
@@ -363,7 +363,7 @@ public class AudioMaster{
         this.jukeboxVolume = jukeboxVolume;
         SettingsLoader.modifySettingsValue("jukeboxVolume", String.valueOf(jukeboxVolume));
         SettingsLoader.writeSettingsFile();
-        if (volumeChangeListener != null) volumeChangeListener.onJukeboxVolumeChange(jukeboxVolume, this);
+        if (IVolumeChangeListener != null) IVolumeChangeListener.onJukeboxVolumeChange(jukeboxVolume, null);
         updatePlayerVolumes();
     }
 
@@ -497,8 +497,8 @@ public class AudioMaster{
         }
     }
 
-    public void setVolumeChangeListener(VolumeChangeListener volumeChangeListener) {
-        this.volumeChangeListener = volumeChangeListener;
+    public void setVolumeChangeListener(IVolumeChangeListener IVolumeChangeListener) {
+        this.IVolumeChangeListener = IVolumeChangeListener;
     }
 
     public boolean isSoundboardActive(){

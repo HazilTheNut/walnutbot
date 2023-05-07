@@ -1,7 +1,5 @@
 package Commands;
 
-import Audio.AudioMaster;
-import CommuncationPlatform.ICommunicationPlatformManager;
 import Main.WalnutbotEnvironment;
 
 public class SkipCommand extends Command {
@@ -16,10 +14,6 @@ public class SkipCommand extends Command {
 
     @Override public String getSpecificHelpDescription() {
         return "Skips the currently playing song and fetches the next one:\n\n* It will play the next song in the queue if there is one.\n* It will play a random song from the default list if the queue is empty.";
-    }
-
-    @Override public void onRunCommand(ICommunicationPlatformManager botManager, AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
-        audioMaster.jukeboxSkipToNextSong(true);
     }
 
     @Override

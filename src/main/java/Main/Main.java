@@ -3,6 +3,7 @@ package Main;
 import Audio.AudioStateMachine;
 import Audio.IAudioStateMachine;
 import Audio.IPlaybackWrapper;
+import Commands.Command;
 import Commands.CommandInterpreter;
 import CommuncationPlatform.DiscordBotManager;
 import CommuncationPlatform.ICommunicationPlatformManager;
@@ -10,12 +11,14 @@ import CommuncationPlatform.IDiscordPlaybackSystemBridge;
 import LavaplayerWrapper.LavaplayerWrapper;
 import LavaplayerWrapper.ILavaplayerBotBridge;
 import LavaplayerWrapper.LavaplayerDiscordBridge;
+import UI.UIFrame;
 import Utils.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
+import javax.swing.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.EnumSet;
@@ -66,9 +69,7 @@ public class Main {
         WalnutbotEnvironment environment = new WalnutbotEnvironment();
 
         // Start up bot core
-        ICommunicationPlatformManager botManager;
         IPlaybackWrapper playbackWrapper;
-        IAudioStateMachine audioStateMachine;
 
         // Start up Lavaplayer wrapper
         ILavaplayerBotBridge lavaplayerBotBridge = new LavaplayerDiscordBridge();
@@ -83,6 +84,23 @@ public class Main {
         environment.setCommandInterpreter(new CommandInterpreter(environment));
 
         // Start up UI
+        if (headlessMode) {
+            if (environment.getCommandInterpreter() != null)
+                environment.getCommandInterpreter().readHeadlessInput();
+            else
+                System.out.println("ERROR: Discord bot did not properly initialize!");
+        } else {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+                e.printStackTrace();
+            }
+            new UIFrame(environment, jda != null);
+        }
+
+        // Startup script
+        if (environment.getCommandInterpreter() != null && startupScriptLoc != null)
+            environment.getCommandInterpreter().evaluateCommand("script ".concat(startupScriptLoc), Transcriber.getGenericCommandFeedBackHandler("Startup"), Command.INTERNAL_MASK);
 
         /*
         AudioMaster audioMaster = new AudioMaster();

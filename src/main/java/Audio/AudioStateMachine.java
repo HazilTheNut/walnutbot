@@ -2,6 +2,7 @@ package Audio;
 
 import UI.SongDurationTracker;
 import Utils.FileIO;
+import Utils.SettingsLoader;
 import Utils.Transcriber;
 
 import java.io.File;
@@ -26,6 +27,9 @@ public class AudioStateMachine implements IAudioStateMachine {
 
     private List<SongDurationTracker> songDurationTrackers;
     private List<IAudioStateMachineListener> audioStateMachineListeners;
+    private List<IVolumeChangeListener> volumeChangeListeners;
+
+    public static final int VOLUME_DEFAULT = 50;
 
     public AudioStateMachine(IPlaybackWrapper playbackWrapper) {
         this.playbackWrapper = playbackWrapper;
@@ -60,6 +64,19 @@ public class AudioStateMachine implements IAudioStateMachine {
 
         songDurationTrackers = new LinkedList<>();
         audioStateMachineListeners = new LinkedList<>();
+        volumeChangeListeners = new LinkedList<>();
+
+        setMainVolume(getSettingsVolume("mainVolume"));
+        setSoundboardVolume(getSettingsVolume("soundboardVolume"));
+        setJukeboxVolume(getSettingsVolume("jukeboxVolume"));
+    }
+
+    private int getSettingsVolume(String setting){
+        try {
+            return Integer.parseInt(SettingsLoader.getSettingsValue(setting, String.valueOf(VOLUME_DEFAULT)));
+        } catch (NumberFormatException e){
+            return VOLUME_DEFAULT;
+        }
     }
 
     /**
@@ -530,9 +547,12 @@ public class AudioStateMachine implements IAudioStateMachine {
     private void setCurrentState(AudioStateMachineStatus newStatus) {
         myCurrentStatus = newStatus;
         Transcriber.printTimestamped("AudioStateMachine new state: %s", myCurrentStatus.name());
-        for (IAudioStateMachineListener listener : audioStateMachineListeners){
-            listener.onAudioStateMachineUpdateStatus(myCurrentStatus);
-        }
+        Thread listenerUpdateThread = new Thread(() -> {
+            for (IAudioStateMachineListener listener : audioStateMachineListeners){
+                listener.onAudioStateMachineUpdateStatus(myCurrentStatus);
+            }
+        });
+        listenerUpdateThread.start();
     }
 
     /**
@@ -547,9 +567,13 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     private void setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState loadState){
-        for (IAudioStateMachineListener listener : audioStateMachineListeners){
-            listener.onJukeboxDefaultListLoadStateUpdate(loadState);
-        }
+        jukeboxDefaultListLoadState = loadState;
+        Thread listenerUpdateThread = new Thread(() -> {
+            for (IAudioStateMachineListener listener : audioStateMachineListeners){
+                listener.onJukeboxDefaultListLoadStateUpdate(loadState, this);
+            }
+        });
+        listenerUpdateThread.start();
     }
 
     /**
@@ -669,7 +693,12 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public boolean setMainVolume(int volume) {
-        return playbackWrapper.setVolume(IPlaybackWrapper.PlaybackStreamType.BOTH, volume);
+        if (playbackWrapper.setVolume(IPlaybackWrapper.PlaybackStreamType.BOTH, volume)) {
+            for (IVolumeChangeListener volumeChangeListener : volumeChangeListeners)
+                volumeChangeListener.onMainVolumeChange(volume, this);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -680,7 +709,12 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public boolean setJukeboxVolume(int volume) {
-        return playbackWrapper.setVolume(IPlaybackWrapper.PlaybackStreamType.JUKEBOX, volume);
+        if (playbackWrapper.setVolume(IPlaybackWrapper.PlaybackStreamType.JUKEBOX, volume)) {
+            for (IVolumeChangeListener volumeChangeListener : volumeChangeListeners)
+                volumeChangeListener.onJukeboxVolumeChange(volume, this);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -691,7 +725,12 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public boolean setSoundboardVolume(int volume) {
-        return playbackWrapper.setVolume(IPlaybackWrapper.PlaybackStreamType.SOUNDBOARD, volume);
+        if (playbackWrapper.setVolume(IPlaybackWrapper.PlaybackStreamType.SOUNDBOARD, volume)) {
+            for (IVolumeChangeListener volumeChangeListener : volumeChangeListeners)
+                volumeChangeListener.onSoundboardVolumeChange(volume, this);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -700,8 +739,8 @@ public class AudioStateMachine implements IAudioStateMachine {
      * @param volumeChangeListener VolumeChangeListener to listen to this IAudioStateMachine
      */
     @Override
-    public void addVolumeChangeListener(VolumeChangeListener volumeChangeListener) {
-
+    public void addVolumeChangeListener(IVolumeChangeListener volumeChangeListener) {
+        volumeChangeListeners.add(volumeChangeListener);
     }
 
     /**
@@ -722,6 +761,12 @@ public class AudioStateMachine implements IAudioStateMachine {
     @Override
     public void setLoopingStatus(boolean looping) {
         loopingJukebox = looping;
+        Thread listenerUpdateThread = new Thread(() -> {
+            for (IAudioStateMachineListener listener : audioStateMachineListeners){
+                listener.onJukeboxLoopingStatusUpdate(looping);
+            }
+        });
+        listenerUpdateThread.start();
     }
 
     /**
@@ -731,7 +776,7 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void addSongDurationTracker(SongDurationTracker songDurationTracker) {
-
+        songDurationTrackers.add(songDurationTracker);
     }
 
     /**
@@ -741,7 +786,12 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void songDurationTrackersNotifySongBegun(long durationMilliseconds) {
-
+        Thread listenerUpdateThread = new Thread(() -> {
+            for (SongDurationTracker songDurationTracker : songDurationTrackers){
+                songDurationTracker.onSongStart(durationMilliseconds, jukeboxCurrentlyPlayingSong.getTrackName());
+            }
+        });
+        listenerUpdateThread.start();
     }
 
     /**
@@ -749,7 +799,12 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void songDurationTrackersNotifySongPause() {
-
+        Thread listenerUpdateThread = new Thread(() -> {
+            for (SongDurationTracker songDurationTracker : songDurationTrackers){
+                songDurationTracker.onSongPause();
+            }
+        });
+        listenerUpdateThread.start();
     }
 
     /**
@@ -757,7 +812,12 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void songDurationTrackersNotifySongResume() {
-
+        Thread listenerUpdateThread = new Thread(() -> {
+            for (SongDurationTracker songDurationTracker : songDurationTrackers){
+                songDurationTracker.onSongResume();
+            }
+        });
+        listenerUpdateThread.start();
     }
 
     /**
@@ -765,6 +825,11 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public void songDurationTrackersNotifySongEnd() {
-
+        Thread listenerUpdateThread = new Thread(() -> {
+            for (SongDurationTracker songDurationTracker : songDurationTrackers){
+                songDurationTracker.onSongEnd();
+            }
+        });
+        listenerUpdateThread.start();
     }
 }
