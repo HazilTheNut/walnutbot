@@ -2,8 +2,10 @@ package Commands;
 
 import Main.WalnutbotEnvironment;
 import Utils.FileIO;
+import Utils.Transcriber;
 
 import java.io.File;
+import java.io.IOException;
 
 public class JukeboxDefaultNewCommand extends Command {
 
@@ -29,6 +31,14 @@ public class JukeboxDefaultNewCommand extends Command {
             return;
         if (sanitizeLocalAccess("dummy", feedbackHandler, permissions)) {
             File file = new File(FileIO.appendPlaylistFileExtension(FileIO.expandURIMacros(args[0])));
+            if (!file.exists()) {
+                try {
+                    if (!file.createNewFile())
+                        Transcriber.printAndPost(feedbackHandler, "Failed to create new file at uri '%1$s'", args[0]);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             environment.getAudioStateMachine().loadJukeboxDefaultList(file.getAbsolutePath());
         }
     }

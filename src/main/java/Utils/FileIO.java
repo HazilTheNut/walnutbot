@@ -87,4 +87,13 @@ public class FileIO {
             return uri;
         return uri.concat(".wbp");
     }
+
+    public static File getSoundboardFile(){
+        String filepath = String.format("~~/data%ssoundboard.wbp", File.separatorChar);
+        return new File(expandURIMacros(filepath));
+    }
+
+    public static String[] getValidPlaylistFileExtensions(){
+        return playlistFileExtensions;
+    }
 }

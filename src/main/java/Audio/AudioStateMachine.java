@@ -41,7 +41,17 @@ public class AudioStateMachine implements IAudioStateMachine {
         jukeboxDefaultListLoadState = JukeboxDefaultListLoadState.UNLOADED;
 
         // Init soundboard list
-        soundboardList = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("SOUNDBOARD"));
+        AudioKeyPlaylist soundboardListRaw = new AudioKeyPlaylist("SOUNDBOARD");
+        soundboardListRaw.addAudioKeyPlaylistListener(((playlist, event) -> {
+            // Auto-save
+            if (event.getEventType() == AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.EVENT_QUEUE_END) {
+                playlist.saveToFile(FileIO.getSoundboardFile());
+            }
+        }));
+        soundboardList = new AudioKeyPlaylistTSWrapper(soundboardListRaw);
+        playbackWrapper.loadTracks(FileIO.getSoundboardFile().getAbsolutePath(), soundboardList, (playlist, successful) -> {
+
+        }, true);
 
         // Init jukebox default list
         AudioKeyPlaylist jukeboxDefaultListRaw = new AudioKeyPlaylist("JUKEBOX DFL");
@@ -106,7 +116,11 @@ public class AudioStateMachine implements IAudioStateMachine {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        playSoundboardSound_internal(key);
+        try {
+            playSoundboardSound_internal(key);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
         stateMachineMutex.release();
     }
 
@@ -156,8 +170,9 @@ public class AudioStateMachine implements IAudioStateMachine {
             // Update state machine
             changeActiveStream(IPlaybackWrapper.PlaybackStreamType.SOUNDBOARD);
             // Play sound
-            if (!playbackWrapper.startPlayback(IPlaybackWrapper.PlaybackStreamType.SOUNDBOARD, key.getAbstractedLoadedTrack())) {
-                Transcriber.printTimestamped("Playback for key %s failed!", key);
+            AudioKey refreshedKey = playbackWrapper.refreshAudioKey(key);
+            if (!playbackWrapper.startPlayback(IPlaybackWrapper.PlaybackStreamType.SOUNDBOARD, refreshedKey.getAbstractedLoadedTrack())) {
+                Transcriber.printTimestamped("Playback for key %s failed!", refreshedKey);
                 stopSoundboard_internal();
             }
         }
@@ -174,7 +189,11 @@ public class AudioStateMachine implements IAudioStateMachine {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        stopSoundboard_internal();
+        try {
+            stopSoundboard_internal();
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
         stateMachineMutex.release();
     }
 
@@ -189,6 +208,7 @@ public class AudioStateMachine implements IAudioStateMachine {
                 break;
             case SOUNDBOARD_PLAYING:
                 setCurrentState(AudioStateMachineStatus.INACTIVE);
+                break;
             case SOUNDBOARD_PLAYING_JUKEBOX_READY:
                 // Jukebox ready to begin playback
                 changeActiveStream(IPlaybackWrapper.PlaybackStreamType.JUKEBOX);
@@ -234,7 +254,11 @@ public class AudioStateMachine implements IAudioStateMachine {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        enqueueJukeboxSong_internal(key);
+        try {
+            enqueueJukeboxSong_internal(key);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
         stateMachineMutex.release();
     }
 
@@ -305,7 +329,11 @@ public class AudioStateMachine implements IAudioStateMachine {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        startNextJukeboxSong_internal(ignoreLooping);
+        try {
+            startNextJukeboxSong_internal(ignoreLooping);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         stateMachineMutex.release();
     }
 
@@ -349,7 +377,30 @@ public class AudioStateMachine implements IAudioStateMachine {
             }
         }
 
+        if (jukeboxCurrentlyPlayingSong.getAbstractedLoadedTrack() != null) {
+            // Track was preloaded and ready to play
+            beginPlaybackOfCurrentSong();
+        } else {
+            AudioKeyPlaylistTSWrapper temp = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("TEMP"));
+            loadTracks(jukeboxCurrentlyPlayingSong.getUrl(), temp, (loadedTemp, successful) -> {
+                if (successful) {
+                    loadedTemp.accessAudioKeyPlaylist(playlist ->
+                            jukeboxCurrentlyPlayingSong = new AudioKey(jukeboxCurrentlyPlayingSong.getName(),
+                                    jukeboxCurrentlyPlayingSong.getUrl(), playlist.getKey(0).getAbstractedLoadedTrack()));
+                    beginPlaybackOfCurrentSong();
+                } else {
+                    resetStateMachine();
+                }
+            }, true);
+        }
+    }
+
+    private void beginPlaybackOfCurrentSong() {
         if (jukeboxCurrentlyPlayingSong != null) {
+            if (jukeboxCurrentlyPlayingSong.getAbstractedLoadedTrack() == null) {
+                Transcriber.printTimestamped("Cannot play Key %s without a track loaded onto it", jukeboxCurrentlyPlayingSong);
+                return;
+            }
             // Begin playing song
             switch (myCurrentStatus) {
                 case INACTIVE:
@@ -389,7 +440,11 @@ public class AudioStateMachine implements IAudioStateMachine {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        pauseJukebox_internal();
+        try {
+            pauseJukebox_internal();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         stateMachineMutex.release();
     }
 
@@ -423,7 +478,11 @@ public class AudioStateMachine implements IAudioStateMachine {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        resumeJukebox_internal();
+        try {
+            resumeJukebox_internal();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         stateMachineMutex.release();
     }
 
@@ -462,7 +521,11 @@ public class AudioStateMachine implements IAudioStateMachine {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        loadJukeboxDefaultList_internal(uri);
+        try {
+            loadJukeboxDefaultList_internal(uri);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         stateMachineMutex.release();
     }
 
@@ -473,12 +536,14 @@ public class AudioStateMachine implements IAudioStateMachine {
 
     private void loadJukeboxDefaultList_internal(String uri) {
         jukeboxDefaultList.accessAudioKeyPlaylist(playlist -> {
+            // Unload previous playlist
             playlist.clearPlaylist();
+            jukeboxDefaultListLoadState = JukeboxDefaultListLoadState.UNLOADED; // Don't do setJukeboxDefaultListLoadState as we should only notify listeners once
+            // Begin loading new playlist
             loadTracks(uri, jukeboxDefaultList, (loadResult, successful) -> {
                 if (!successful) {
                     setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.UNLOADED);
-                }
-                if (FileIO.isWebsiteURL(uri))
+                } else if (FileIO.isWebsiteURL(uri))
                     setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.REMOTE);
                 else if (FileIO.isPlaylistFile(uri))
                     setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.LOCAL_FILE);
@@ -499,10 +564,6 @@ public class AudioStateMachine implements IAudioStateMachine {
                         default:
                             accessedLoadResult.setUrl("ERROR");
                             break;
-                    }
-                    // Populate list
-                    for (AudioKey key : accessedLoadResult.getAudioKeys()) {
-                        accessedLoadResult.addAudioKey(key);
                     }
                 });
             }, false);

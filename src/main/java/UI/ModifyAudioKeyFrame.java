@@ -144,22 +144,24 @@ public class ModifyAudioKeyFrame extends JFrame {
     }
 
     private String buildCommand(JTextField nameField, JTextField urlField, ModificationType modificationType, TargetList targetList, int pos, String originalName){
+        String sanitizedOriginalName = FileIO.sanitizeURIForCommand(originalName);
         String name = FileIO.sanitizeURIForCommand(nameField.getText());
         String url  = FileIO.sanitizeURIForCommand(urlField.getText());
         switch (targetList){
             case SOUNDBOARD: {
                 switch (modificationType){
                     case ADD: return String.format("sb add %1$s %2$s", name, url);
-                    case MODIFY: return String.format("sb modify %1$s -name %2$s -url %3$s", originalName, name, url);
-                    case REMOVE: return String.format("sb remove %1$d", pos);
+                    case MODIFY: return String.format("sb modify %1$s -name %2$s -url %3$s", sanitizedOriginalName, name, url);
+                    case REMOVE: return String.format("sb remove %1$s", name);
                 }
                 return "ERROR";
             }
             case JUKEBOX_QUEUE: {
                 switch (modificationType){
                     case ADD: return String.format("jb %1$s", url);
-                    case MODIFY: return "ERROR";
-                    case REMOVE: return "ERROR";
+                    case MODIFY:
+                    case REMOVE:
+                        return "ERROR";
                 }
                 return "ERROR";
             }

@@ -113,8 +113,6 @@ public class SoundboardPanel extends JPanel implements IAudioStateMachineListene
         else
             soundsMainPanel.setLayout(listLayout);
 
-        soundsMainPanel.loadSoundboard();
-
         soundsMainPanel.validate();
 
         return soundsMainPanel;
@@ -191,16 +189,12 @@ public class SoundboardPanel extends JPanel implements IAudioStateMachineListene
             environment.getAudioStateMachine().getSoundboardList().accessAudioKeyPlaylist(playlist -> playlist.addAudioKeyPlaylistListener(this));
         }
 
-        private void loadSoundboard(){
-
-            environment.getAudioStateMachine().getSoundboardList().accessAudioKeyPlaylist(playlist -> {
-                removeAll();
-                for (int i = 0; i < playlist.getAudioKeys().size(); i++) {
-                    AudioKey key = playlist.getKey(i);
-                    add(new SoundButtonPanel(key, environment));
-                }
-            });
-
+        private void loadSoundboard(AudioKeyPlaylist playlist){
+            removeAll();
+            for (int i = 0; i < playlist.getAudioKeys().size(); i++) {
+                AudioKey key = playlist.getKey(i);
+                add(new SoundButtonPanel(key, environment));
+            }
         }
 
         @Override
@@ -213,7 +207,7 @@ public class SoundboardPanel extends JPanel implements IAudioStateMachineListene
                 case SORT:
                 case SHUFFLE:
                 case ON_SUBSCRIBE:
-                    loadSoundboard();
+                    loadSoundboard(playlist);
                     break;
                 case MODIFY:
                     if (getComponent(event.getPos()) instanceof AudioKeyUIWrapper) {

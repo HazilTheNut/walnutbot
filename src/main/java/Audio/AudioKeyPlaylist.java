@@ -92,7 +92,7 @@ public class AudioKeyPlaylist {
 
     public void clearPlaylist(){
         audioKeys.clear();
-        if (previousRandomDrawings != null) instantiatePreviousDrawingsQueue();
+        previousRandomDrawings = null;
         eventQueue.add(new AudioKeyPlaylistEvent(null, 0, AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.CLEAR));
     }
 

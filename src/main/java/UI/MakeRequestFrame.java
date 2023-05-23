@@ -16,7 +16,7 @@ import java.io.File;
 public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
     private String previousFilePath;
-    private JCheckBox keepWindowOpenCheckBox;
+    private final JCheckBox keepWindowOpenCheckBox;
 
     public MakeRequestFrame(String baseCommand, String windowTitle, CommandInterpreter commandInterpreter, JFrame uiFrame){
         this(baseCommand, windowTitle, commandInterpreter, uiFrame, true);
@@ -72,13 +72,16 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
 
         JButton confirmButton = new JButton("Request");
         confirmButton.addActionListener(e -> {
-            processUrlFieldForRequests(baseCommand, commandInterpreter, urlField.getText());
+            processUrlFieldForRequests(baseCommand, commandInterpreter, urlField.getText(), uiFrame);
             urlField.setText("");
         });
         buttonPanel.add(confirmButton);
 
         JButton cancelButton = new JButton("Exit");
-        cancelButton.addActionListener(e -> dispose());
+        cancelButton.addActionListener(e -> {
+            uiFrame.removeWindowStateListener(this);
+            dispose();
+        });
         buttonPanel.add(cancelButton);
 
         keepWindowOpenCheckBox = new JCheckBox("Keep this window open");
@@ -90,9 +93,9 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
         uiFrame.addWindowStateListener(this);
     }
 
-    private void processUrlFieldForRequests(String baseCommand, CommandInterpreter commandInterpreter, String url){
+    private void processUrlFieldForRequests(String baseCommand, CommandInterpreter commandInterpreter, String url, JFrame uiFrame){
         if (url.indexOf('\"') < 0) { // Only one element
-            makeRequest(baseCommand, commandInterpreter, FileIO.sanitizeURIForCommand(url));
+            makeRequest(baseCommand, commandInterpreter, FileIO.sanitizeURIForCommand(url), uiFrame);
         } else {
             int posQuotOne = 0;
             int posQuotTwo = 0;
@@ -101,7 +104,7 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
                 if (posQuotOne >= 0) { // If successfully found a new '"' character
                     posQuotTwo = url.indexOf('\"', posQuotOne + 1);
                     if (posQuotTwo > 0) { // If successfully found a second '"' character
-                        makeRequest(baseCommand, commandInterpreter, FileIO.sanitizeURIForCommand(url.substring(posQuotOne+1, posQuotTwo)));
+                        makeRequest(baseCommand, commandInterpreter, FileIO.sanitizeURIForCommand(url.substring(posQuotOne+1, posQuotTwo)), uiFrame);
                     }
                 }
                 if (posQuotTwo >= 0 && posQuotOne >= 0) posQuotOne = posQuotTwo + 1;
@@ -109,11 +112,13 @@ public class MakeRequestFrame extends JFrame implements WindowStateListener {
         }
     }
 
-    private void makeRequest(String baseCommand, CommandInterpreter commandInterpreter, String url){
+    private void makeRequest(String baseCommand, CommandInterpreter commandInterpreter, String url, JFrame uiFrame){
         commandInterpreter.evaluateCommand(baseCommand.concat(url),
             Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
-        if (!keepWindowOpenCheckBox.isSelected())
+        if (!keepWindowOpenCheckBox.isSelected()) {
+            uiFrame.removeWindowStateListener(this);
             dispose();
+        }
     }
 
     /**

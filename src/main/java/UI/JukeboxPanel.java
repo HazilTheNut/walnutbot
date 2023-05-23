@@ -110,7 +110,7 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
     public void openJukeboxPlaylist(CommandInterpreter commandInterpreter){
         JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist (.playlist)", "playlist"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist (.playlist)", FileIO.getValidPlaylistFileExtensions()));
         fileChooser.setAcceptAllFileFilterUsed(false);
         fileChooser.setDialogTitle("Open Walnutbot Playlist");
         int result = fileChooser.showOpenDialog(null);
@@ -127,7 +127,7 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
     public void createNewJukeboxPlaylist(CommandInterpreter commandInterpreter){
         JFileChooser fileChooser = new JFileChooser(FileIO.getRootFilePath());
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", "playlist"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Walnutbot Playlist", FileIO.getValidPlaylistFileExtensions()));
         int result = fileChooser.showSaveDialog(null);
         if (result == JFileChooser.APPROVE_OPTION){
             File chosen = fileChooser.getSelectedFile();
@@ -141,7 +141,6 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
         queueTable = new TrackListingTable(environment, uiFrame, true);
         environment.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> {
-            queueTable.pullAudioKeyList(playlist);
             playlist.addAudioKeyPlaylistListener(queueTable);
         });
 
@@ -223,12 +222,12 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
                     playlistLabel.setToolTipText("");
                     break;
                 case LOCAL_FILE:
-                    playlistLabel.setText(playlist.getName());
+                    playlistLabel.setText(playlist.getUrl());
                     playlistLabel.setIcon(new ImageIcon(ButtonMaker.convertIconPath("icons/save.png")));
                     playlistLabel.setToolTipText("This playlist is a local file; Auto-Save is enabled.");
                     break;
                 case REMOTE:
-                    playlistLabel.setText(playlist.getName());
+                    playlistLabel.setText(playlist.getUrl());
                     playlistLabel.setIcon(new ImageIcon(ButtonMaker.convertIconPath("icons/internet.png")));
                     playlistLabel.setToolTipText("This playlist was loaded from the Internet; Auto-Save is disabled.");
                     break;
@@ -244,7 +243,7 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
         popupMenu.add(new JLabel("- History"));
         for (int i = recentPlaylistsHistory.getAudioKeys().size()-1; i >= 0; i--) {
             AudioKey song = recentPlaylistsHistory.getKey(i);
-            JMenuItem item = new JMenuItem(song.getName(), new ImageIcon(ButtonMaker.convertIconPath("icons/history.png")));
+            JMenuItem item = new JMenuItem(song.getUrl(), new ImageIcon(ButtonMaker.convertIconPath("icons/history.png")));
             item.addActionListener(e -> commandInterpreter
                 .evaluateCommand("jb dfl load ".concat(FileIO.sanitizeURIForCommand(song.getUrl())),
                     Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI),
@@ -308,9 +307,8 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
     public void onJukeboxDefaultListLoadStateUpdate(IAudioStateMachine.JukeboxDefaultListLoadState loadState, IAudioStateMachine origin) {
         origin.getJukeboxDefaultList().accessAudioKeyPlaylist(playlist -> {
             defaultListTable.pullAudioKeyList(playlist);
-            boolean listValid = loadState == IAudioStateMachine.JukeboxDefaultListLoadState.LOCAL_FILE;
-            addPlaylistButton.setEnabled(listValid);
-            if (listValid)
+            addPlaylistButton.setEnabled(loadState == IAudioStateMachine.JukeboxDefaultListLoadState.LOCAL_FILE);
+            if (loadState != IAudioStateMachine.JukeboxDefaultListLoadState.UNLOADED)
                 recordRecentPlaylist(playlist);
         });
         updateDefaultPlaylistLabel(origin);
@@ -382,7 +380,7 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
                 case SHUFFLE:
                 case SORT:
                 case ON_SUBSCRIBE:
-                    refresh();
+                    pullAudioKeyList(playlist);
                     break;
                 case CLEAR:
                     removeAll();

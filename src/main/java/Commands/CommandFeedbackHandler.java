@@ -9,7 +9,7 @@ public interface CommandFeedbackHandler {
      * Sends a public message in the same channel as where the command is found.
      *
      * @param message The message to send
-     * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
+     * @param isCopiedToConsole Whether the message is copied to this bot's System.out
      */
     void sendMessage(String message, boolean isCopiedToConsole);
 
@@ -22,7 +22,7 @@ public interface CommandFeedbackHandler {
      * Sends a private message to the command author
      *
      * @param message The message to send
-     * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
+     * @param isCopiedToConsole Whether the message is copied to this bot's System.out
      */
     void sendAuthorPM(String message, boolean isCopiedToConsole);
 

@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.LinkedList;
@@ -71,9 +72,9 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
         loadRequestsProcessing.incrementAndGet();
         if (FileIO.isPlaylistFile(uri)) {
             AudioKeyPlaylist fromFile = new AudioKeyPlaylist(new File(uri));
-            if (fromFile.isURLValid()){
-                // Put this on its own thread to retain this method being nonblocking
-                Thread playlistFileImportThread = new Thread(() -> {
+            // Put this on its own thread to retain this method being nonblocking
+            Thread playlistFileImportThread = new Thread(() -> {
+                if (fromFile.isURLValid()) {
                     if (storeLoadedTrackObjects) {
                         // AudioKeys from playlist file do not have tracks loaded on them.
                         loadTracksPlaylistFile(fromFile, output, trackLoadResultHandler);
@@ -86,10 +87,11 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
                         });
                     }
                     trackLoadResultHandler.onTracksLoaded(output, true);
-                    loadRequestsProcessing.decrementAndGet();
-                });
-                playlistFileImportThread.start();
-            }
+                } else
+                    trackLoadResultHandler.onTracksLoaded(output, false);
+                loadRequestsProcessing.decrementAndGet();
+            });
+            playlistFileImportThread.start();
             return fromFile.isURLValid();
         }
         // Otherwise use lavaplayer to load tracks
@@ -121,7 +123,7 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
                 }
             } else {
                 counter.increment();
-                audioPlayerManager.loadItemOrdered(counter.getCount(), keyFromFile.getUrl(), new LavaplayerTrackLoadResultHandler(output, trackLoadResultHandler, loadRequestsProcessing,true));
+                audioPlayerManager.loadItemOrdered(counter.getCount(), keyFromFile.getUrl(), new LavaplayerTrackLoadResultHandler(output, trackLoadResultHandler, loadRequestsProcessing,true, keyFromFile.getName()));
             }
         }
     }
@@ -333,13 +335,20 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
         private final AudioKeyPlaylistTSWrapper audioKeyPlaylistTSWrapper;
         private final ITrackLoadResultHandler trackLoadResultHandler;
         private final AtomicInteger loadRequestsProcessing;
+        @Nullable
+        private final String nameOverride;
         boolean storeLoadedTrackObjects;
 
         public LavaplayerTrackLoadResultHandler(AudioKeyPlaylistTSWrapper audioKeyPlaylistTSWrapper, ITrackLoadResultHandler trackLoadResultHandler, AtomicInteger loadRequestsProcessing, boolean storeLoadedTrackObjects) {
+            this(audioKeyPlaylistTSWrapper, trackLoadResultHandler, loadRequestsProcessing, storeLoadedTrackObjects, null);
+        }
+
+        public LavaplayerTrackLoadResultHandler(AudioKeyPlaylistTSWrapper audioKeyPlaylistTSWrapper, ITrackLoadResultHandler trackLoadResultHandler, AtomicInteger loadRequestsProcessing, boolean storeLoadedTrackObjects, String nameOverride) {
             this.audioKeyPlaylistTSWrapper = audioKeyPlaylistTSWrapper;
             this.trackLoadResultHandler = trackLoadResultHandler;
             this.loadRequestsProcessing = loadRequestsProcessing;
             this.storeLoadedTrackObjects = storeLoadedTrackObjects;
+            this.nameOverride = nameOverride;
         }
 
         /**
@@ -372,10 +381,12 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
 
         private void insertTrack(AudioKeyPlaylist playlist, AudioTrack track) {
             AudioKey key;
-            if (storeLoadedTrackObjects)
-                key = new AudioKey(String.format("%s - %s", track.getInfo().author, track.getInfo().title), track.getIdentifier(), track);
+            if (nameOverride != null)
+                key = new AudioKey(nameOverride, track.getIdentifier(), track);
+            else if (storeLoadedTrackObjects)
+                key = new AudioKey(LavaplayerUtils.printAuthorAndTitle(track), track.getIdentifier(), track);
             else
-                key = new AudioKey(String.format("%s - %s", track.getInfo().author, track.getInfo().title), track.getIdentifier());
+                key = new AudioKey(LavaplayerUtils.printAuthorAndTitle(track), track.getIdentifier());
             playlist.addAudioKey(key);
         }
 

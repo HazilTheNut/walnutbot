@@ -26,7 +26,6 @@ import java.util.EnumSet;
 public class Main {
 
     public static void main(String[] args){
-
         // Read CLA's
         boolean headlessMode = false;
         String startupScriptLoc = null;

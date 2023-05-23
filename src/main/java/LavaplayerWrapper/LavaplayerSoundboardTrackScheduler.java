@@ -43,7 +43,8 @@ public class LavaplayerSoundboardTrackScheduler extends AudioEventAdapter {
      */
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         Transcriber.printTimestamped("Soundboard track '%s' (%s) ended", LavaplayerUtils.printAuthorAndTitle(track), track.getIdentifier());
-        audioStateMachine.stopSoundboard();
+        if (endReason.mayStartNext)
+            audioStateMachine.stopSoundboard();
         // Adapter dummy method
     }
 
