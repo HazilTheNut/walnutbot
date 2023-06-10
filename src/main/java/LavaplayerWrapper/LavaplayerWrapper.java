@@ -2,6 +2,7 @@ package LavaplayerWrapper;
 
 import Audio.*;
 import Utils.FileIO;
+import Utils.Transcriber;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -176,14 +177,17 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
         if (!(loadedTrackObject instanceof AudioTrack))
             return false;
         AudioTrack track = (AudioTrack) loadedTrackObject;
+        Transcriber.printRaw("startPlayback: %s %s", playbackStreamType.name(), LavaplayerUtils.printAuthorAndTitle(track));
         if (isDisconnectedFromVoiceChannel())
             return false;
         switch (playbackStreamType) {
             case JUKEBOX:
                 jukeboxPlayer.startTrack(track, false);
+                jukeboxPlayer.setPaused(false);
                 break;
             case SOUNDBOARD:
                 soundboardPlayer.startTrack(track, false);
+                soundboardPlayer.setPaused(false);
                 break;
             default:
                 return false;
@@ -201,6 +205,7 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
     public boolean endPlayback(PlaybackStreamType playbackStreamType) {
         if (isDisconnectedFromVoiceChannel())
             return false;
+        Transcriber.printRaw("endPlayback: %s", playbackStreamType.name());
         switch (playbackStreamType) {
             case JUKEBOX:
                 jukeboxPlayer.stopTrack();
@@ -224,6 +229,7 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
     public boolean pausePlayback(PlaybackStreamType playbackStreamType) {
         if (isDisconnectedFromVoiceChannel())
             return false;
+        Transcriber.printRaw("pausePlayback: %s", playbackStreamType.name());
         switch (playbackStreamType) {
             case JUKEBOX:
                 jukeboxPlayer.setPaused(true);
@@ -247,6 +253,7 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
     public boolean resumePlayback(PlaybackStreamType playbackStreamType) {
         if (isDisconnectedFromVoiceChannel())
             return false;
+        Transcriber.printRaw("resumePlayback: %s", playbackStreamType.name());
         switch (playbackStreamType) {
             case JUKEBOX:
                 jukeboxPlayer.setPaused(false);

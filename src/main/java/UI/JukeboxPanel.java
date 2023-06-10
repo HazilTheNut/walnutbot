@@ -282,6 +282,7 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
     private void recordRecentPlaylist(AudioKeyPlaylist playlist){
         AudioKey recordKey = new AudioKey(playlist.getName(), playlist.getUrl());
+        Transcriber.printRaw("recording recent: %s", recordKey.getUrl());
 
         // Remove duplicate to promote to front
         recentPlaylistsHistory.removeAudioKey(recordKey);

@@ -11,7 +11,7 @@ import java.util.List;
 
 public class FileIO {
 
-    private static final String[] playlistFileExtensions = { ".playlist", ".wbp" };
+    private static final String[] playlistFileExtensions = { "playlist", "wbp" };
 
     public static String getRootFilePath() {
         String path = FileIO.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -35,7 +35,7 @@ public class FileIO {
     public static String getFileExtension(String uri) {
         int lastIndex = uri.lastIndexOf('.');
         if (lastIndex > 0 && lastIndex < uri.length() - 1)
-            return uri.substring(lastIndex);
+            return uri.substring(lastIndex + 1);
         else
             return uri;
     }
@@ -49,7 +49,7 @@ public class FileIO {
     public static String getFileName(String uri) {
         int sepIndex = uri.lastIndexOf(File.separatorChar);
         int dotIndex = uri.lastIndexOf('.');
-        return uri.substring(Math.max(0, sepIndex), Math.min(uri.length(), dotIndex));
+        return uri.substring(Math.max(0, sepIndex), dotIndex);
     }
 
     public static File[] getFilesInDirectory(String uri) {
@@ -83,7 +83,7 @@ public class FileIO {
     }
 
     public static String appendPlaylistFileExtension(String uri) {
-        if (getFileExtension(uri).equals(".wbp"))
+        if (getFileExtension(uri).equals("wbp"))
             return uri;
         return uri.concat(".wbp");
     }

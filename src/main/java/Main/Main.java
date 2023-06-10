@@ -77,7 +77,7 @@ public class Main {
         environment.setAudioStateMachine(new AudioStateMachine(playbackWrapper));
 
         // Start up connectivity with Discord communication platform
-        environment.setCommunicationPlatformManager(new DiscordBotManager(jda, environment.getAudioStateMachine(), (IDiscordPlaybackSystemBridge)lavaplayerBotBridge));
+        environment.setCommunicationPlatformManager(new DiscordBotManager(jda, environment, (IDiscordPlaybackSystemBridge)lavaplayerBotBridge));
 
         // Start up command interpreter
         environment.setCommandInterpreter(new CommandInterpreter(environment));

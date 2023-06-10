@@ -2,6 +2,8 @@ package CommuncationPlatform;
 
 import Audio.IAudioStateMachine;
 import Audio.IAudioStateMachineListener;
+import Commands.Command;
+import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEvent;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventListener;
@@ -9,27 +11,31 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DiscordBotManager implements AudioEventListener, ICommunicationPlatformManager, IAudioStateMachineListener {
+public class DiscordBotManager extends ListenerAdapter implements AudioEventListener, ICommunicationPlatformManager, IAudioStateMachineListener {
 
     private final boolean useDefaultStatus;
     private final boolean showCurrentPlayingSong;
 
     private final JDA jda;
-    private final IAudioStateMachine audioStateMachine;
+    private final WalnutbotEnvironment environment;
     private final IDiscordPlaybackSystemBridge playbackSystemBridge;
 
-    public DiscordBotManager(JDA jda, IAudioStateMachine audioStateMachine, IDiscordPlaybackSystemBridge playbackSystemBridge){
+    public DiscordBotManager(JDA jda, WalnutbotEnvironment environment, IDiscordPlaybackSystemBridge playbackSystemBridge){
         this.jda = jda;
-        this.audioStateMachine = audioStateMachine;
-        audioStateMachine.addAudioStateMachineListener(this);
+        this.environment = environment;
+        environment.getAudioStateMachine().addAudioStateMachineListener(this);
         this.playbackSystemBridge = playbackSystemBridge;
         useDefaultStatus         = Boolean.parseBoolean(SettingsLoader.getBotConfigValue("status_use_default"));
         showCurrentPlayingSong   = Boolean.parseBoolean(SettingsLoader.getBotConfigValue("status_show_current_song"));
+        jda.addEventListener(this);
+        updateStatus();
     }
 
     @Override
@@ -38,8 +44,8 @@ public class DiscordBotManager implements AudioEventListener, ICommunicationPlat
     }
 
     private void updateStatus(boolean useDefault){
-        if (showCurrentPlayingSong && audioStateMachine.getJukeboxCurrentlyPlayingSong() != null){ // Status based on currently-playing song (currentlyPlayingSong is null when no song is playing)
-            String message = audioStateMachine.getJukeboxCurrentlyPlayingSong().getName();
+        if (showCurrentPlayingSong && environment.getAudioStateMachine().getJukeboxCurrentlyPlayingSong() != null){ // Status based on currently-playing song (currentlyPlayingSong is null when no song is playing)
+            String message = environment.getAudioStateMachine().getJukeboxCurrentlyPlayingSong().getName();
             jda.getPresence().setActivity(Activity.playing(message));
         } else if (useDefault){ // Status based on default configuration
             jda.getPresence().setActivity(Activity
@@ -71,6 +77,33 @@ public class DiscordBotManager implements AudioEventListener, ICommunicationPlat
         }
     }
 
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if (environment.getCommandInterpreter() == null)
+            return;
+        //Transcriber.printTimestamped("Raw message: \"%1$s\"", event.getMessage().getContentRaw());
+
+        //Input sanitation
+        //Transcriber.printTimestamped("My name: \'%1$s\"", botManager.getBotName());
+        if (!Boolean.parseBoolean(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
+            return;
+        //Ensure the bot doesn't get stuck in response loops
+        if (event.getAuthor().getAsTag().equals(environment.getCommunicationPlatformManager().getBotName()))
+            return;
+
+        //Run command if incoming message starts with the command character
+        String messageContent = event.getMessage().getContentRaw();
+        environment.getCommandInterpreter().receiveMessageFromCommunicationPlatform(messageContent, new DiscordCommandFeedbackHandler(event), getUserPermissions(event.getAuthor().getAsTag()));
+    }
+
+    private byte getUserPermissions(String username){
+        if (SettingsLoader.isAdminUser(username))
+            return Command.ADMIN_MASK;
+        if (SettingsLoader.isBlockedUser(username))
+            return Command.BLOCKED_MASK;
+        return Command.USER_MASK;
+    }
+
     /**
      * @param event The event
      */
@@ -95,8 +128,8 @@ public class DiscordBotManager implements AudioEventListener, ICommunicationPlat
     @Override public void disconnectFromVoiceChannel() {
         for (AudioManager audioManager : jda.getAudioManagers()){
             audioManager.closeAudioConnection();
-            audioStateMachine.stopSoundboard();
-            audioStateMachine.pauseJukebox();
+            environment.getAudioStateMachine().stopSoundboard();
+            environment.getAudioStateMachine().pauseJukebox();
         }
     }
 

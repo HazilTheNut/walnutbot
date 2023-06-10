@@ -45,6 +45,7 @@ public class AudioStateMachine implements IAudioStateMachine {
         soundboardListRaw.addAudioKeyPlaylistListener(((playlist, event) -> {
             // Auto-save
             if (event.getEventType() == AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.EVENT_QUEUE_END) {
+                Transcriber.printRaw("saving soundboard");
                 playlist.saveToFile(FileIO.getSoundboardFile());
             }
         }));
@@ -59,6 +60,7 @@ public class AudioStateMachine implements IAudioStateMachine {
             // Auto-save
             if (event.getEventType() == AudioKeyPlaylistEvent.AudioKeyPlaylistEventType.EVENT_QUEUE_END) {
                 if (jukeboxDefaultListLoadState == JukeboxDefaultListLoadState.LOCAL_FILE) {
+                    Transcriber.printRaw("saving jukebox default list to %s", jukeboxDefaultListRaw.getUrl());
                     jukeboxDefaultListRaw.saveToFile(new File(jukeboxDefaultListRaw.getUrl()));
                 }
             }
@@ -101,6 +103,7 @@ public class AudioStateMachine implements IAudioStateMachine {
      */
     @Override
     public boolean loadTracks(String uri, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects) {
+        Transcriber.printRaw("loadTracks: %s %b", uri, storeLoadedTrackObjects);
         return playbackWrapper.loadTracks(uri, output, trackLoadResultHandler, storeLoadedTrackObjects);
     }
 
@@ -125,6 +128,7 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     private void playSoundboardSound_internal(AudioKey key) {
+        Transcriber.printRaw("playSoundboardSound_internal");
         // Play sound
         if (key.getAbstractedLoadedTrack() == null) {
             // We need to load up the track
@@ -198,6 +202,7 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     private void stopSoundboard_internal() {
+        Transcriber.printRaw("stopSoundboard_internal");
         // Stop playback
         playbackWrapper.endPlayback(IPlaybackWrapper.PlaybackStreamType.SOUNDBOARD);
         switch (myCurrentStatus) {
@@ -265,6 +270,7 @@ public class AudioStateMachine implements IAudioStateMachine {
     private void enqueueJukeboxSong_internal(AudioKey key) {
         // Populate the queue with tracks loaded from key
         if (key.getAbstractedLoadedTrack() == null) {
+            Transcriber.printRaw("enqueueJukeboxSong_internal: need to load");
             // Need to load the track(s)
             AudioKeyPlaylistTSWrapper temp = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("TEMP"));
             if (!playbackWrapper.loadTracks(key.getUrl(), temp, (output, successful) -> {
@@ -283,6 +289,7 @@ public class AudioStateMachine implements IAudioStateMachine {
                 Transcriber.printTimestamped("Loading for key %s failed!", key);
             }
         } else {
+            Transcriber.printRaw("enqueueJukeboxSong_internal: loaded");
             switch (myCurrentStatus) {
                 case INACTIVE:
                     // Start playing music
@@ -338,6 +345,7 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     private void startNextJukeboxSong_internal(boolean ignoreLooping) {
+        Transcriber.printRaw("startNextJukeboxSong_internal");
         // End playback
         playbackWrapper.endPlayback(IPlaybackWrapper.PlaybackStreamType.JUKEBOX);
 
@@ -396,6 +404,7 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     private void beginPlaybackOfCurrentSong() {
+        Transcriber.printRaw("beginPlaybackOfCurrentSong");
         if (jukeboxCurrentlyPlayingSong != null) {
             if (jukeboxCurrentlyPlayingSong.getAbstractedLoadedTrack() == null) {
                 Transcriber.printTimestamped("Cannot play Key %s without a track loaded onto it", jukeboxCurrentlyPlayingSong);
@@ -449,13 +458,14 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     private void pauseJukebox_internal() {
+        Transcriber.printRaw("pauseJukebox_internal");
         switch (myCurrentStatus){
             case JUKEBOX_PLAYING:
+            case JUKEBOX_PAUSED:
                 playbackWrapper.pausePlayback(IPlaybackWrapper.PlaybackStreamType.JUKEBOX);
                 setCurrentState(AudioStateMachineStatus.JUKEBOX_PAUSED);
                 break;
             case INACTIVE:
-            case JUKEBOX_PAUSED:
             case SOUNDBOARD_PLAYING:
             case SOUNDBOARD_PLAYING_JUKEBOX_PAUSED:
                 // Do nothing
@@ -487,6 +497,7 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     private void resumeJukebox_internal() {
+        Transcriber.printRaw("resumeJukebox_internal");
         switch (myCurrentStatus){
             case INACTIVE:
             case SOUNDBOARD_PLAYING:
@@ -494,10 +505,10 @@ public class AudioStateMachine implements IAudioStateMachine {
                 startNextJukeboxSong(true);
                 break;
             case JUKEBOX_PAUSED:
+            case JUKEBOX_PLAYING:
                 if (playbackWrapper.resumePlayback(IPlaybackWrapper.PlaybackStreamType.JUKEBOX))
                     setCurrentState(AudioStateMachineStatus.JUKEBOX_PLAYING);
                 break;
-            case JUKEBOX_PLAYING:
             case SOUNDBOARD_PLAYING_JUKEBOX_READY:
             case SOUNDBOARD_PLAYING_JUKEBOX_SUSPENDED:
                 // Do nothing
@@ -535,12 +546,15 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     private void loadJukeboxDefaultList_internal(String uri) {
+        Transcriber.printRaw("loadJukeboxDefaultList_internal: %s", uri);
         jukeboxDefaultList.accessAudioKeyPlaylist(playlist -> {
             // Unload previous playlist
+            Transcriber.printRaw("loadJukeboxDefaultList_internal: prev playlist unloading: %s", playlist.getUrl());
             playlist.clearPlaylist();
             jukeboxDefaultListLoadState = JukeboxDefaultListLoadState.UNLOADED; // Don't do setJukeboxDefaultListLoadState as we should only notify listeners once
             // Begin loading new playlist
             loadTracks(uri, jukeboxDefaultList, (loadResult, successful) -> {
+                Transcriber.printRaw("loadJukeboxDefaultList_internal: new playlist loaded: %s", uri);
                 if (!successful) {
                     setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.UNLOADED);
                 } else if (FileIO.isWebsiteURL(uri))
@@ -565,6 +579,7 @@ public class AudioStateMachine implements IAudioStateMachine {
                             accessedLoadResult.setUrl("ERROR");
                             break;
                     }
+                    Transcriber.printRaw("loadJukeboxDefaultList_internal: assigned uri: %s", accessedLoadResult.getUrl());
                 });
             }, false);
         });

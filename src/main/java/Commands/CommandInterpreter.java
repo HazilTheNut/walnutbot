@@ -3,11 +3,9 @@ package Commands;
 import Main.WalnutbotEnvironment;
 import Main.WalnutbotInfo;
 import Utils.*;
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import java.util.*;
 
-public class CommandInterpreter extends ListenerAdapter {
+public class CommandInterpreter {
 
     private final HashMap<String, Command> commandMap;
     private final WalnutbotEnvironment environment;
@@ -27,13 +25,13 @@ public class CommandInterpreter extends ListenerAdapter {
         addCommand(new GenericCommand("status", "Prints out the current status of the bot", ((environment1, feedbackHandler) -> {
             String channelStr = environment1.getCommunicationPlatformManager().connectedVoiceChannelToString();
             StringBuilder jukeboxDefaultListName = new StringBuilder();
-            environment1.getAudioStateMachine().getJukeboxDefaultList().accessAudioKeyPlaylist(playlist -> jukeboxDefaultListName.append(playlist.getName()));
+            environment1.getAudioStateMachine().getJukeboxDefaultList().accessAudioKeyPlaylist(playlist -> jukeboxDefaultListName.append(playlist.getUrl()));
             StringBuilder jukeboxQueueLength = new StringBuilder();
             environment1.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> jukeboxQueueLength.append(playlist.getAudioKeys().size()));
             Transcriber.printAndPost(feedbackHandler,
                 "**Bot Status:**\n```\n"
                     + "Version: %6$s\n"
-                    + "Raw Volumes: sb=%1$d jb=%2$d\n"
+                    + "Volumes: sb=%1$d jb=%2$d\n"
                     + "Connected Channel: %3$s\n"
                     + "Jukebox Default List: %4$s\n"
                     + "Jukebox Queue Length: %5$s\n```",
@@ -66,21 +64,9 @@ public class CommandInterpreter extends ListenerAdapter {
         return String.format("allowCommand_%1$s", command);
     }
 
-    @Override public void onMessageReceived(MessageReceivedEvent event) {
-        //Transcriber.printTimestamped("Raw message: \"%1$s\"", event.getMessage().getContentRaw());
-
-        //Input sanitation
-        //Transcriber.printTimestamped("My name: \'%1$s\"", botManager.getBotName());
-        if (!Boolean.parseBoolean(SettingsLoader.getBotConfigValue("accept_bot_messages")) && event.getAuthor().isBot())
-            return;
-        //Ensure the bot doesn't get stuck in response loops
-        if (event.getAuthor().getAsTag().equals(environment.getCommunicationPlatformManager().getBotName()))
-            return;
-
-        //Run command if incoming message starts with the command character
-        String messageContent = event.getMessage().getContentRaw();
-        if (isADiscordCommand(messageContent))
-            evaluateCommand(removeCommandChar(messageContent), new DiscordCommandFeedbackHandler(event), getUserPermissions(event.getAuthor().getAsTag()));
+    public void receiveMessageFromCommunicationPlatform(String message, CommandFeedbackHandler commandFeedbackHandler, byte userPermission) {
+        if (isAPrefixedCommand(message))
+            evaluateCommand(removeCommandChar(message), commandFeedbackHandler, userPermission);
     }
 
     public void readHeadlessInput(){
@@ -98,15 +84,7 @@ public class CommandInterpreter extends ListenerAdapter {
         inputThread.start();
     }
 
-    private byte getUserPermissions(String username){
-        if (SettingsLoader.isAdminUser(username))
-            return Command.ADMIN_MASK;
-        if (SettingsLoader.isBlockedUser(username))
-            return Command.BLOCKED_MASK;
-        return Command.USER_MASK;
-    }
-
-    private boolean isADiscordCommand(String commandRawText){
+    private boolean isAPrefixedCommand(String commandRawText){
         String commandCharStr = SettingsLoader.getBotConfigValue("command_char");
         if (commandCharStr == null) return false;
         return commandRawText.length() > commandCharStr.length() && commandRawText.substring(0, commandCharStr.length()).equals(commandCharStr);
@@ -213,68 +191,5 @@ public class CommandInterpreter extends ListenerAdapter {
         String[] subarray = new String[arr.length-1]; //Either the command arguments or a command-args group of a subcommand
         System.arraycopy(arr, 1, subarray, 0, subarray.length);
         return subarray;
-    }
-
-    private class DiscordCommandFeedbackHandler implements CommandFeedbackHandler {
-
-        MessageReceivedEvent event;
-
-        public DiscordCommandFeedbackHandler(MessageReceivedEvent event) {
-            this.event = event;
-        }
-
-        /**
-         * Sends a public message in the same channel as where the command is found.
-         *
-         * @param message           The message to send
-         * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
-         */
-        @Override public void sendMessage(String message, boolean isCopiedToConsole) {
-            event.getChannel().sendMessage(message).queue();
-        }
-
-        /**
-         * @return True if the channel where the command is found is a public space, rather than a form of private message
-         */
-        @Override public boolean isChannelPublic() {
-            return event.getChannel().getType().isGuild();
-        }
-
-        /**
-         * Sends a private message to the command author
-         *
-         * @param message           The message to send
-         * @param isCopiedToConsole Whether or not the message is copied to this bot's System.out
-         */
-        @Override public void sendAuthorPM(String message, boolean isCopiedToConsole) {
-            if (isChannelPublic())
-                event.getChannel().sendMessage(String.format("<@%1$s> I have sent a PM to you.", event.getAuthor().getId())).queue();
-            event.getAuthor().openPrivateChannel().complete().sendMessage(message).queue();
-        }
-
-        /**
-         * Gets a String describing the author of the command.
-         *
-         * @return A String describing the author of the command.
-         */
-        @Override public String getAuthor() {
-            return event.getAuthor().getAsTag();
-        }
-
-        /**
-         * Returns the size of pages to display for listing commands such as help, jb list, etc.
-         *
-         * @param commandType The command to distinguish page sizes for
-         * @return The number of elements to list on a given page.
-         */
-        @Override public int getListPageSize(CommandType commandType) {
-            switch (commandType){
-                case HELP: return 15;
-                case QUEUE: return 10;
-                case DEFAULT: return 10;
-                case CONNECT: return 15;
-                default: return 10;
-            }
-        }
     }
 }
