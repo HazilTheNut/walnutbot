@@ -33,10 +33,10 @@ public class JukeboxDefaultAddCommand extends Command {
             return;
         }
         if (sanitizeLocalAccess(args[0], feedbackHandler, permissions)) {
-            environment.getAudioStateMachine().loadTracks(FileIO.expandURIMacros(args[0]), environment.getAudioStateMachine().getJukeboxDefaultList(), (loadResult, successful) -> {
+            environment.getAudioStateMachine().loadTracks(FileIO.expandURIMacros(args[0]), environment.getAudioStateMachine().getJukeboxDefaultList(), new LoadJobSettings(false, false), (loadResult, successful) -> {
                 if (!successful)
                     Transcriber.printAndPost(feedbackHandler, "Failed to load URI: %s", args[0]);
-            }, false);
+            });
             Transcriber.printAndPost(feedbackHandler, "Songs added to Jukebox Default List");
         }
     }

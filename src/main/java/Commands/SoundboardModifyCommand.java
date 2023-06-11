@@ -37,7 +37,7 @@ public class SoundboardModifyCommand extends Command {
             if (args[index].equals("-name"))
                 newData.setName(args[index+1]);
             else if (args[index].equals("-url")) {
-                String expandedURI = FileIO.expandURIMacros(args[0]);
+                String expandedURI = FileIO.expandURIMacros(args[index+1]);
                 if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions))
                     newData.setUrl(expandedURI);
                 else

@@ -1,6 +1,10 @@
 package Audio;
 
+import java.util.List;
+
 public interface IPlaybackWrapper {
+
+
     enum PlaybackStreamType {
         SOUNDBOARD,
         JUKEBOX,
@@ -12,16 +16,16 @@ public interface IPlaybackWrapper {
 
     /**
      * Given a URI (can be local file or web address), populates an AudioKeyPlaylist with the tracks found at that location.
-     * The URI can point to an audio file (.mp3, .mp4, .wav, etc.), a Walnutbot .playlist file, or a web address such as <a href="https://www.bandcamp.com">...</a>
+     * The URI can point to an audio file (.mp3, .mp4, .wav, etc.) or a web address such as <a href="https://www.bandcamp.com">...</a>.
+     * The URI cannot be a Walnutbot playlist file (.playlist, .wbp)
      * This is a nonblocking operation and spins up its own thread.
      *
-     * @param uri The URI to load the track from
-     * @param output AudioKeyPlaylist to populate with load results
-     * @param trackLoadResultHandler Handles what occurs after the AudioKeyPlaylist is populated
+     * @param source                  The URI to load the track from
+     * @param output                  AudioKeyPlaylist to populate with load results
      * @param storeLoadedTrackObjects Whether to store the loaded track object on each generated AudioKey
-     * @return true if the operation was successful, and false otherwise
+     * @param loadResultHandler       Handles what occurs after the AudioKeyPlaylist is populated
      */
-    boolean loadTracks(String uri, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects);
+    void loadItem(AudioKey source, List<AudioKey> output, LoadJobSettings storeLoadedTrackObjects, IPlaybackWrapperLoadResultHandler loadResultHandler);
 
     /**
      * Sets which stream of audio, either the Soundboard or the Jukebox, should be playing through the bot.
@@ -89,4 +93,6 @@ public interface IPlaybackWrapper {
     int getVolume(PlaybackStreamType playbackStreamType);
 
     boolean isProcessingLoadRequests();
+
+    boolean isDisconnectedFromVoiceChannel();
 }

@@ -29,6 +29,8 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
     private static final String noSongText = "Song currently not playing";
 
+    private int scrollUnitIncrement;
+
     public JukeboxPanel(WalnutbotEnvironment environment, UIFrame uiFrame){
         environment.getAudioStateMachine().addAudioStateMachineListener(this);
 
@@ -52,11 +54,11 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
         JScrollPane scrollPane = new JScrollPane(defaultListTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        int unitIncrement = 0;
+        scrollUnitIncrement = 0;
         for (Component component : scrollPane.getComponents())
-            unitIncrement = Math.max(unitIncrement, (int)component.getMinimumSize().getHeight());
+            scrollUnitIncrement = Math.max(scrollUnitIncrement, (int)component.getMinimumSize().getHeight());
 
-        scrollPane.getVerticalScrollBar().setUnitIncrement(unitIncrement);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(scrollUnitIncrement);
 
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(createDefaultListControlsPanel(environment.getCommandInterpreter(), uiFrame), BorderLayout.PAGE_START);
@@ -145,6 +147,8 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
         });
 
         JScrollPane scrollPane = new JScrollPane(queueTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        scrollPane.getVerticalScrollBar().setUnitIncrement(scrollUnitIncrement);
 
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(createQueueControlsPanel(environment, uiFrame), BorderLayout.PAGE_START);

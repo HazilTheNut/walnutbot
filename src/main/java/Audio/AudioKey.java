@@ -11,14 +11,10 @@ public class AudioKey implements Comparable<AudioKey>{
     private String name;
     private String url;
     @Nullable private AudioTrack loadedTrack;
-    private Object abstractedLoadedTrack;
+    private final Object abstractedLoadedTrack;
 
     public Object getAbstractedLoadedTrack() {
         return abstractedLoadedTrack;
-    }
-
-    public void setAbstractedLoadedTrack(Object abstractedLoadedTrack) {
-        this.abstractedLoadedTrack = abstractedLoadedTrack;
     }
 
     public AudioKey(String name, String url) {
@@ -110,5 +106,14 @@ public class AudioKey implements Comparable<AudioKey>{
             return String.format("%1$s - %2$s", name, loadedTrack.getInfo().author);
         else
             return name;
+    }
+
+    /**
+     * Returns an AudioKey with the same name and URI, but with a null abstractedLoadedTrack
+     *
+     * @return an AudioKey with the same name and URI, but with a null abstractedLoadedTrack
+     */
+    public AudioKey shallowCopy(){
+        return new AudioKey(name, url, null);
     }
 }

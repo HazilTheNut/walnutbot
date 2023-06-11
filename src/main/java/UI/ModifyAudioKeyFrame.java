@@ -1,19 +1,11 @@
 package UI;
 
-import Audio.AudioKey;
-import Audio.AudioKeyPlaylist;
-import Audio.AudioKeyPlaylistTSWrapper;
-import Audio.AudioMaster;
+import Audio.*;
 import Commands.Command;
-import Commands.CommandInterpreter;
 import Main.WalnutbotEnvironment;
 import Main.WalnutbotInfo;
 import Utils.FileIO;
 import Utils.Transcriber;
-import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
-import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -63,10 +55,10 @@ public class ModifyAudioKeyFrame extends JFrame {
         JButton fetchInfoButton = ButtonMaker.createIconButton("icons/extract.png", "Fetch Song Name from URL", 5);
         fetchInfoButton.addActionListener(e -> {
             AudioKeyPlaylistTSWrapper output = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("TEMP"));
-            environment.getAudioStateMachine().loadTracks(urlField.getText(), output, (playlist, successful) -> {
+            environment.getAudioStateMachine().loadTracks(urlField.getText(), output, new LoadJobSettings(false, true), (playlist, successful) -> {
                 if (successful)
                     output.accessAudioKeyPlaylist(playlist1 -> nameField.setText(playlist1.getKey(0).getName()));
-            }, false);
+            });
         });
         namePanel.add(fetchInfoButton);
         namePanel.add(Box.createHorizontalStrut(FIELD_MARGIN));

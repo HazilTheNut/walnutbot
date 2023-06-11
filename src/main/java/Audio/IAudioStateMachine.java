@@ -29,15 +29,15 @@ public interface IAudioStateMachine {
     // State machine operation
     /**
      * Should be a pass-through to an IPlaybackWrapper loadTracks() useful for retrieving tracks from local/internet
-     *  to instant-play soundboard sounds, import tracks into jukebox default list, or enqueue jukebox songs
+     * to instant-play soundboard sounds, import tracks into jukebox default list, or enqueue jukebox songs
      *
-     * @param uri The URI to load the track from
-     * @param output AudioKeyPlaylist to populate with load results
+     * @param uri                    The URI to load the track from
+     * @param output                 AudioKeyPlaylist to populate with load results
+     * @param loadJobSettings        Whether to store the loaded track object on each generated AudioKey
      * @param trackLoadResultHandler Handles what occurs after the AudioKeyPlaylist is populated
-     * @param storeLoadedTrackObjects Whether to store the loaded track object on each generated AudioKey
      * @return true if the operation was successful, and false otherwise
      */
-    boolean loadTracks(String uri, AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, boolean storeLoadedTrackObjects);
+    boolean loadTracks(String uri, AudioKeyPlaylistTSWrapper output, LoadJobSettings loadJobSettings, ITrackLoadResultHandler trackLoadResultHandler);
 
     /**
      * Interrupts jukebox if it was playing and plays a sound
