@@ -5,14 +5,19 @@ import Utils.FileIO;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioTrackLoadJob {
+
+    private final UUID id;
     private final Semaphore loadResultMutex;
 
     public AudioTrackLoadJob(){
         loadResultMutex = new Semaphore(1,true);
+        id = UUID.randomUUID();
     }
 
     public boolean loadItem(String uri, AudioKeyPlaylistTSWrapper output, IPlaybackWrapper playbackWrapper, ITrackLoadResultHandler trackLoadResultHandler, LoadJobSettings loadJobSettings) {
@@ -126,10 +131,27 @@ public class AudioTrackLoadJob {
         return successful.get();
     }
 
+    public UUID getId() {
+        return id;
+    }
+
     private enum UriLoadRequestState {
         UNLOADED,
         LOADED_SUCCESSFULLY,
         LOADED_UNSUCCESSFULLY
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AudioTrackLoadJob that = (AudioTrackLoadJob) o;
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     private static class UriLoadRequest {

@@ -40,85 +40,11 @@ public class ScriptCommand extends Command {
             return;
         String expandedURI = FileIO.expandURIMacros(args[0]);
         if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions)){
-            File scriptFile = new File(expandedURI);
-            if (scriptFile.exists() && scriptFile.isFile()){
-                CommandFeedbackHandler scriptFeedbackHandler = Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_CONSOLE);
-                Thread scriptThread = new Thread(() -> {
-                    try {
-                        Scanner sc = new Scanner(scriptFile);
-                        while (sc.hasNext()){
-                            String command = sc.nextLine();
-                            if (command.length() > 0) {
-                                if (command.charAt(0) == '@')
-                                    delay(command, environment.getAudioStateMachine());
-                                else if (command.charAt(0) != '#')
-                                    commandInterpreter
-                                        .evaluateCommand(command, scriptFeedbackHandler, permissions);
-                            }
-                        }
-                        sc.close();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                });
-                scriptThread.start();
-            }
+            Thread parseThread = new Thread(() -> {
+                ScriptParser parser = new ScriptParser();
+                parser.parseScriptFile(expandedURI, environment, feedbackHandler, permissions);
+            });
+            parseThread.start();
         }
     }
-
-    private void delay(String delayString, IAudioStateMachine audioStateMachine) {
-        if (delayString.equals("@sb")){
-                try {
-                    do {
-                        Thread.sleep(100);
-                    } while (isSoundboardPlaying(audioStateMachine));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-            }
-        } else if (delayString.equals("@jb") || delayString.equals("@load")){
-            try {
-                do {
-                    Thread.sleep(100);
-                } while (audioStateMachine.areLoadRequestsProcessing());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } else{
-            // Calculate number of milliseconds to wait
-            long waitMs = 0;
-            int pos = 1;
-            String[] units = {"h", "m", "s", "ms"};
-            long[] unitLengthsMs = {60 * 60 * 1000, 60 * 1000, 1000, 1};
-            for (int i = 0; i < units.length; i++) {
-                String unit = units[i];
-                long unitLength = unitLengthsMs[i];
-                if (pos < delayString.length()){
-                    int unitPos = delayString.indexOf(unit, pos);
-                    if (unitPos > 0) {
-                        waitMs += Integer.parseInt(delayString.substring(pos, unitPos)) * unitLength;
-                        pos = unitPos + unit.length();
-                    }
-                }
-            }
-            // Wait that many milliseconds
-            try {
-                Thread.sleep(waitMs);
-            } catch (InterruptedException e){
-                e.printStackTrace();
-            }
-        }
-    }
-
-    private boolean isSoundboardPlaying(IAudioStateMachine audioStateMachine) {
-        switch (audioStateMachine.getCurrentStatus()) {
-            case SOUNDBOARD_PLAYING:
-            case SOUNDBOARD_PLAYING_JUKEBOX_SUSPENDED:
-            case SOUNDBOARD_PLAYING_JUKEBOX_PAUSED:
-            case SOUNDBOARD_PLAYING_JUKEBOX_READY:
-                return true;
-            default:
-                return false;
-        }
-    }
-
 }

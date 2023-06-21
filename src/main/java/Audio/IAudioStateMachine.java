@@ -245,4 +245,18 @@ public interface IAudioStateMachine {
      * Notifies all song duration trackers that a jukebox song has ended
      */
     void songDurationTrackersNotifySongEnd();
+
+    /**
+     * Notifies object when the soundboard finishes playing. If it is not playing, the object is immediately notified.
+     *
+     * @param obj The object to notify
+     */
+    void notifyWhenSoundboardCompletes(Object obj);
+
+    /**
+     * Notifies object when the audio tracks are done loading. If no loading jobs are active, the object is immediately notified.
+     *
+     * @param obj The object to notify
+     */
+    void notifyWhenAudioLoadingCompletes(Object obj);
 }
