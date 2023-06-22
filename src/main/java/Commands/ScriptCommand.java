@@ -1,13 +1,7 @@
 package Commands;
 
-import Audio.IAudioStateMachine;
 import Main.WalnutbotEnvironment;
 import Utils.FileIO;
-import Utils.Transcriber;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.Scanner;
 
 public class ScriptCommand extends Command {
 
@@ -40,10 +34,8 @@ public class ScriptCommand extends Command {
             return;
         String expandedURI = FileIO.expandURIMacros(args[0]);
         if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions)){
-            Thread parseThread = new Thread(() -> {
-                ScriptParser parser = new ScriptParser();
-                parser.parseScriptFile(expandedURI, environment, feedbackHandler, permissions);
-            });
+            ScriptParser parser = new ScriptParser();
+            Thread parseThread = new Thread(() -> parser.parseScriptFile(expandedURI, environment, feedbackHandler, permissions));
             parseThread.start();
         }
     }

@@ -9,7 +9,6 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
 
 public class AudioStateMachine implements IAudioStateMachine {
@@ -33,8 +32,8 @@ public class AudioStateMachine implements IAudioStateMachine {
 
     private final ConcurrentHashMap<UUID, AudioTrackLoadJob> loadingJobs;
 
-    private final ConcurrentLinkedDeque<Object> soundboardCompleteNotifyList;
-    private final ConcurrentLinkedDeque<Object> loadingCompleteNotifyList;
+    private final ConcurrentLinkedDeque<INotifiableObject> soundboardCompleteNotifyList;
+    private final ConcurrentLinkedDeque<INotifiableObject> loadingCompleteNotifyList;
 
     public static final int VOLUME_DEFAULT = 50;
 
@@ -46,6 +45,10 @@ public class AudioStateMachine implements IAudioStateMachine {
         myCurrentStatus = AudioStateMachineStatus.INACTIVE;
         currentActiveStreamState = CurrentActiveStreamState.NEITHER;
         jukeboxDefaultListLoadState = JukeboxDefaultListLoadState.UNLOADED;
+
+        loadingJobs = new ConcurrentHashMap<>();
+        soundboardCompleteNotifyList = new ConcurrentLinkedDeque<>();
+        loadingCompleteNotifyList = new ConcurrentLinkedDeque<>();
 
         // Init soundboard list
         AudioKeyPlaylist soundboardListRaw = new AudioKeyPlaylist("SOUNDBOARD");
@@ -86,11 +89,6 @@ public class AudioStateMachine implements IAudioStateMachine {
         setMainVolume(getSettingsVolume("mainVolume"));
         setSoundboardVolume(getSettingsVolume("soundboardVolume"));
         setJukeboxVolume(getSettingsVolume("jukeboxVolume"));
-
-        loadingJobs = new ConcurrentHashMap<>();
-
-        soundboardCompleteNotifyList = new ConcurrentLinkedDeque<>();
-        loadingCompleteNotifyList = new ConcurrentLinkedDeque<>();
     }
 
     private int getSettingsVolume(String setting){
@@ -131,7 +129,7 @@ public class AudioStateMachine implements IAudioStateMachine {
         // If set is empty, notify objects waiting for load to finish
         if (loadingJobs.isEmpty()) {
             while (!loadingCompleteNotifyList.isEmpty())
-                loadingCompleteNotifyList.removeFirst().notifyAll();
+                loadingCompleteNotifyList.removeFirst().awaken();
         }
     }
 
@@ -275,7 +273,7 @@ public class AudioStateMachine implements IAudioStateMachine {
         }
         // Notify objects waiting for soundboard to finish
         while (!soundboardCompleteNotifyList.isEmpty())
-            soundboardCompleteNotifyList.removeFirst().notifyAll();
+            soundboardCompleteNotifyList.removeFirst().awaken();
     }
 
     /**
@@ -948,47 +946,40 @@ public class AudioStateMachine implements IAudioStateMachine {
     }
 
     /**
-     * Notifies object when the soundboard finishes playing. If it is not playing, the object does not wait.
+     * Notifies object when the soundboard finishes playing.
      *
      * @param obj The object to notify
+     * @return true if the soundboard is currently playing and the caller should wait
      */
     @Override
-    public void notifyWhenSoundboardCompletes(Object obj) {
+    public boolean notifyWhenSoundboardCompletes(INotifiableObject obj) {
         switch (myCurrentStatus) {
             case SOUNDBOARD_PLAYING:
             case SOUNDBOARD_PLAYING_JUKEBOX_PAUSED:
             case SOUNDBOARD_PLAYING_JUKEBOX_READY:
             case SOUNDBOARD_PLAYING_JUKEBOX_SUSPENDED:
                 soundboardCompleteNotifyList.add(obj);
-                try {
-                    obj.wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                break;
+                return true;
             case INACTIVE:
             case JUKEBOX_PAUSED:
             case JUKEBOX_PLAYING:
             default:
-                // Do nothing
-                break;
+                return false;
         }
     }
 
     /**
-     * Notifies object when the audio tracks are done loading. If no loading jobs are active, the object does not wait.
+     * Notifies object when the soundboard finishes playing.
      *
      * @param obj The object to notify
+     * @return true if the soundboard is currently playing and the caller should wait
      */
     @Override
-    public void notifyWhenAudioLoadingCompletes(Object obj) {
+    public boolean notifyWhenAudioLoadingCompletes(INotifiableObject obj) {
         if (!loadingJobs.isEmpty()) {
             loadingCompleteNotifyList.add(obj);
-            try {
-                obj.wait();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            return true;
         }
+        return false;
     }
 }

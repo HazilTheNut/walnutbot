@@ -29,9 +29,9 @@ dependencies {
 }
 
 shadowJar {
-    destinationDir = file("$projectDir/production")
+    destinationDirectory = file("$projectDir/production")
 }
 
 jar {
-    destinationDir = file("$projectDir/production")
+    destinationDirectory = file("$projectDir/production")
 }

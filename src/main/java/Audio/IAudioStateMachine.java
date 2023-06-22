@@ -247,16 +247,18 @@ public interface IAudioStateMachine {
     void songDurationTrackersNotifySongEnd();
 
     /**
-     * Notifies object when the soundboard finishes playing. If it is not playing, the object is immediately notified.
+     * Notifies object when the soundboard finishes playing.
      *
      * @param obj The object to notify
+     * @return true if the soundboard is currently playing and the caller should wait
      */
-    void notifyWhenSoundboardCompletes(Object obj);
+    boolean notifyWhenSoundboardCompletes(INotifiableObject obj);
 
     /**
-     * Notifies object when the audio tracks are done loading. If no loading jobs are active, the object is immediately notified.
+     * Notifies object when the audio tracks are done loading.
      *
      * @param obj The object to notify
+     * @return true if audio tracks are currently loading and the caller should wait
      */
-    void notifyWhenAudioLoadingCompletes(Object obj);
+    boolean notifyWhenAudioLoadingCompletes(INotifiableObject obj);
 }
