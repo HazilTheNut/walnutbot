@@ -22,12 +22,12 @@ public class LavaplayerDiscordBridge implements ILavaplayerBotBridge, IDiscordPl
         if (activeStream != player)
             connectedVoiceChannel.getGuild().getAudioManager().setSendingHandler(new LavaplayerDiscordSendHandler(player));
         activeStream = player;
-        lavaplayerWrapper.setConnectedToVoiceChannel(true);
         return true;
     }
 
     public void setConnectedVoiceChannel(VoiceChannel connectedVoiceChannel) {
         this.connectedVoiceChannel = connectedVoiceChannel;
+        lavaplayerWrapper.setConnectedToVoiceChannel(true);
         // Reestablish audio streaming with new voice channel
         if (activeStream != null)
             setActiveStream(activeStream);

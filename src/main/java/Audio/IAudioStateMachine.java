@@ -83,7 +83,10 @@ public interface IAudioStateMachine {
      */
     void loadJukeboxDefaultList(String uri);
 
-    boolean areLoadRequestsProcessing();
+    /**
+     * Clears the jukebox default list
+     */
+    void clearJukeboxDefaultList();
 
     // State machine information
 

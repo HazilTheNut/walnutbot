@@ -417,6 +417,7 @@ public class AudioStateMachine implements IAudioStateMachine {
                     resetStateMachine();
                     break;
             }
+            return;
         }
 
         if (jukeboxCurrentlyPlayingSong.getAbstractedLoadedTrack() != null) {
@@ -576,11 +577,6 @@ public class AudioStateMachine implements IAudioStateMachine {
         stateMachineMutex.release();
     }
 
-    @Override
-    public boolean areLoadRequestsProcessing() {
-        return playbackWrapper.isProcessingLoadRequests();
-    }
-
     private void loadJukeboxDefaultList_internal(String uri) {
         Transcriber.printRaw("loadJukeboxDefaultList_internal: %s", uri);
         jukeboxDefaultList.accessAudioKeyPlaylist(playlist -> {
@@ -618,6 +614,32 @@ public class AudioStateMachine implements IAudioStateMachine {
                     Transcriber.printRaw("loadJukeboxDefaultList_internal: assigned uri: %s", accessedLoadResult.getUrl());
                 });
             });
+        });
+    }
+
+    /**
+     * Clears the jukebox default list
+     */
+    @Override
+    public void clearJukeboxDefaultList() {
+        try {
+            stateMachineMutex.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            clearJukeboxDefaultList_internal();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        stateMachineMutex.release();
+    }
+
+    public void clearJukeboxDefaultList_internal() {
+        Transcriber.printRaw("unloadJukeboxDefaultList_internal");
+        jukeboxDefaultList.accessAudioKeyPlaylist(playlist -> {
+            playlist.clearPlaylist();
+            setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.UNLOADED);
         });
     }
 

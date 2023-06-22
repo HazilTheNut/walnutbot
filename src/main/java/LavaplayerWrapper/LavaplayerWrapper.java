@@ -23,7 +23,7 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
     private final AudioPlayer jukeboxPlayer;
     private boolean isConnectedToVoiceChannel;
 
-    private AtomicInteger loadRequestsProcessing;
+    private final AtomicInteger loadRequestsProcessing;
 
     private static final int MAX_VOLUME = 150;
 

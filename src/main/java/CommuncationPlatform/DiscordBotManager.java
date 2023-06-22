@@ -131,6 +131,7 @@ public class DiscordBotManager extends ListenerAdapter implements AudioEventList
             environment.getAudioStateMachine().stopSoundboard();
             environment.getAudioStateMachine().pauseJukebox();
         }
+        playbackSystemBridge.onDisconnect();
     }
 
     @Override public List<String> getListOfVoiceChannels() {
