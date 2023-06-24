@@ -1,8 +1,5 @@
 package UI;
 
-import Audio.AudioMaster;
-import Commands.CommandInterpreter;
-import CommuncationPlatform.ICommunicationPlatformManager;
 import Main.WalnutbotEnvironment;
 import Utils.SettingsLoader;
 

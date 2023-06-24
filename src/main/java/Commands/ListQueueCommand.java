@@ -24,7 +24,7 @@ public class ListQueueCommand extends Command {
     void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         environment.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> {
             StringBuilder message = new StringBuilder();
-            message.append("*JJukebox Queue:*\n```\n");
+            message.append("*Jukebox Queue:*\n```\n");
             if (environment.getAudioStateMachine().getJukeboxCurrentlyPlayingSong() != null)
                 message.append("Now Playing: ").append(environment.getAudioStateMachine().getJukeboxCurrentlyPlayingSong().getName()).append("\n===\n");
             if (playlist.isEmpty()) {

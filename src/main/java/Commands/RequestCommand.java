@@ -2,7 +2,6 @@ package Commands;
 
 import Audio.AudioKey;
 import Audio.AudioKeyPlaylist;
-import Audio.AudioMaster;
 import Main.WalnutbotEnvironment;
 import Utils.FileIO;
 import Utils.Transcriber;
@@ -53,6 +52,7 @@ public class RequestCommand extends Command {
             environment.getAudioStateMachine().enqueueJukeboxSong(new AudioKey("TEMP", expandedURI));
     }
 
+    /*
     private void postQueueStatus(AudioMaster audioMaster, CommandFeedbackHandler feedbackHandler){
         int numberofSongs = audioMaster.getJukeboxQueueList().getAudioKeys().size();
         //if (audioMaster.getCurrentlyPlayingSong() != null) numberofSongs++;
@@ -62,4 +62,5 @@ public class RequestCommand extends Command {
     private void postErrorStatus(CommandFeedbackHandler feedbackHandler, String url){
         Transcriber.printAndPost(feedbackHandler, "**WARNING:** This bot threw an error parsing this url: \"%1$s\"", url);
     }
+    */
 }
