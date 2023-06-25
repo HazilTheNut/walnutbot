@@ -2,11 +2,19 @@ package LavaplayerWrapper;
 
 import Audio.*;
 import Utils.Transcriber;
+import com.sedmelluq.discord.lavaplayer.container.MediaContainerRegistry;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import com.sedmelluq.discord.lavaplayer.source.bandcamp.BandcampAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.beam.BeamAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.getyarn.GetyarnAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.http.HttpAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.soundcloud.SoundCloudAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.twitch.TwitchStreamAudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.vimeo.VimeoAudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -36,8 +44,7 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
         lavaplayerBotBridge.assignLavaplayerWrapper(this);
 
         audioPlayerManager = new DefaultAudioPlayerManager();
-        AudioSourceManagers.registerLocalSource(audioPlayerManager);
-        AudioSourceManagers.registerRemoteSources(audioPlayerManager);
+        registerSources(audioPlayerManager);
 
         soundboardPlayer = audioPlayerManager.createPlayer();
         jukeboxPlayer = audioPlayerManager.createPlayer();
@@ -45,6 +52,19 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
         isConnectedToVoiceChannel = false;
 
         loadRequestsProcessing = new AtomicInteger(0);
+    }
+
+    private void registerSources(AudioPlayerManager playerManager){
+        AudioSourceManagers.registerLocalSource(playerManager);
+        // YouTube playback is intentionally disabled.
+        // playerManager.registerSourceManager(new YoutubeAudioSourceManager(true));
+        playerManager.registerSourceManager(SoundCloudAudioSourceManager.createDefault());
+        playerManager.registerSourceManager(new BandcampAudioSourceManager());
+        playerManager.registerSourceManager(new VimeoAudioSourceManager());
+        playerManager.registerSourceManager(new TwitchStreamAudioSourceManager());
+        playerManager.registerSourceManager(new BeamAudioSourceManager());
+        playerManager.registerSourceManager(new GetyarnAudioSourceManager());
+        playerManager.registerSourceManager(new HttpAudioSourceManager(MediaContainerRegistry.DEFAULT_REGISTRY));
     }
 
     @Override
@@ -358,18 +378,6 @@ public class LavaplayerWrapper implements IPlaybackWrapper {
             if (trackLoadResultHandler != null)
                 trackLoadResultHandler.onLoadComplete(false);
             loadRequestsProcessing.decrementAndGet();
-        }
-    }
-
-    private static class TrackLoadCounter {
-        private int count = 0;
-
-        void increment() {
-            count++;
-        }
-
-        int getCount() {
-            return count;
         }
     }
 }

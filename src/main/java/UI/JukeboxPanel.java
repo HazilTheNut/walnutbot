@@ -13,7 +13,6 @@ import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.Iterator;
 
 public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
@@ -142,9 +141,7 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
         JPanel panel = new JPanel(new BorderLayout());
 
         queueTable = new TrackListingTable(environment, uiFrame, true);
-        environment.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> {
-            playlist.addAudioKeyPlaylistListener(queueTable);
-        });
+        environment.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(playlist -> playlist.addAudioKeyPlaylistListener(queueTable));
 
         JScrollPane scrollPane = new JScrollPane(queueTable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
@@ -257,7 +254,7 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
         // List of playlists in nearby folder
         popupMenu.add(new JLabel("- Playlists Folder"));
-        for (File file : FileIO.getFilesInDirectory(FileIO.getRootFilePath().concat("playlists/"))) {
+        for (File file : FileIO.getPlaylistFilesInDirectory(FileIO.getRootFilePath().concat("playlists/"))) {
             JMenuItem item = new JMenuItem(file.getName(), new ImageIcon(ButtonMaker.convertIconPath("icons/playlistfile.png")));
             item.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl load ".concat(FileIO.sanitizeURIForCommand(file.getPath())),
                 Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
@@ -324,7 +321,7 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
         loopingBox.setSelected(loopingStatus);
     }
 
-    private class TrackListingTable extends JPanel implements AudioKeyPlaylistListener {
+    private static class TrackListingTable extends JPanel implements AudioKeyPlaylistListener {
 
         private final WalnutbotEnvironment environment;
         UIFrame uiFrame;
@@ -355,13 +352,6 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
             }
             validate();
             repaint();
-        }
-
-        private void refresh(){
-            if (isQueueList)
-                environment.getAudioStateMachine().getJukeboxQueue().accessAudioKeyPlaylist(this::pullAudioKeyList);
-            else
-                environment.getAudioStateMachine().getJukeboxDefaultList().accessAudioKeyPlaylist(this::pullAudioKeyList);
         }
 
         @Override
@@ -399,13 +389,13 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
         }
     }
 
-    private class TrackListing extends JPanel implements AudioKeyUIWrapper {
+    private static class TrackListing extends JPanel implements AudioKeyUIWrapper {
 
-        private AudioKey audioKey;
-        private JTextComponent nameText;
-        private JTextComponent urlText;
+        private final AudioKey audioKey;
+        private final JTextComponent nameText;
+        private final JTextComponent urlText;
 
-        private java.util.UUID UUID;
+        private final java.util.UUID UUID;
 
         private int findMyPosition(){
             for (int i = 0; i < getParent().getComponents().length; i++) {
@@ -483,49 +473,6 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
         @Override public AudioKey getData() {
             return audioKey;
-        }
-    }
-
-    private class PlaylistHistoryCircularQueue<E> {
-
-        private E[] elements;
-        private int queueOldestPos;
-
-        @SuppressWarnings("unchecked")
-        private PlaylistHistoryCircularQueue(int size){
-            elements = (E[]) new Object[size];
-            queueOldestPos = 0;
-        }
-
-        private void record(E event){
-            for (E element : elements)
-                if (event.equals(element))
-                    return;
-            elements[queueOldestPos] = event;
-            queueOldestPos = (queueOldestPos + 1) % elements.length;
-        }
-
-        private Iterator<E> iterator(){
-            return new Iterator<E>() {
-                private int currentPos = (queueOldestPos == 0) ? elements.length - 1 : queueOldestPos - 1;
-                private int consumeCount;
-
-                @Override public boolean hasNext() {
-                    if (consumeCount == elements.length)
-                        return false;
-                    return elements[currentPos] != null;
-                }
-
-                @Override public E next() {
-                    if (hasNext()) {
-                        E element = elements[currentPos];
-                        currentPos = (currentPos == 0) ? elements.length - 1 : currentPos - 1;
-                        consumeCount++;
-                        return element;
-                    } else
-                        return null;
-                }
-            };
         }
     }
 }

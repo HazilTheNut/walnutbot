@@ -2,16 +2,15 @@ package Utils;
 
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.List;
 
 public class FileIO {
 
     private static final String[] playlistFileExtensions = { "playlist", "wbp" };
+    private static final String[] scriptFileExtensions = { "wbs" };
 
     public static String getRootFilePath() {
         String path = FileIO.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -52,10 +51,19 @@ public class FileIO {
         return uri.substring(Math.max(0, sepIndex), dotIndex);
     }
 
-    public static File[] getFilesInDirectory(String uri) {
+    public static File[] getPlaylistFilesInDirectory(String uri) {
         File folder = new File(uri);
         if (folder.isDirectory()){
             FileFilter filter = new SuffixFileFilter(playlistFileExtensions);
+            return folder.listFiles(filter);
+        }
+        return new File[0];
+    }
+
+    public static File[] getScriptFilesInDirectory(String uri) {
+        File folder = new File(uri);
+        if (folder.isDirectory()){
+            FileFilter filter = new SuffixFileFilter(scriptFileExtensions);
             return folder.listFiles(filter);
         }
         return new File[0];
