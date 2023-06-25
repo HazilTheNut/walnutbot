@@ -1,6 +1,8 @@
 package Audio;
 
+import Main.WalnutbotInfo;
 import Utils.FileIO;
+import Utils.Transcriber;
 
 import java.io.File;
 import java.util.LinkedList;
@@ -38,26 +40,46 @@ public class AudioTrackLoadJob {
 
         // Load each URI
         for (UriLoadRequest loadRequest : urisToProcess) {
-            if (!loadJobSettings.storeLoadedTrackObjects() && !FileIO.isWebsiteURL(loadRequest.getUri())) {
-                /* If we don't need to store any loaded track objects and the URI is a local file,
-                 *  then we don't need to go through the IPlaybackWrapper
-                 */
-                loadRequestWithoutPlaybackWrapper(output, trackLoadResultHandler, urisToProcess, loadRequest);
-            } else {
-                playbackWrapper.loadItem(loadRequest.getSource(), loadRequest.getLoadedTracks(), loadJobSettings,
-                        successful -> onPlaybackWrapperLoadComplete(output, trackLoadResultHandler, urisToProcess, loadRequest, successful));
+            UriSourceType uriSourceType = resolveUriType(loadRequest.getUri());
+            Transcriber.printRaw("URI \"%s\" is %s", loadRequest.getUri(), uriSourceType.name());
+            switch (uriSourceType) {
+                case LOCAL_PLAYLIST:
+                    /*
+                     * This should have been expanded by above unless loadJobSettings.recursivelyExpandPlaylistFiles() is false.
+                     * In which case they can appear here, though a playlist file is not music and this isn't playable
+                     */
+                    if (loadJobSettings.storeLoadedTrackObjects())
+                        loadRequestWithoutPlaybackWrapper(output, trackLoadResultHandler, urisToProcess, loadRequest, UriLoadRequestState.LOADED_UNSUCCESSFULLY);
+                    else
+                        loadRequestWithoutPlaybackWrapper(output, trackLoadResultHandler, urisToProcess, loadRequest, UriLoadRequestState.LOADED_SUCCESSFULLY);
+                    break;
+                case LOCAL_MUSIC:
+                case WEBSITE_LINK:
+                    if (loadJobSettings.storeLoadedTrackObjects())
+                        playbackWrapper.loadItem(loadRequest.getSource(), loadRequest.getLoadedTracks(), loadJobSettings,
+                                successful -> onPlaybackWrapperLoadComplete(output, trackLoadResultHandler, urisToProcess, loadRequest, successful));
+                    else
+                        loadRequestWithoutPlaybackWrapper(output, trackLoadResultHandler, urisToProcess, loadRequest, UriLoadRequestState.LOADED_SUCCESSFULLY);
+                    break;
+                case INVALID:
+                default:
+                    loadRequestWithoutPlaybackWrapper(output, trackLoadResultHandler, urisToProcess, loadRequest, UriLoadRequestState.LOADED_UNSUCCESSFULLY);
+                    break;
             }
         }
     }
 
-    private void loadRequestWithoutPlaybackWrapper(AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, LinkedList<UriLoadRequest> urisToProcess, UriLoadRequest loadRequest) {
+    private void loadRequestWithoutPlaybackWrapper(AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, LinkedList<UriLoadRequest> urisToProcess, UriLoadRequest loadRequest, UriLoadRequestState requestState) {
         try {
             loadResultMutex.acquire();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        loadRequest.setLoadRequestState(UriLoadRequestState.LOADED_SUCCESSFULLY);
-        loadRequest.getLoadedTracks().add(loadRequest.getSource());
+        if (loadRequest.getSource().getName() == null)
+            loadRequest.getSource().setName(loadRequest.getUri());
+        loadRequest.setLoadRequestState(requestState);
+        if (requestState == UriLoadRequestState.LOADED_SUCCESSFULLY)
+            loadRequest.getLoadedTracks().add(loadRequest.getSource());
         if (isURIsToProcessListDoneLoading(urisToProcess)) {
             boolean result = populateOutputAudioKeyPlaylist(output, urisToProcess);
             trackLoadResultHandler.onTracksLoaded(output, result);
@@ -141,6 +163,29 @@ public class AudioTrackLoadJob {
         LOADED_UNSUCCESSFULLY
     }
 
+    private enum UriSourceType {
+        INVALID,
+        LOCAL_MUSIC,
+        LOCAL_PLAYLIST,
+        WEBSITE_LINK
+    }
+
+    private UriSourceType resolveUriType(String uri) {
+        // First check for website link
+        if (FileIO.isWebsiteURL(uri))
+            return UriSourceType.WEBSITE_LINK;
+        // Otherwise, this should be some sort of local file
+        if (FileIO.isPlaylistFile(uri))
+            return UriSourceType.LOCAL_PLAYLIST;
+        // Check to see if it is a playable music file
+        String ext = FileIO.getFileExtension(uri);
+        for (String acceptedExt : WalnutbotInfo.ACCEPTED_AUDIO_FORMATS)
+            if (ext.equals(acceptedExt))
+                return UriSourceType.LOCAL_MUSIC;
+        // If all else fails, it's invalid
+        return UriSourceType.INVALID;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -155,20 +200,18 @@ public class AudioTrackLoadJob {
     }
 
     private static class UriLoadRequest {
-        private final String uri;
         private final AudioKey source;
         private UriLoadRequestState loadRequestState;
-        private LinkedList<AudioKey> loadedTracks;
+        private final LinkedList<AudioKey> loadedTracks;
 
         public UriLoadRequest(AudioKey source) {
             this.source = source;
-            this.uri = source.getUrl();
             loadRequestState = UriLoadRequestState.UNLOADED;
             loadedTracks = new LinkedList<>();
         }
 
         public String getUri() {
-            return uri;
+            return source.getUrl();
         }
 
         public UriLoadRequestState getLoadRequestState() {

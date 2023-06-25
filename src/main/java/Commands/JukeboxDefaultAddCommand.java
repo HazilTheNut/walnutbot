@@ -21,7 +21,7 @@ public class JukeboxDefaultAddCommand extends Command {
 
     @Override String getSpecificHelpDescription() {
         return "Adds a song to the Jukebox's Default List\n\n"
-            + "url - The URL of the song to add to the default list";
+            + "url - The URL of the song to add to the default list. A URL of \"blank\" inserts an empty key.";
     }
 
     @Override
@@ -30,6 +30,10 @@ public class JukeboxDefaultAddCommand extends Command {
             return;
         if (environment.getAudioStateMachine().getJukeboxDefaultListLoadState() == IAudioStateMachine.JukeboxDefaultListLoadState.UNLOADED){
             Transcriber.printAndPost(feedbackHandler, "**WARNING:** No Default List loaded!");
+            return;
+        }
+        if (args[0].equals("blank")) {
+            environment.getAudioStateMachine().getJukeboxDefaultList().accessAudioKeyPlaylist(playlist -> playlist.addAudioKey(new AudioKey("blank", "blank")));
             return;
         }
         if (sanitizeLocalAccess(args[0], feedbackHandler, permissions)) {

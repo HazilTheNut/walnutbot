@@ -21,7 +21,8 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
     private JLabel playlistLabel;
 
     private JCheckBox loopingBox;
-    private JButton addPlaylistButton;
+    private JButton importToDefaultListButton;
+    private JButton addBlankToDefaultListButton;
 
     private final AudioKeyPlaylist recentPlaylistsHistory;
     private static final String HISTORY_LOC = "~~/data/jbhistory.playlist";
@@ -101,10 +102,16 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
 
         mainPanel.add(Box.createHorizontalGlue());
 
-        addPlaylistButton = new JButton("Import Music");
-        addPlaylistButton.addActionListener(e -> new MakeRequestFrame("jb dfl add ", "Import Music", commandInterpreter, uiFrame));
-        addPlaylistButton.setEnabled(false);
-        mainPanel.add(addPlaylistButton);
+        addBlankToDefaultListButton = ButtonMaker.createIconButton("icons/add.png", "Add Blank Entry", 4);
+        addBlankToDefaultListButton.addActionListener(e -> commandInterpreter.evaluateCommand("jb dfl add blank",
+                Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK));
+        addBlankToDefaultListButton.setEnabled(false);
+        mainPanel.add(addBlankToDefaultListButton);
+
+        importToDefaultListButton = new JButton("Import Music");
+        importToDefaultListButton.addActionListener(e -> new MakeRequestFrame("jb dfl add ", "Import Music", commandInterpreter, uiFrame));
+        importToDefaultListButton.setEnabled(false);
+        mainPanel.add(importToDefaultListButton);
 
         return mainPanel;
     }
@@ -309,7 +316,8 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
     public void onJukeboxDefaultListLoadStateUpdate(IAudioStateMachine.JukeboxDefaultListLoadState loadState, IAudioStateMachine origin) {
         origin.getJukeboxDefaultList().accessAudioKeyPlaylist(playlist -> {
             defaultListTable.pullAudioKeyList(playlist);
-            addPlaylistButton.setEnabled(loadState == IAudioStateMachine.JukeboxDefaultListLoadState.LOCAL_FILE);
+            importToDefaultListButton.setEnabled(loadState == IAudioStateMachine.JukeboxDefaultListLoadState.LOCAL_FILE);
+            addBlankToDefaultListButton.setEnabled(loadState == IAudioStateMachine.JukeboxDefaultListLoadState.LOCAL_FILE);
             if (loadState != IAudioStateMachine.JukeboxDefaultListLoadState.UNLOADED)
                 recordRecentPlaylist(playlist);
         });

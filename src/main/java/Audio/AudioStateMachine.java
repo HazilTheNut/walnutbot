@@ -427,9 +427,7 @@ public class AudioStateMachine implements IAudioStateMachine {
             AudioKeyPlaylistTSWrapper temp = new AudioKeyPlaylistTSWrapper(new AudioKeyPlaylist("TEMP"));
             loadTracks(jukeboxCurrentlyPlayingSong.getUrl(), temp, new LoadJobSettings(true, true), (loadedTemp, successful) -> {
                 if (successful) {
-                    loadedTemp.accessAudioKeyPlaylist(playlist ->
-                            jukeboxCurrentlyPlayingSong = new AudioKey(jukeboxCurrentlyPlayingSong.getName(),
-                                    jukeboxCurrentlyPlayingSong.getUrl(), playlist.getKey(0).getAbstractedLoadedTrack()));
+                    loadedTemp.accessAudioKeyPlaylist(playlist -> jukeboxCurrentlyPlayingSong = playlist.getKey(0));
                     beginPlaybackOfCurrentSong();
                 } else {
                     // Got a bad track, try getting another one
