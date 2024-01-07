@@ -90,7 +90,6 @@ public class Transcriber {
             OutputSplitter splitter = new OutputSplitter(System.out.toString(), System.out, transcriptReceivers);
             transcriptReceivers.add(new HeadlessFileOutWriter(FileIO.getRootFilePath().concat("output.txt")));
             System.setOut(splitter);
-            System.setOut(splitter);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -113,13 +112,17 @@ public class Transcriber {
         }
 
         @Override public void print(String s) {
-            fileOutStream.print(s);
+            if (fileOutStream != null) {
+                fileOutStream.print(s);
+            }
             //super.printTimestamped(s);
             sendToReceivers(s);
         }
 
         @Override public void println(String x) {
-            fileOutStream.println(x);
+            if (fileOutStream != null) {
+                fileOutStream.print(x);
+            }
             //super.println(x);
             sendToReceivers(x);
         }

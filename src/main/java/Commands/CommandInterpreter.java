@@ -70,7 +70,7 @@ public class CommandInterpreter {
     }
 
     public void readHeadlessInput(){
-        Thread inputThread = new Thread(() -> {
+        //Thread inputThread = new Thread(() -> {
            Scanner sc = new Scanner(System.in);
            String input;
            String exitWord = "exit";
@@ -80,8 +80,8 @@ public class CommandInterpreter {
                    evaluateCommand(input, new ConsoleCommandFeedbackHandler(), Command.INTERNAL_MASK);
            } while (!input.equals(exitWord));
            System.exit(0);
-        });
-        inputThread.start();
+        //});
+        //inputThread.start();
     }
 
     private boolean isAPrefixedCommand(String commandRawText){

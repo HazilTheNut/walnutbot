@@ -31,9 +31,9 @@ public class Main {
         String startupScriptLoc = null;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
-            if (arg.equals("-headless"))
+            if (arg.equals("--headless") || arg.equals("-h"))
                 headlessMode = true;
-            else if (arg.equals("-run") && i < args.length - 1)
+            else if ((arg.equals("--run") || arg.equals("-r")) && i < args.length - 1)
                 startupScriptLoc = args[i+1];
         }
 
@@ -82,6 +82,10 @@ public class Main {
         // Start up command interpreter
         environment.setCommandInterpreter(new CommandInterpreter(environment));
 
+        // Startup script
+        if (environment.getCommandInterpreter() != null && startupScriptLoc != null)
+            environment.getCommandInterpreter().evaluateCommand("script ".concat(startupScriptLoc), Transcriber.getGenericCommandFeedBackHandler("Startup"), Command.INTERNAL_MASK);
+
         // Start up UI
         if (headlessMode) {
             if (environment.getCommandInterpreter() != null)
@@ -96,46 +100,5 @@ public class Main {
             }
             new UIFrame(environment, jda != null);
         }
-
-        // Startup script
-        if (environment.getCommandInterpreter() != null && startupScriptLoc != null)
-            environment.getCommandInterpreter().evaluateCommand("script ".concat(startupScriptLoc), Transcriber.getGenericCommandFeedBackHandler("Startup"), Command.INTERNAL_MASK);
-
-        /*
-        AudioMaster audioMaster = new AudioMaster();
-        if (jda == null)
-            Transcriber.printTimestamped("WARNING: JDA is null!");
-        IBotManager botManager = null;
-        if (jda != null){
-            botManager = new DiscordBotManager(jda, audioMaster);
-            botManager.updateStatus();
-            audioMaster.setDiscordBotManager(botManager);
-        }
-        CommandInterpreter commandInterpreter = null;
-
-        if (botManager != null) {
-            commandInterpreter = new CommandInterpreter(botManager, audioMaster);
-            jda.addEventListener(commandInterpreter);
-        }
-
-        if (headlessMode) {
-            if (commandInterpreter != null)
-                commandInterpreter.readHeadlessInput();
-            else
-                System.out.println("ERROR: Discord bot did not properly initialize!");
-        } else {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-                e.printStackTrace();
-            }
-            new UIFrame(botManager, audioMaster, commandInterpreter, (jda != null));
-        }
-
-        // Startup script
-        if (commandInterpreter != null && startupScriptLoc != null)
-            commandInterpreter.evaluateCommand("script ".concat(startupScriptLoc), Transcriber.getGenericCommandFeedBackHandler("Startup"), Command.INTERNAL_MASK);
-
-         */
     }
 }

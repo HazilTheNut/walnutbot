@@ -1,6 +1,7 @@
 package Commands;
 
 import Main.WalnutbotEnvironment;
+import Utils.FileIO;
 
 public class JukeboxDefaultLoadCommand extends Command {
 
@@ -26,6 +27,6 @@ public class JukeboxDefaultLoadCommand extends Command {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         if (sanitizeLocalAccess(args[0], feedbackHandler, permissions))
-            environment.getAudioStateMachine().loadJukeboxDefaultList(args[0]);
+            environment.getAudioStateMachine().loadJukeboxDefaultList(FileIO.expandURIMacros(args[0]));
     }
 }
