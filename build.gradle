@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'com.walnutbot'
-version '1.0-pre13'
+version '1.0.0'
 
 mainClassName = "Main/Main"
 
