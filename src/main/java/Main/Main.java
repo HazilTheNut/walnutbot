@@ -1,18 +1,18 @@
 package Main;
 
 import Audio.AudioStateMachine;
-import Audio.IAudioStateMachine;
 import Audio.IPlaybackWrapper;
 import Commands.Command;
 import Commands.CommandInterpreter;
 import CommuncationPlatform.DiscordBotManager;
-import CommuncationPlatform.ICommunicationPlatformManager;
 import CommuncationPlatform.IDiscordPlaybackSystemBridge;
-import LavaplayerWrapper.LavaplayerWrapper;
 import LavaplayerWrapper.ILavaplayerBotBridge;
 import LavaplayerWrapper.LavaplayerDiscordBridge;
+import LavaplayerWrapper.LavaplayerWrapper;
 import UI.UIFrame;
-import Utils.*;
+import Utils.FileIO;
+import Utils.SettingsLoader;
+import Utils.Transcriber;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -43,12 +43,13 @@ public class Main {
         System.out.printf("BEGIN of Walnutbot (time: %1$s)\n\tResiding in %2$s\n---\n",
                 (new SimpleDateFormat("MM/dd/yyyy kk:mm:ss")).format(now),
                 FileIO.getRootFilePath());
+        System.out.printf("Java runtime version: %s\n", System.getProperty("java.version"));
         SettingsLoader.initialize();
 
         // Validate bot token
         String token = SettingsLoader.getBotConfigValue("token");
         if (token == null) {
-            System.out.println("WARNING! The token is missing from the config file! (Put \'token=...\' on a line in the file)");
+            System.out.println("WARNING! The token is missing from the config file! (Put 'token=...' on a line in the file)");
         }
 
         // Connect to discord bot
