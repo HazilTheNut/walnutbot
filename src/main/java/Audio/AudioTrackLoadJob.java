@@ -35,8 +35,20 @@ public class AudioTrackLoadJob {
 
     public void loadItemThread(String uri, AudioKeyPlaylistTSWrapper output, IPlaybackWrapper playbackWrapper, ITrackLoadResultHandler trackLoadResultHandler, LoadJobSettings loadJobSettings) {
         // Populate urisToProcess to construct list of URIs to load
-        LinkedList<UriLoadRequest> urisToProcess = new LinkedList<>();
+        UriList<UriLoadRequest> urisToProcess = new UriList<>();
         populateURIsToProcessList(uri, urisToProcess, loadJobSettings);
+
+        // If list empty, return successful
+        if (urisToProcess.size() == 0) {
+            try {
+                loadResultMutex.acquire();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            trackLoadResultHandler.onTracksLoaded(output, true);
+            loadResultMutex.release();
+            return;
+        }
 
         // Load each URI
         for (UriLoadRequest loadRequest : urisToProcess) {
@@ -55,11 +67,8 @@ public class AudioTrackLoadJob {
                     break;
                 case LOCAL_MUSIC:
                 case WEBSITE_LINK:
-                    if (loadJobSettings.storeLoadedTrackObjects())
-                        playbackWrapper.loadItem(loadRequest.getSource(), loadRequest.getLoadedTracks(), loadJobSettings,
-                                successful -> onPlaybackWrapperLoadComplete(output, trackLoadResultHandler, urisToProcess, loadRequest, successful));
-                    else
-                        loadRequestWithoutPlaybackWrapper(output, trackLoadResultHandler, urisToProcess, loadRequest, UriLoadRequestState.LOADED_SUCCESSFULLY);
+                    playbackWrapper.loadItem(loadRequest.getSource(), loadRequest.getLoadedTracks(), loadJobSettings,
+                            successful -> onPlaybackWrapperLoadComplete(output, trackLoadResultHandler, urisToProcess, loadRequest, successful));
                     break;
                 case INVALID:
                 default:
@@ -69,7 +78,7 @@ public class AudioTrackLoadJob {
         }
     }
 
-    private void loadRequestWithoutPlaybackWrapper(AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, LinkedList<UriLoadRequest> urisToProcess, UriLoadRequest loadRequest, UriLoadRequestState requestState) {
+    private void loadRequestWithoutPlaybackWrapper(AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, UriList<UriLoadRequest> urisToProcess, UriLoadRequest loadRequest, UriLoadRequestState requestState) {
         try {
             loadResultMutex.acquire();
         } catch (InterruptedException e) {
@@ -80,14 +89,15 @@ public class AudioTrackLoadJob {
         loadRequest.setLoadRequestState(requestState);
         if (requestState == UriLoadRequestState.LOADED_SUCCESSFULLY)
             loadRequest.getLoadedTracks().add(loadRequest.getSource());
-        if (isURIsToProcessListDoneLoading(urisToProcess)) {
+        if (isURIsToProcessListDoneLoading(urisToProcess) && urisToProcess.hasNotYetPopulatedToOutputList()) {
             boolean result = populateOutputAudioKeyPlaylist(output, urisToProcess);
+            urisToProcess.setPopulatedToOutputList();
             trackLoadResultHandler.onTracksLoaded(output, result);
         }
         loadResultMutex.release();
     }
 
-    private void onPlaybackWrapperLoadComplete(AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, LinkedList<UriLoadRequest> urisToProcess, UriLoadRequest loadRequest, boolean successful) {
+    private void onPlaybackWrapperLoadComplete(AudioKeyPlaylistTSWrapper output, ITrackLoadResultHandler trackLoadResultHandler, UriList<UriLoadRequest> urisToProcess, UriLoadRequest loadRequest, boolean successful) {
         try {
             loadResultMutex.acquire();
         } catch (InterruptedException e) {
@@ -97,9 +107,9 @@ public class AudioTrackLoadJob {
             loadRequest.setLoadRequestState(UriLoadRequestState.LOADED_SUCCESSFULLY);
         else
             loadRequest.setLoadRequestState(UriLoadRequestState.LOADED_UNSUCCESSFULLY);
-        // Populate the AudioKeyPlaylistTSWrapper output after all tracks have been loaded
-        if (isURIsToProcessListDoneLoading(urisToProcess)) {
+        if (isURIsToProcessListDoneLoading(urisToProcess) && urisToProcess.hasNotYetPopulatedToOutputList()) {
             boolean result = populateOutputAudioKeyPlaylist(output, urisToProcess);
+            urisToProcess.setPopulatedToOutputList();
             trackLoadResultHandler.onTracksLoaded(output, result);
         }
         loadResultMutex.release();
@@ -233,6 +243,22 @@ public class AudioTrackLoadJob {
         @Override
         public String toString() {
             return String.format("%s (%s)", source, loadRequestState.name());
+        }
+    }
+
+    private static class UriList<E> extends LinkedList<E> {
+        private boolean isPopulatedToOutputList;
+        UriList(){
+            super();
+            isPopulatedToOutputList = false;
+        }
+
+        boolean hasNotYetPopulatedToOutputList() {
+            return !isPopulatedToOutputList;
+        }
+
+        void setPopulatedToOutputList() {
+            isPopulatedToOutputList = true;
         }
     }
 }

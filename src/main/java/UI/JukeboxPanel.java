@@ -124,12 +124,15 @@ public class JukeboxPanel extends JPanel implements IAudioStateMachineListener {
         int result = fileChooser.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION){
             File chosen = fileChooser.getSelectedFile();
-            if (chosen.getName().endsWith(".playlist")) {
-                commandInterpreter
-                    .evaluateCommand("jb dfl load ".concat(chosen.getPath().replace("\\", "\\\\")),
-                        Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
-            } else
-                JOptionPane.showMessageDialog(new JFrame(), "ERROR: This is not a Walnutbot Playlist!");
+            for (String ext : FileIO.getValidPlaylistFileExtensions()) {
+                if (chosen.getName().endsWith(ext)) {
+                    commandInterpreter
+                            .evaluateCommand("jb dfl load ".concat(chosen.getPath().replace("\\", "\\\\")),
+                                    Transcriber.getGenericCommandFeedBackHandler(Transcriber.AUTH_UI), Command.INTERNAL_MASK);
+                    return;
+                }
+            }
+            JOptionPane.showMessageDialog(new JFrame(), "ERROR: This is not a Walnutbot Playlist!");
         }
     }
 
