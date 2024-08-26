@@ -2,6 +2,7 @@ package Commands;
 
 import Main.WalnutbotEnvironment;
 import Utils.FileIO;
+import Utils.Transcriber;
 
 public class JukeboxDefaultLoadCommand extends Command {
 
@@ -26,7 +27,10 @@ public class JukeboxDefaultLoadCommand extends Command {
     void onRunCommand(WalnutbotEnvironment environment, CommandFeedbackHandler feedbackHandler, byte permissions, String[] args) {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
-        if (sanitizeLocalAccess(args[0], feedbackHandler, permissions))
-            environment.getAudioStateMachine().loadJukeboxDefaultList(FileIO.expandURIMacros(args[0]));
+        if (sanitizeLocalAccess(args[0], feedbackHandler, permissions)) {
+            String expanded = FileIO.expandURIMacros(args[0]);
+            Transcriber.printRaw("JukeboxDefaultLoadCommand.onRunCommand expanded: %s", expanded);
+            environment.getAudioStateMachine().loadJukeboxDefaultList(FileIO.expandURIMacros(expanded));
+        }
     }
 }

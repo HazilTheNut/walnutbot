@@ -48,6 +48,7 @@ public class RequestCommand extends Command {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         String expandedURI = FileIO.expandURIMacros(args[0]);
+        Transcriber.printRaw("RequestCommand.onRunCommand expanded URI: %s", expandedURI);
         if (sanitizeLocalAccess(expandedURI, feedbackHandler, permissions))
             environment.getAudioStateMachine().enqueueJukeboxSong(new AudioKey("TEMP", expandedURI));
     }

@@ -594,6 +594,7 @@ public class AudioStateMachine implements IAudioStateMachine {
                 else {
                     setJukeboxDefaultListLoadState(JukeboxDefaultListLoadState.UNLOADED);
                 }
+                Transcriber.printRaw("loadJukeboxDefaultList_internal: default list load state is now %s", getJukeboxDefaultListLoadState().toString());
                 // loadTracks spins up its own thread so this should be okay
                 loadResult.accessAudioKeyPlaylist(accessedLoadResult -> {
                     // Update the URL
@@ -609,7 +610,7 @@ public class AudioStateMachine implements IAudioStateMachine {
                             accessedLoadResult.setUrl("ERROR");
                             break;
                     }
-                    Transcriber.printRaw("loadJukeboxDefaultList_internal: assigned uri: %s", accessedLoadResult.getUrl());
+                    Transcriber.printRaw("loadJukeboxDefaultList_internal: assigned uri as default list: %s", accessedLoadResult.getUrl());
                 });
             });
         });

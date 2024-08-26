@@ -30,11 +30,13 @@ public class JukeboxDefaultNewCommand extends Command {
         if (argsInsufficient(args, 1, feedbackHandler))
             return;
         if (sanitizeLocalAccess("dummy", feedbackHandler, permissions)) {
-            File file = new File(FileIO.appendPlaylistFileExtension(FileIO.expandURIMacros(args[0])));
+            String expandedURI = FileIO.appendPlaylistFileExtension(FileIO.expandURIMacros(args[0]));
+            Transcriber.printRaw("JukeboxDefaultNewCommand.onRunCommand:\n\tinput URI: %s\n\texpanded URI: %s\n", args[0], expandedURI);
+            File file = new File(expandedURI);
             if (!file.exists()) {
                 try {
                     if (!file.createNewFile())
-                        Transcriber.printAndPost(feedbackHandler, "Failed to create new file at uri '%1$s'", args[0]);
+                        Transcriber.printAndPost(feedbackHandler, "Failed to create new file at uri '%1$s'", expandedURI);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

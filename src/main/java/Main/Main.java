@@ -44,6 +44,7 @@ public class Main {
                 (new SimpleDateFormat("MM/dd/yyyy kk:mm:ss")).format(now),
                 FileIO.getRootFilePath());
         System.out.printf("Java runtime version: %s\n", System.getProperty("java.version"));
+        System.out.printf("Root file path: %s\n", FileIO.getRootFilePath());
         SettingsLoader.initialize();
 
         // Validate bot token

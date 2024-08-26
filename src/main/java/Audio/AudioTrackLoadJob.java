@@ -53,7 +53,7 @@ public class AudioTrackLoadJob {
         // Load each URI
         for (UriLoadRequest loadRequest : urisToProcess) {
             UriSourceType uriSourceType = resolveUriType(loadRequest.getUri());
-            Transcriber.printRaw("URI \"%s\" is %s", loadRequest.getUri(), uriSourceType.name());
+            Transcriber.printRaw("loadItemThread: URI \"%s\" is %s", loadRequest.getUri(), uriSourceType.name());
             switch (uriSourceType) {
                 case LOCAL_PLAYLIST:
                     /*
